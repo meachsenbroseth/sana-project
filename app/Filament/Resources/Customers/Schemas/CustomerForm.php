@@ -28,7 +28,8 @@ class CustomerForm
                     DateTimePicker::make('email_verified_at')
                     ->native(false)
                     ->native()
-                    ->displayFormat('M d, Y'),
+                    ->displayFormat('M d, Y')
+                    ->required(),
                     TextInput::make('phone')
                         ->tel(),
                     DatePicker::make('date_of_birth'),
@@ -38,7 +39,8 @@ class CustomerForm
                             'female' => 'Female',
                             'other' => 'Other',
                         ])
-                        ->native(false),
+                        ->native(false)
+                        ->required(),
                     Toggle::make('is_active')
                         ->default(true)
                         ->required(),

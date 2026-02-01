@@ -5,7 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder;
+
 use Illuminate\Support\Str;
 
 class Product extends Model
@@ -79,7 +80,6 @@ class Product extends Model
         $query->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
             ->where('stock_quantity', '>', 0);
     }
-
     /**
      * Scope to filter by category
      */
@@ -178,5 +178,4 @@ class Product extends Model
             }
         });
     }
- 
 }

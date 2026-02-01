@@ -1,24 +1,26 @@
 <?php
 
-namespace App\Filament\Resources\Orders\Tables;
+namespace App\Filament\Widgets;
 
 use App\Filament\Resources\Customers\CustomerResource;
+use App\Models\Order;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Filament\Widgets\TableWidget;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
-class OrdersTable
+class LatestOrders extends TableWidget
 {
-    public static function configure(Table $table): Table
+    protected int  | string | array $columnSpan = 'full';
+
+    protected static ?int $sort = 1;
+
+    public function table(Table $table): Table
     {
         return $table
+            ->query(fn (): Builder => Order::query())
             ->columns([
                 TextColumn::make('order_number')
                     ->sortable()
@@ -64,36 +66,19 @@ class OrdersTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->defaultSort('created_at', 'desc')
+            ->heading('Latest Order')
             ->filters([
-                SelectFilter::make('status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'processing' => 'Processing',
-                        'shipped' => 'Shipped',
-                        'delivered' => 'Delivered',
-                        'cancelled' => 'Cancelled'
-                    ])
-                    ->multiple()
-                    ->native(false),
-                SelectFilter::make('payment_status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'paid' => 'Paid',
-                        'failed' => 'Failed',
-                    ])
-                    ->native(false),
-                TrashedFilter::make(),
+                //
+            ])
+            ->headerActions([
+                //
             ])
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                //
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
-                    RestoreBulkAction::make(),
+                    //
                 ]),
             ]);
     }
