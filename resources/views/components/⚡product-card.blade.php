@@ -28,11 +28,23 @@ new class extends Component {
                     </svg>
                 </div>
             @endif
-            @if ($product->is_featured)
-                <span class="absolute top-2 left-2 bg-yellow-500 text-white text-xs font-semibold px-2 py-1 rounded">
-                    Featured
-                </span>
-            @endif
+            <div class="absolute top-2 left-2 flex flex-col gap-2">
+                @if ($product->is_featured)
+                    <span class="bg-yellow-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                        Featured
+                    </span>
+                @endif
+                @if ($product->discount_percentage > 0)
+                    <span class="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                        -{{ $product->discount_percentage }}%
+                    </span>
+                @endif
+                @if ($product->stock_status === 'out_of_stock')
+                    <span class="bg-black text-white text-xs font-semibold px-2 py-1 rounded">
+                        Out of Stock
+                    </span>
+                @endif
+            </div>
         </div>
 
         <!-- Product Info -->
