@@ -57,7 +57,7 @@ new class extends Component {
             ->when($this->sort === 'newest', fn($q) => $q->latest())
             ->when($this->sort === 'name_asc', fn($q) => $q->orderBy('name'))
             ->when($this->sort === 'name_desc', fn($q) => $q->orderByDesc('name'))
-            ->paginate(12);
+            ->paginate(9);
     }
 
     #[Computed]
@@ -164,12 +164,6 @@ new class extends Component {
                                 </button>
                             </div>
                             <div class="flex flex-wrap gap-2">
-                                @if ($search)
-                                    <span class="inline-flex items-center gap-1 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm">
-                                        Search: {{ $search }}
-                                        <button wire:click="$set('search', '')" class="hover:text-indigo-900">×</button>
-                                    </span>
-                                @endif
                                 @if ($category)
                                     <span class="inline-flex items-center gap-1 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm">
                                         Category: {{ \App\Models\Category::where('slug', $category)->first()?->name }}
@@ -197,14 +191,6 @@ new class extends Component {
                             </div>
                         </div>
                     @endif
-
-                    <!-- Search -->
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <h3 class="font-semibold text-gray-900 mb-3">Search</h3>
-                        <input type="text" wire:model.live.debounce.300ms="search" 
-                            placeholder="Search products..." 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    </div>  
 
                     <!-- Categories -->
                     <div class="bg-white p-4 rounded-lg shadow-sm">

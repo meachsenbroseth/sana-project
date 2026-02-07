@@ -15,9 +15,9 @@ new class extends Component {
             <a href="{{ route('home') }}" wire:navigate
                 class="flex items-center gap-2 flex-shrink-0 hover:opacity-80 transition-opacity">
                 <div class="w-8 h-8 bg-black rounded-md flex items-center justify-center">
-                    <span class="text-white font-bold">E</span>
+                    <span class="text-white font-bold">P</span>
                 </div>
-                <span class="font-bold text-lg hidden sm:block">{{ config('app.name') }}</span>
+                <span class="font-bold text-lg hidden sm:block">Phanna Computer</span>
             </a>
 
             {{-- Search Bar --}}
@@ -27,8 +27,7 @@ new class extends Component {
 
 
             {{-- Actions --}}
-            
-
+            <livewire:cart-icon />
             {{-- User Auth --}}
             @auth('customer')
                 @php($customer = auth('customer')->user())

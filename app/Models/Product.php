@@ -155,7 +155,7 @@ class Product extends Model
 
     public function incrementViews()
     {
-        $this->increment('views_count');
+        $this->increment('view_count');
     }
 
     // Events

@@ -23,6 +23,7 @@
     <header>
         <livewire:navbar />
     </header>
+    
     <main>
         {{ $slot }}
     </main>
