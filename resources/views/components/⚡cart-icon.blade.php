@@ -21,29 +21,19 @@ new class extends Component {
 ?>
 
 <div>
-    <a href="/cart" wire:navigate
-       class="relative p-2 rounded-md hover:bg-gray-100 transition-colors">
-        
-        <svg class="h-5 w-5 text-gray-700"
-             xmlns="http://www.w3.org/2000/svg"
-             fill="none" viewBox="0 0 24 24"
-             stroke="currentColor" stroke-width="2">
-            <circle cx="8" cy="21" r="1" />
-            <circle cx="19" cy="21" r="1" />
-            <path d="M2.05 2.05h2l2.66 12.42
-                     a2 2 0 0 0 2 1.58h9.78
-                     a2 2 0 0 0 1.95-1.57
-                     l1.65-7.43H5.12" />
+    <a href="{{route('cart.index')}}" class="relative">
+        <svg class="h-5 w-5 text-gray-700" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="8" cy="21" r="1"></circle>
+            <circle cx="19" cy="21" r="1"></circle>
+            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
         </svg>
-
         @if ($cartCount > 0)
             <span
-                class="absolute -top-1 -right-1
-                       h-5 w-5 flex items-center justify-center
-                       text-xs bg-red-600 text-white rounded-full">
+                class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                 {{ $cartCount }}
             </span>
         @endif
     </a>
 </div>
-
