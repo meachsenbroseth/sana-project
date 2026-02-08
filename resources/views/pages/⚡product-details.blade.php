@@ -21,13 +21,7 @@ new class extends Component {
         $this->selectedImage = $this->product->images->first()?->image_path;
 
         // related products
-        $this->relatedProducts = Product::active()
-            ->where('category_id', $this->product->category_id)
-            ->whereKeyNot($this->product->id)
-            ->orderByDesc('is_featured')
-            ->inRandomOrder()
-            ->limit(4)
-            ->get();
+        $this->relatedProducts = Product::active()->where('category_id', $this->product->category_id)->whereKeyNot($this->product->id)->orderByDesc('is_featured')->inRandomOrder()->limit(4)->get();
     }
     public function selectImage(string $path)
     {
@@ -213,7 +207,7 @@ new class extends Component {
                         </div>
                     </div>
 
-                    <!-- Short Description -->
+                    <!-- Description -->
                     @if ($product->description)
                         <div x-data="{ expanded: false }">
                             <div class="prose prose-sm max-w-none" x-show="!expanded" x-cloak>
@@ -275,9 +269,25 @@ new class extends Component {
 
                     <!-- Add to Cart -->
                     @if ($product->stock_status === 'in_stock')
-                        <button wire:click="addToCart"
+                        {{-- <button wire:click="addToCart"
                             class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition font-semibold text-lg">
                             Add to Cart
+                        </button> --}}
+                        <button wire:click="addToCart" wire:loading.attr="disabled"
+                            wire:loading.class="opacity-75 cursor-not-allowed"
+                            class=" w-full flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg wire:loading.remove class="w-4 h-4" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <svg wire:loading class="w-4 h-4 animate-spin" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span wire:loading.remove>Add to Cart</span>
+                            <span wire:loading>Adding...</span>
                         </button>
                     @else
                         <button disabled
