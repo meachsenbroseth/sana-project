@@ -61,7 +61,7 @@ class ProductForm
                                         ->label('SKU')
                                         ->disabled()
                                         ->unique(ignoreRecord: true)
-                                        ->default(fn()=>'SKU-'.strtoupper(Str::random(8)))
+                                        ->default(fn() => 'SKU-' . strtoupper(Str::random(8)))
                                         ->helperText('Stock Keeping Unit - unique identifier')
                                         ->required(),
                                     TextInput::make('price')
@@ -128,9 +128,9 @@ class ProductForm
                                             ->maxSize(2048)
                                             ->reorderable()
                                             ->columnSpanFull()
-                                            ->previewable(true)
-                                            ->helperText('You can drag and drop to reorder images. (Fist image will be primary image)')
+                                            ->helperText('You can drag and drop to reorder images')
                                             ->saveRelationshipsUsing(function ($component, $state, $record) {
+                                                // delete exisiting images
                                                 $record->images()->delete();
 
                                                 if (is_array($state)) {

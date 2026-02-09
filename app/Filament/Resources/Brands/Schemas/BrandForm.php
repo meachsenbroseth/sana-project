@@ -18,25 +18,18 @@ class BrandForm
                 Section::make('Brand Information')->schema([
                     TextInput::make('name')
                         ->live(onBlur: true)
-                        ->afterStateUpdated(
-                            fn($operation, $state, $set) =>
-                            $operation === 'create'
-                                ? $set('slug', Str::slug($state))
-                                : null
-                        )
                         ->required(),
                     TextInput::make('slug')
                         ->disabled()
-                        ->dehydrated()
+                        ->visibleOn('edit')
                         ->unique(ignoreRecord: true)
                         ->required(),
                     FileUpload::make('image')
                         ->disk('public')
-                        ->directory('brands')
-                        ->visibility('public')
-                        ->downloadable()
+                        ->directory('categories')
                         ->imageEditor()
                         ->preserveFilenames()
+                        ->downloadable()
                         ->image(),
                 ])->columnSpanFull()
                     ->columns(2),
