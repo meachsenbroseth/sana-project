@@ -7,6 +7,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Str;
 
 class BrandForm
 {
@@ -16,22 +17,22 @@ class BrandForm
             ->components([
                 Section::make('Brand Information')->schema([
                     TextInput::make('name')
+                        ->live(onBlur: true)
                         ->required(),
                     TextInput::make('slug')
-                        ->visibleOn('edit')
                         ->disabled()
+                        ->visibleOn('edit')
                         ->unique(ignoreRecord: true)
                         ->required(),
                     FileUpload::make('image')
                         ->disk('public')
-                        ->directory('brands')
-                        ->visibility('public')
-                        ->downloadable()
+                        ->directory('categories')
                         ->imageEditor()
                         ->preserveFilenames()
+                        ->downloadable()
                         ->image(),
                 ])->columnSpanFull()
-                ->columns(2),
+                    ->columns(2),
                 Section::make('Display Settings')->schema([
                     Toggle::make('is_active')
                         ->default(true)
@@ -44,4 +45,4 @@ class BrandForm
 
             ]);
     }
-} 
+}

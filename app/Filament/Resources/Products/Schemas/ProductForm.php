@@ -59,8 +59,9 @@ class ProductForm
                                 Section::make('Pricing')->schema([
                                     TextInput::make('sku')
                                         ->label('SKU')
+                                        ->disabled()
                                         ->unique(ignoreRecord: true)
-                                        ->default(fn()=>'SKU-'.strtoupper(Str::random(8)))
+                                        ->default(fn() => 'SKU-' . strtoupper(Str::random(8)))
                                         ->helperText('Stock Keeping Unit - unique identifier')
                                         ->required(),
                                     TextInput::make('price')
@@ -129,6 +130,7 @@ class ProductForm
                                             ->columnSpanFull()
                                             ->helperText('You can drag and drop to reorder images')
                                             ->saveRelationshipsUsing(function ($component, $state, $record) {
+                                                // delete exisiting images
                                                 $record->images()->delete();
 
                                                 if (is_array($state)) {
