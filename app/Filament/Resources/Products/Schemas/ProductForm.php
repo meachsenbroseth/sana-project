@@ -126,6 +126,7 @@ class ProductForm
                                             ->directory('products')
                                             ->imageEditor()
                                             ->maxSize(2048)
+                                            ->disk('public')
                                             ->reorderable()
                                             ->columnSpanFull()
                                             ->previewable(true)
