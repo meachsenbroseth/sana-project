@@ -48,6 +48,8 @@ new class extends Component {
             $this->loadCart();
 
             $this->dispatch('cart-updated');
+
+             session()->flash('success','Item removed from cart');
         }
     }
     public function clearCart()

@@ -11,6 +11,10 @@ new class extends Component {
         $this->updateCartCount();
     }
 
+    /**
+     * This component listens for the signal from the Cart Page
+     * or Add-to-Cart buttons, but DOES NOT re-dispatch it.
+     */
     #[On('cart-updated')]
     public function updateCartCount()
     {
@@ -18,7 +22,8 @@ new class extends Component {
 
         $this->cartCount = collect($cart)->sum('quantity');
 
-        $this->dispatch('cart-updated');
+        // REMOVED: $this->dispatch('cart-updated');
+        // Removing this prevents the component from triggering itself.
     }
 };
 ?>
