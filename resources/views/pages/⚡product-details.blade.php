@@ -45,48 +45,45 @@ new class extends Component {
 
     public function addToCart()
     {
-        // Stock status check
+        // Check stock
         if ($this->product->stock_status !== 'in_stock') {
-            session()->flash('error', 'This product is out of stock');
-            return;
-        }
-
-        // Stock quantity check
-        if ($this->product->stock_quantity !== null && $this->quantity > $this->product->stock_quantity) {
-            session()->flash('error', 'Requested quantity exceeds available stock');
+            session()->flash('error', 'This product is currently out of stock');
             return;
         }
 
         // Get cart from session
         $cart = session()->get('cart', []);
 
-        // Unique key per product
         $cartKey = 'product_' . $this->product->id;
 
-        // If product already exists → increase quantity
+        // Increase quantity if exists
         if (isset($cart[$cartKey])) {
-            $cart[$cartKey]['quantity'] += $this->quantity;
+            $cart[$cartKey]['quantity']++;
         } else {
-            // Add new product
+            // Add new item
             $cart[$cartKey] = [
                 'product_id' => $this->product->id,
+                'variant_id' => null,
                 'name' => $this->product->name,
                 'price' => $this->product->price,
-                'image' => $this->selectedImage,
-                'quantity' => $this->quantity,
+                'image' => $this->product->primeImage?->image_path,
+                'quantity' => 1,
             ];
         }
 
         // Save cart
         session()->put('cart', $cart);
 
-        // Notify other components (cart icon, mini cart, etc.)
+        // Refresh product state (important for Livewire)
+        $this->product->refresh();
+
+        // Update cart icon component
         $this->dispatch('cart-updated');
 
-        // Feedback
-        session()->flash('success', 'Product added to cart');
+        // Flash message
+        session()->flash('success', $this->product->name . ' has been added to your cart.');
 
-        // Reset quantity
+        // Reset quantity (optional UX improvement)
         $this->quantity = 1;
     }
 };
@@ -152,6 +149,10 @@ new class extends Component {
                         @if ($product->stock_status === 'in_stock')
                             <span class="bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded">
                                 In Stock
+                            </span>
+                        @elseif ($product->stock_status === 'pre_order')
+                            <span class=" bg-yellow-100 text-yellow-600 text-sm font-semibold px-3 py-1 rounded">
+                                Pre Order
                             </span>
                         @else
                             <span class="bg-red-100 text-red-800 text-sm font-semibold px-3 py-1 rounded">
@@ -258,9 +259,10 @@ new class extends Component {
                     <!-- Flash Messages -->
                     @if (session()->has('success'))
                         <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                            {{ session('success ') }}
+                            {{ session('success') }}
                         </div>
                     @endif
+
                     @if (session()->has('error'))
                         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                             {{ session('error') }}
@@ -269,29 +271,48 @@ new class extends Component {
 
                     <!-- Add to Cart -->
                     @if ($product->stock_status === 'in_stock')
-                        {{-- <button wire:click="addToCart"
-                            class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition font-semibold text-lg">
-                            Add to Cart
-                        </button> --}}
                         <button wire:click="addToCart" wire:loading.attr="disabled"
-                            wire:loading.class="opacity-75 cursor-not-allowed"
-                            class=" w-full flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                            <svg wire:loading.remove class="w-4 h-4" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
+                            wire:loading.class="opacity-75 cursor-not-allowed" wire:target="addToCart"
+                            class="w-full cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+
+                            <!-- Cart Icon -->
+                            <svg wire:loading.remove wire:target="addToCart" class="w-5 h-5" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
-                            <svg wire:loading class="w-4 h-4 animate-spin" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
+
+                            <!-- Spinner -->
+                            <svg wire:loading wire:target="addToCart" class="w-5 h-5 animate-spin" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
-                            <span wire:loading.remove>Add to Cart</span>
-                            <span wire:loading>Adding...</span>
+
+                            <span wire:loading.remove wire:target="addToCart">
+                                Add to Cart
+                            </span>
+
+                            <span wire:loading wire:target="addToCart">
+                                Adding...
+                            </span>
+                        </button>
+                    @elseif ($product->stock_status === 'pre_order')
+                        <button wire:click="addToCart" wire:loading.attr="disabled" wire:target="addToCart"
+                            class="w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Pre-order Now
                         </button>
                     @else
                         <button disabled
-                            class="w-full bg-gray-300 text-gray-500 py-3 px-6 rounded-lg cursor-not-allowed font-semibold text-lg">
+                            class="w-full bg-gray-300 text-gray-500 font-medium py-3 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                            </svg>
                             Out of Stock
                         </button>
                     @endif
@@ -323,7 +344,6 @@ new class extends Component {
             </div>
         </div>
 
-        <!-- Tabs: Reviews -->
         <!-- Tabs: Reviews -->
         <div class="bg-white rounded-lg shadow-sm overflow-hidden mb-8" x-data="{ activeTab: 'reviews' }">
 
