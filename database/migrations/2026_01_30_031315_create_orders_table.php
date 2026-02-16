@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->string('order_number')->unique();
-            $table->foreignId('customer_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('customer_id')->constrained('customers')->cascadeOnDelete();
 
             $table->decimal('subtotal', 10, 2);
             $table->decimal('discount_amount', 10, 2)->default(0);
@@ -33,7 +33,7 @@ return new class extends Migration
             $table->enum('payment_method',['cash_on_delivery', 'KHQR'])->default('cash_on_delivery');
             $table->string('payment_status')->default('pending');
             $table->string('transaction_id')->nullable();
-            $table->enum('status', ['pending', 'processing', 'shipped', 'delivered', 'cancelled'])->default('pending'); 
+            $table->enum('status', ['pending', 'processing', 'shipped', 'delivered', 'cancelled'])->default('pending');
             $table->string('tracking_number')->nullable();
             $table->text('customer_notes')->nullable();
             $table->text('admin_notes')->nullable();
