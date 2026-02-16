@@ -19,8 +19,8 @@ return new class extends Migration
             $table->string('address_line_1');
             $table->string('address_line_2')->nullable();
             $table->string('city');
-            $table->string('state');
-            $table->string('country')->default('CAM');
+            $table->string('state')->nullable();
+            $table->string('country')->default('KH');
             $table->boolean('is_default')->default(false);
             $table->timestamps();
         });
