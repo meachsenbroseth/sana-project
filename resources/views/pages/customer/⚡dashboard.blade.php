@@ -1,8 +1,11 @@
 <?php
 
 use Livewire\Component;
+use App\Models\Product;
 
 new class extends Component {
+
+    public Product $product;
     public function getCustomerProperty()
     {
         return auth('customer')->user();
@@ -212,46 +215,59 @@ new class extends Component {
 
                     @if ($this->recentOrders->count() > 0)
                         <div class="space-y-4">
-                            @foreach ($recentOrders as $order)
+                            @foreach ($this->recentOrders as $order)
                                 <a href="{{ route('customer.orders.show', $order->id) }}"
                                     class="block border rounded-lg p-4 hover:border-blue-600 hover:shadow-md transition">
+
                                     <div class="flex items-center justify-between mb-3">
                                         <div>
-                                            <p class="font-semibold text-gray-900">{{ $order->order_number }}</p>
+                                            <p class="font-semibold text-gray-900">
+                                                {{ $order->order_number }}
+                                            </p>
+
                                             <p class="text-sm text-gray-600">
                                                 {{ $order->created_at->format('M d, Y') }}
                                             </p>
                                         </div>
+
                                         <div class="text-right">
-                                            <p class="font-bold text-gray-900">${{ number_format($order->total, 2) }}
+                                            <p class="font-bold text-gray-900">
+                                                ${{ number_format($order->total, 2) }}
                                             </p>
+
                                             <span
-                                                class="inline-block px-2 py-1 text-xs rounded {{ $order->status === 'delivered'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : ($order->status === 'cancelled'
-                                                        ? 'bg-red-100 text-red-800'
-                                                        : 'bg-yellow-100 text-yellow-800') }}">
+                                                class="inline-block px-2 py-1 text-xs rounded
+                            {{ $order->status === 'delivered'
+                                ? 'bg-green-100 text-green-800'
+                                : ($order->status === 'cancelled'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-yellow-100 text-yellow-800') }}">
                                                 {{ ucfirst($order->status) }}
                                             </span>
                                         </div>
                                     </div>
+
                                     <div class="flex items-center gap-2">
                                         @foreach ($order->items->take(3) as $item)
+
                                             @if ($item->product)
                                                 <div class="w-12 h-12 rounded bg-gray-100 overflow-hidden">
                                                     @if ($item->product->primaryImage)
-                                                        <img src="{{ asset('storage/' . $item->product->primaryImage->image_path) }}"
+                                                        <img src="{{ asset('storage/' . $product->primeImage->image_path) }}"
                                                             alt="{{ $item->product_name }}"
                                                             class="w-full h-full object-cover">
                                                     @endif
                                                 </div>
                                             @endif
                                         @endforeach
+
                                         @if ($order->items->count() > 3)
-                                            <span class="text-sm text-gray-600">+{{ $order->items->count() - 3 }}
-                                                more</span>
+                                            <span class="text-sm text-gray-600">
+                                                +{{ $order->items->count() - 3 }} more
+                                            </span>
                                         @endif
                                     </div>
+
                                 </a>
                             @endforeach
                         </div>
