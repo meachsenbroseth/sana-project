@@ -10,6 +10,10 @@
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Mail;
 
+    use KHQR\BakongKHQR;
+    use KHQR\Helpers\KHQRData;
+    use KHQR\Models\IndividualInfo;
+
     new class extends Component {
         public $cart = [];
         public $step = 1; // 1: Address, 2: Review, 3: Payment
@@ -28,6 +32,11 @@
         // Order details
         public $paymentMethod = 'cash_on_delivery';
         public $customerNotes = '';
+
+        public $showKhqrModal = false;
+        public $khqrString = '';
+        public $currentOrderId = null;
+        public $khqrMd5 = null;
 
         public function mount()
         {
@@ -244,7 +253,7 @@
 
                 // Redirect based on payment method
                 if ($this->paymentMethod === 'KHQR') {
-                    return $this->processStripePayment($order);
+                    return $this->processKhqrPayment($order);
                 } else {
                     return redirect()->route('customer.orders.show', $order->id)->with('success', 'Order placed successfully!');
                 }
@@ -255,8 +264,68 @@
             }
         }
 
-        protected function processKhqrPayment($order){
+        protected function processKhqrPayment($order)
+        {
+            try {
+                // 1. Setup Merchant Info [cite: 75-80]
+                // In a real app, put these in your .env file
+                $merchant = new IndividualInfo(
+                    bakongAccountID: env('BAKONG_MERCHANT_ID', 'vannak_dim@cadi'),
+                    merchantName: env('BAKONG_MERCHANT_NAME', 'Your Shop Name'),
+                    merchantCity: env('BAKONG_MERCHANT_CITY', 'Phnom Penh'),
+                    currency: KHQRData::CURRENCY_USD, // Assuming your shop is in USD
+                    amount: $order->total,
+                );
 
+                // 2. Generate QR [cite: 82]
+                $qrResponse = BakongKHQR::generateIndividual($merchant);
+
+                if (isset($qrResponse->data['qr']) && isset($qrResponse->data['md5'])) {
+                    $this->khqrString = $qrResponse->data['qr'];
+                    $this->khqrMd5 = $qrResponse->data['md5'];
+                    $this->currentOrderId = $order->id;
+
+                    // Open the modal to show QR code
+                    $this->showKhqrModal = true;
+                } else {
+                    session()->flash('error', 'Failed to generate KHQR code.');
+                }
+            } catch (\Exception $e) {
+                session()->flash('error', 'Error generating payment: ' . $e->getMessage());
+            }
+        }
+
+        // Add this method to poll payment status
+        public function checkKhqrStatus()
+        {
+            if (!$this->khqrMd5 || !$this->currentOrderId) {
+                return;
+            }
+
+            try {
+                // [cite: 100-102] Verify transaction using MD5
+                $token = env('BAKONG_TOKEN');
+                $bakong = new BakongKHQR($token);
+                $result = $bakong->checkTransactionByMD5($this->khqrMd5);
+
+                // Check if payment is successful (Response code 0 means success)
+                if (isset($result['responseCode']) && $result['responseCode'] === 0) {
+                    // Update Order Status
+                    $order = Order::find($this->currentOrderId);
+                    if ($order) {
+                        $order->update([
+                            'payment_status' => 'paid',
+                            'status' => 'processing',
+                        ]);
+
+                        // Redirect to success page [cite: 211]
+                        return redirect()->route('customer.orders.show', $order->id)->with('success', 'Payment successful! Order placed.');
+                    }
+                }
+            } catch (\Exception $e) {
+                // Log error silently while polling
+                // \Log::error($e->getMessage());
+            }
         }
 
         protected function getProductSku($item)
@@ -568,7 +637,7 @@
                                     </div>
                                 </label>
                                 <label class="relative cursor-pointer">
-                                    <input type="radio" wire:model="paymentMethod" value="khqr"
+                                    <input type="radio" wire:model="paymentMethod" value="KHQR"
                                         class="peer sr-only">
                                     <div
                                         class="border-2 rounded-lg p-4 peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
@@ -661,6 +730,72 @@
                                         {{ $country }}
                                     </p>
                                 @endif
+                            </div>
+                        @endif
+
+                        @if ($showKhqrModal)
+                            <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title"
+                                role="dialog" aria-modal="true">
+                                <div
+                                    class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                                    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                                        aria-hidden="true"></div>
+
+                                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen"
+                                        aria-hidden="true">&#8203;</span>
+
+                                    <div
+                                        class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+
+                                        <div wire:poll.2s="checkKhqrStatus">
+                                            <div class="text-center">
+                                                <div
+                                                    class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
+                                                    <svg class="h-6 w-6 text-blue-600" fill="none"
+                                                        viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 17h.01M9 17h.01M9 13H5a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2zm12-4h-4a2 2 0 00-2 2v2a2 2 0 002 2h4a2 2 0 002-2v-2a2 2 0 00-2-2zm-6 0h-2v4m2-4v4" />
+                                                    </svg>
+                                                </div>
+                                                <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4"
+                                                    id="modal-title">
+                                                    Scan to Pay (KHQR)
+                                                </h3>
+
+                                                <div class="mt-4 flex justify-center">
+                                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={{ urlencode($this->khqrString) }}"
+                                                        alt="Scan Me" />
+                                                </div>
+
+                                                <div class="mt-4">
+                                                    <p class="text-sm text-gray-500">
+                                                        Please scan this QR code with your Bakong App or Mobile Banking
+                                                        App.
+                                                    </p>
+                                                    <p class="text-xs text-gray-400 mt-2">
+                                                        Transaction MD5: {{ $this->khqrMd5 }}
+                                                    </p>
+
+                                                    <div class="mt-4 flex justify-center items-center space-x-2">
+                                                        <div
+                                                            class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600">
+                                                        </div>
+                                                        <span class="text-sm text-blue-600">Waiting for
+                                                            payment...</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-5 sm:mt-6">
+                                            <button type="button" wire:click="$set('showKhqrModal', false)"
+                                                class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
+                                                Cancel / Close
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         @endif
                     </div>
