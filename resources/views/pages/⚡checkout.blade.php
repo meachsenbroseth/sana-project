@@ -9,20 +9,20 @@
     use App\Mail\OrderConfirmation;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Mail;
-    
+
     use KHQR\BakongKHQR;
     use KHQR\Helpers\KHQRData;
     use KHQR\Models\IndividualInfo;
-    
+
     use BaconQrCode\Renderer\ImageRenderer;
     use BaconQrCode\Renderer\Image\SvgImageBackEnd;
     use BaconQrCode\Renderer\RendererStyle\RendererStyle;
     use BaconQrCode\Writer;
-    
+
     new class extends Component {
         public $cart = [];
         public $step = 1; // 1: Address, 2: Review, 3: Payment
-    
+
         // Address fields
         public $useExistingAddress = true;
         public $selectedAddressId = null;
@@ -33,29 +33,29 @@
         public $city = '';
         public $state = '';
         public $country = 'KH'; // Cambodia country code
-    
+
         // Order details
         public $paymentMethod = 'cash_on_delivery';
         public $customerNotes = '';
-    
+
         public $showKhqrModal = false;
         public $khqrString = '';
         public $currentOrderId = null;
         public $khqrMd5 = null;
         public $khqrStringRaw = null;
-    
+
         public function mount()
         {
             $this->cart = session()->get('cart', []);
-    
+
             if (empty($this->cart)) {
                 return redirect()->route('cart.index');
             }
-    
+
             $customer = auth('customer')->user();
             $this->full_name = $customer->name;
             $this->phone = $customer->phone ?? '';
-    
+
             // Set default address if available
             $defaultAddress = $customer->address()->where('is_default', true)->first();
             if ($defaultAddress) {
@@ -71,36 +71,36 @@
                 }
             }
         }
-    
+
         #[Computed]
         public function addresses()
         {
             return auth('customer')->user()->address ?? collect();
         }
-    
+
         #[Computed]
         public function subtotal()
         {
             return $this->getSubtotal();
         }
-    
+
         #[Computed]
         public function shippingCost()
         {
             return $this->getShippingCost();
         }
-    
+
         #[Computed]
         public function total()
         {
             return $this->subtotal + $this->shippingCost;
         }
-    
+
         public function selectAddress($addressId)
         {
             $this->selectedAddressId = $addressId;
         }
-    
+
         public function nextStep()
         {
             if ($this->step === 1) {
@@ -111,14 +111,14 @@
                 $this->step = 3;
             }
         }
-    
+
         public function previousStep()
         {
             if ($this->step > 1) {
                 $this->step--;
             }
         }
-    
+
         protected function validateAddress()
         {
             if (!$this->useExistingAddress) {
@@ -130,14 +130,14 @@
                     'city' => 'required|string|max:100',
                     'country' => 'required|string|max:2',
                 ]);
-    
+
                 return true;
             } else {
                 // Validate existing address selection
                 if (!$this->selectedAddressId) {
                     // Check if there are any addresses available
                     $addressCount = auth('customer')->user()->address()->count();
-    
+
                     if ($addressCount === 0) {
                         // No addresses available, switch to new address form
                         $this->useExistingAddress = false;
@@ -149,21 +149,21 @@
                         return false;
                     }
                 }
-    
+
                 // Verify the selected address exists and belongs to the customer
                 $address = Address::where('id', $this->selectedAddressId)
                     ->where('customer_id', auth('customer')->id())
                     ->first();
-    
+
                 if (!$address) {
                     session()->flash('error', 'Invalid address selected.');
                     return false;
                 }
-    
+
                 return true;
             }
         }
-    
+
         public function placeOrder()
         {
             // Validate address again before placing order
@@ -171,12 +171,12 @@
                 $this->step = 1; // Go back to address step
                 return;
             }
-    
+
             try {
                 DB::beginTransaction();
-    
+
                 $customer = auth('customer')->user();
-    
+
                 // Get shipping address data
                 if ($this->useExistingAddress && $this->selectedAddressId) {
                     $address = Address::find($this->selectedAddressId);
@@ -202,16 +202,16 @@
                         'shipping_country' => $this->country,
                     ];
                 }
-    
+
                 // Calculate totals
                 $subtotal = $this->getSubtotal();
                 $shippingCost = $this->getShippingCost();
                 $taxAmount = 0; // You can calculate tax here if needed
                 $total = $subtotal + $shippingCost + $taxAmount;
-    
+
                 // Generate order number
                 $orderNumber = 'ORD-' . strtoupper(uniqid());
-    
+
                 // Create order
                 $order = Order::create(
                     [
@@ -229,13 +229,13 @@
                         'customer_notes' => $this->customerNotes,
                     ] + $shippingData,
                 );
-    
+
                 // Create order items
                 foreach ($this->cart as $item) {
                     $unitAmount = $item['price'];
                     $quantity = $item['quantity'];
                     $totalAmount = $unitAmount * $quantity;
-    
+
                     OrderItem::create([
                         'order_id' => $order->id,
                         'product_id' => $item['product_id'],
@@ -246,17 +246,17 @@
                         'total_amount' => $totalAmount,
                     ]);
                 }
-    
+
                 DB::commit();
-    
+
                 // // Send order confirmation
                 // if ($customer->email) {
                 //     Mail::to($customer->email)->queue(new OrderConfirmation($order));
                 // }
-    
+
                 // Clear cart
                 session()->forget('cart');
-    
+
                 // Redirect based on payment method
                 if ($this->paymentMethod === 'KHQR') {
                     return $this->processKhqrPayment($order);
@@ -269,7 +269,7 @@
                 return;
             }
         }
-    
+
         protected function processKhqrPayment($order)
         {
             try {
@@ -282,25 +282,25 @@
                     currency: KHQRData::CURRENCY_KHR, // Assuming your shop is in USD
                     amount: $order->total,
                 );
-    
+
                 // 2. Generate QR [cite: 82]
                 $qrResponse = BakongKHQR::generateIndividual($merchant);
                 if (isset($qrResponse->data['qr']) && isset($qrResponse->data['md5'])) {
                     $this->khqrStringRaw = $qrResponse->data['qr'];
                     $this->khqrMd5 = $qrResponse->data['md5'];
                     $this->currentOrderId = $order->id;
-    
+
                     $renderer = new ImageRenderer(
                         new RendererStyle(250), // Size: 250px
                         new SvgImageBackEnd(),
                     );
                     $writer = new Writer($renderer);
-    
+
                     // This generates a raw SVG string
                     $fullSvg = $writer->writeString($this->khqrStringRaw);
-    
+
                     $this->khqrString = trim(substr($fullSvg, strpos($fullSvg, '<svg')));
-    
+
                     // Open the modal to show QR code
                     $this->showKhqrModal = true;
                 } else {
@@ -310,20 +310,20 @@
                 session()->flash('error', 'Error generating payment: ' . $e->getMessage());
             }
         }
-    
+
         // Add this method to poll payment status
         public function checkKhqrStatus()
         {
             if (!$this->khqrMd5 || !$this->currentOrderId) {
                 return;
             }
-    
+
             try {
                 // [cite: 100-102] Verify transaction using MD5
                 $token = env('BAKONG_TOKEN');
                 $bakong = new BakongKHQR($token);
                 $result = $bakong->checkTransactionByMD5($this->khqrMd5);
-    
+
                 // Check if payment is successful (Response code 0 means success)
                 if (isset($result['responseCode']) && $result['responseCode'] === 0) {
                     // Update Order Status
@@ -332,10 +332,11 @@
                         $order->update([
                             'payment_status' => 'paid',
                             'status' => 'processing',
+                            'transaction_id' => $this->khqrMd5,
                         ]);
-    
+
                         // Redirect to success page [cite: 211]
-                        return redirect()->route('customer.orders.show', $order->id)->with('success', 'Payment successful! Order placed.');
+                        return redirect()->route('checkout.success', $order->id)->with('success', 'Payment successful!');
                     }
                 }
             } catch (\Exception $e) {
@@ -343,18 +344,18 @@
                 // \Log::error($e->getMessage());
             }
         }
-    
+
         protected function getProductSku($item)
         {
             if (!empty($item['variant_id'])) {
                 $variant = \App\Models\ProductVariant::find($item['variant_id']);
                 return $variant ? $variant->sku : '';
             }
-    
+
             $product = \App\Models\Product::find($item['product_id']);
             return $product ? $product->sku : '';
         }
-    
+
         protected function getSubtotal()
         {
             return array_sum(
@@ -363,17 +364,17 @@
                 }, $this->cart),
             );
         }
-    
+
         protected function getShippingCost()
         {
             $subtotal = $this->getSubtotal();
             $freeShippingThreshold = Setting::get('free_shipping_threshold', 100);
             $flatRate = Setting::get('flat_shipping_rate', 10);
-    
+
             if ($freeShippingThreshold && $subtotal >= $freeShippingThreshold) {
                 return 0;
             }
-    
+
             return $flatRate;
         }
     };
