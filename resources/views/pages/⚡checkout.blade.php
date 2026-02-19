@@ -44,9 +44,9 @@
         public $khqrMd5 = null;
         public $khqrStringRaw = null;
 
-        public $paymentTimeout = 300; // 5 minutes in seconds
-        public $paymentStartedAt;
-        public $timeLeft = 300;
+        public $paymentTimeout = 120; // 5 minutes in seconds
+        public $paymentStartedAtTs = null;
+        public $timeLeft = 120;
 
         public function mount()
         {
@@ -294,7 +294,7 @@
                     $this->khqrMd5 = $qrResponse->data['md5'];
                     $this->currentOrderId = $order->id;
 
-                    $this->paymentStartedAt = now();
+                    $this->paymentStartedAtTs = now()->timestamp;
                     $this->timeLeft = $this->paymentTimeout;
 
                     $renderer = new ImageRenderer(
@@ -326,13 +326,12 @@
             }
 
             // FIX: Check if paymentStartedAt is set
-            if (!$this->paymentStartedAt) {
-                $this->paymentStartedAt = now();
-                $this->timeLeft = $this->paymentTimeout;
+            if (!$this->paymentStartedAtTs) {
+                return;
             }
 
             //  Calculate remaining time
-            $elapsed = now()->diffInSeconds($this->paymentStartedAt);
+            $elapsed = now()->timestamp - $this->paymentStartedAtTs;
             $this->timeLeft = max(0, $this->paymentTimeout - $elapsed);
 
             // Handle Timeout
@@ -380,7 +379,7 @@
             }
 
             $this->showKhqrModal = false;
-            $this->reset(['khqrString', 'khqrMd5', 'currentOrderId', 'timeLeft', 'paymentStartedAt']);
+            $this->reset(['khqrString', 'khqrMd5', 'currentOrderId', 'timeLeft', 'paymentStartedAtTs']);
             session()->flash('error', $reason);
         }
         protected function getProductSku($item)
@@ -798,13 +797,13 @@
                                                 <h3 class="text-lg font-bold text-gray-900">Scan to Pay (KHQR)</h3>
 
                                                 <!-- Timer Display -->
-                                                {{-- <div class="mt-2">
+                                                <div class="mt-2">
                                                     <span
                                                         class="text-2xl font-mono font-bold {{ $timeLeft < 60 ? 'text-red-600' : 'text-blue-600' }}">
                                                         {{ sprintf('%02d:%02d', floor($timeLeft / 60), $timeLeft % 60) }}
                                                     </span>
                                                     <p class="text-xs text-gray-500">Time remaining</p>
-                                                </div> --}}
+                                                </div>
 
                                                 <!-- Progress Bar -->
                                                 <div
