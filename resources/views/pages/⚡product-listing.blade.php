@@ -78,7 +78,7 @@ new class extends Component {
         if ($this->minPrice < 0) $this->minPrice = 0;
         if ($this->maxPrice < $this->minPrice) $this->maxPrice = $this->minPrice;
         if ($this->maxPrice > $this->priceRange[1]) $this->maxPrice = $this->priceRange[1];
-        
+
         $this->resetPage();
     }
 
@@ -248,21 +248,39 @@ new class extends Component {
                         </div>
                         <div class="space-y-4">
                             <div class="flex items-center gap-2">
-                                <input type="number" wire:model.live.debounce.500ms="minPrice" 
+                                <input type="number" wire:model.live.debounce.500ms="minPrice"
                                     placeholder="Min" min="0" max="{{ $priceRange[1] }}"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                                 <span class="text-gray-500">to</span>
-                                <input type="number" wire:model.live.debounce.500ms="maxPrice" 
+                                <input type="number" wire:model.live.debounce.500ms="maxPrice"
                                     placeholder="Max" min="0" max="{{ $priceRange[1] }}"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                             </div>
                         </div>
+                                            <div x-data="{
+        min: @entangle('minPrice'),
+        max: @entangle('maxPrice'),
+        maxLimit: {{ $priceRange[1] }},
+    }"
+     class="bg-white p-4 rounded-lg shadow-sm">
+    <div class="relative w-full h-2 rounded-full bg-gray-200">
+        <div class="absolute h-full rounded-full bg-blue-500"
+             x-bind:style="`width: ${(min / maxLimit) * 100}%; left: 0`"></div>
+        <input type="range"
+               x-bind:max="maxLimit"
+               x-model="min"
+               @change="$wire.set('minPrice', min)"
+               class="absolute z-30 w-full h-2 opacity-0 cursor-pointer appearance-none pointer-events-none"
+               style="pointer-events: auto;">
+    </div>
+</div>
+    
                     </div>
 
                     <!-- Featured Filter -->
                     <div class="bg-white p-4 rounded-lg shadow-sm">
                         <label class="flex items-center cursor-pointer">
-                            <input type="checkbox" wire:model.live="featured" 
+                            <input type="checkbox" wire:model.live="featured"
                                 class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                             <span class="ml-3 text-gray-700 font-medium">Featured Products Only</span>
                         </label>
@@ -291,7 +309,7 @@ new class extends Component {
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="text-gray-700 font-medium">Sort by:</span>
-                            <select wire:model.live="sort" 
+                            <select wire:model.live="sort"
                                 class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                                 <option value="newest">Newest</option>
                                 <option value="price_low">Price: Low to High</option>
@@ -339,7 +357,7 @@ new class extends Component {
         <div class="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-white overflow-y-auto">
             <div class="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
                 <h3 class="text-lg font-semibold">Filters</h3>
-                <button onclick="document.getElementById('mobile-filters').classList.add('hidden')" 
+                <button onclick="document.getElementById('mobile-filters').classList.add('hidden')"
                         class="text-gray-500 hover:text-gray-700">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

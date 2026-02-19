@@ -20,10 +20,10 @@
 </head>
 
 <body>
-    <header>
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200">
         <livewire:navbar />
     </header>
-    
+
     <main>
         {{ $slot }}
     </main>
@@ -31,7 +31,7 @@
     <div>
         @livewire('notifications')
     </div>
-    
+
     <footer>
         <livewire:footer />
     </footer>

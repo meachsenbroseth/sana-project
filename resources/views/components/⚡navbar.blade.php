@@ -8,9 +8,11 @@ new class extends Component {
 ?>
 
 <div>
-    <header
-        class="sticky top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200">
-        <div class="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
+    {{-- <header class="fixed w-full top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200">
+
+    </header> --}}
+            <div class="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
+
             {{-- Logo --}}
             <a href="{{ route('home') }}" wire:navigate
                 class="flex items-center gap-2 flex-shrink-0 hover:opacity-80 transition-opacity">
@@ -26,10 +28,10 @@ new class extends Component {
             <div class="flex items-center gap-4 flex-shrink-0">
                 {{-- Actions --}}
                 <livewire:cart-icon />
-                {{-- User Auth --}} 
+
+                {{-- User Auth --}}
                 <livewire:user-auth />
             </div>
+
         </div>
-</div>
-</header>
 </div>
