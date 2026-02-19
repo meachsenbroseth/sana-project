@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Mail; // <-- Add this
+use App\Mail\OrderConfirmation;
 
 class Order extends Model
 {
@@ -121,6 +123,9 @@ class Order extends Model
 
 
             //order commpletion email
+            if ($order->customer && $order->customer->email) {
+                Mail::to($order->customer->email)->queue(new OrderConfirmation($order));
+            }
         });
     }
 }

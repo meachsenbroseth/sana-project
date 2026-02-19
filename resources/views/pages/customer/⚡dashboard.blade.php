@@ -4,7 +4,6 @@ use Livewire\Component;
 use App\Models\Product;
 
 new class extends Component {
-
     public Product $product;
     public function getCustomerProperty()
     {
@@ -249,11 +248,10 @@ new class extends Component {
 
                                     <div class="flex items-center gap-2">
                                         @foreach ($order->items->take(3) as $item)
-
                                             @if ($item->product)
                                                 <div class="w-12 h-12 rounded bg-gray-100 overflow-hidden">
-                                                    @if ($item->product->primaryImage)
-                                                        <img src="{{ asset('storage/' . $product->primeImage->image_path) }}"
+                                                    @if ($item->product->primeImage)
+                                                        <img src="{{ asset('storage/' . $item->product->primeImage->image_path) }}"
                                                             alt="{{ $item->product_name }}"
                                                             class="w-full h-full object-cover">
                                                     @endif

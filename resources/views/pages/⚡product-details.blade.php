@@ -63,7 +63,6 @@ new class extends Component {
             // Add new item
             $cart[$cartKey] = [
                 'product_id' => $this->product->id,
-                'variant_id' => null,
                 'name' => $this->product->name,
                 'price' => $this->product->price,
                 'image' => $this->product->primeImage?->image_path,

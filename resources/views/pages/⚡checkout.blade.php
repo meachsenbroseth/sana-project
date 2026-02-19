@@ -253,10 +253,10 @@
 
                 DB::commit();
 
-                // // Send order confirmation
-                // if ($customer->email) {
-                //     Mail::to($customer->email)->queue(new OrderConfirmation($order));
-                // }
+                // Send order confirmation
+                if ($customer->email) {
+                    Mail::to($customer->email)->queue(new OrderConfirmation($order));
+                }
 
                 // Clear cart
                 session()->forget('cart');
