@@ -67,7 +67,7 @@ new class extends Component {
                 'name' => $this->product->name,
                 'price' => $this->product->price,
                 'image' => $this->product->primeImage?->image_path,
-                'quantity' => 1,
+                'quantity' => $this->quantity,
             ];
         }
 
