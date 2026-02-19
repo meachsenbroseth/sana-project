@@ -35,7 +35,7 @@
         public $country = 'KH'; // Cambodia country code
 
         // Order details
-        public $paymentMethod = 'cash_on_delivery';
+        public $paymentMethod = 'KHQR';
         public $customerNotes = '';
 
         public $showKhqrModal = false;
@@ -43,6 +43,10 @@
         public $currentOrderId = null;
         public $khqrMd5 = null;
         public $khqrStringRaw = null;
+
+        public $paymentTimeout = 300; // 5 minutes in seconds
+        public $paymentStartedAt;
+        public $timeLeft = 300;
 
         public function mount()
         {
@@ -290,6 +294,9 @@
                     $this->khqrMd5 = $qrResponse->data['md5'];
                     $this->currentOrderId = $order->id;
 
+                    $this->paymentStartedAt = now();
+                    $this->timeLeft = $this->paymentTimeout;
+
                     $renderer = new ImageRenderer(
                         new RendererStyle(250), // Size: 250px
                         new SvgImageBackEnd(),
@@ -315,6 +322,22 @@
         public function checkKhqrStatus()
         {
             if (!$this->khqrMd5 || !$this->currentOrderId) {
+                return;
+            }
+
+            // FIX: Check if paymentStartedAt is set
+            if (!$this->paymentStartedAt) {
+                $this->paymentStartedAt = now();
+                $this->timeLeft = $this->paymentTimeout;
+            }
+
+            //  Calculate remaining time
+            $elapsed = now()->diffInSeconds($this->paymentStartedAt);
+            $this->timeLeft = max(0, $this->paymentTimeout - $elapsed);
+
+            // Handle Timeout
+            if ($this->timeLeft <= 0) {
+                $this->cancelPayment('Payment timed out.');
                 return;
             }
 
@@ -344,15 +367,26 @@
                 // \Log::error($e->getMessage());
             }
         }
-
-        protected function getProductSku($item)
+        public function cancelPayment($reason = 'Payment cancelled by user.')
         {
-            if (!empty($item['variant_id'])) {
-                $variant = \App\Models\ProductVariant::find($item['variant_id']);
-                return $variant ? $variant->sku : '';
+            if ($this->currentOrderId) {
+                $order = Order::find($this->currentOrderId);
+                if ($order && $order->status === 'pending') {
+                    $order->update([
+                        'status' => 'cancelled',
+                        'payment_status' => 'failed',
+                    ]);
+                }
             }
 
+            $this->showKhqrModal = false;
+            $this->reset(['khqrString', 'khqrMd5', 'currentOrderId', 'timeLeft', 'paymentStartedAt']);
+            session()->flash('error', $reason);
+        }
+        protected function getProductSku($item)
+        {
             $product = \App\Models\Product::find($item['product_id']);
+
             return $product ? $product->sku : '';
         }
 
@@ -589,9 +623,7 @@
                                         </div>
                                         <div class="flex-1">
                                             <h3 class="font-semibold text-gray-900">{{ $item['name'] }}</h3>
-                                            @if (!empty($item['variant_name']))
-                                                <p class="text-sm text-gray-600">{{ $item['variant_name'] }}</p>
-                                            @endif
+
                                             <p class="text-sm text-gray-600">Quantity: {{ $item['quantity'] }}</p>
                                             <p class="text-sm text-gray-600">Price:
                                                 ${{ number_format($item['price'], 2) }} each</p>
@@ -751,74 +783,76 @@
                         @endif
 
                         @if ($showKhqrModal)
-                            <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title"
-                                role="dialog" aria-modal="true">
+                            <div class="fixed inset-0 z-50 overflow-y-auto">
                                 <div
                                     class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-
                                     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-                                        aria-hidden="true"></div>
+                                        wire:click="cancelPayment('Payment cancelled')"></div>
 
-                                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen"
-                                        aria-hidden="true">&#8203;</span>
+                                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
                                     <div
-                                        class="relative z-10 inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-
-                                        <div wire:poll.2s="checkKhqrStatus">
+                                        class="relative z-10 inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full sm:p-6">
+                                        <div wire:poll.1s="checkKhqrStatus">
                                             <div class="text-center">
-                                                <div
-                                                    class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
-                                                    <svg class="h-6 w-6 text-blue-600" fill="none"
-                                                        viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 17h.01M9 17h.01M9 13H5a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2zm12-4h-4a2 2 0 00-2 2v2a2 2 0 002 2h4a2 2 0 002-2v-2a2 2 0 00-2-2zm-6 0h-2v4m2-4v4" />
-                                                    </svg>
-                                                </div>
-                                                <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4"
-                                                    id="modal-title">
-                                                    Scan to Pay (KHQR)
-                                                </h3>
+                                                <h3 class="text-lg font-bold text-gray-900">Scan to Pay (KHQR)</h3>
 
-                                                <div class="mt-4 flex justify-center items-center overflow-hidden">
+                                                <!-- Timer Display -->
+                                                {{-- <div class="mt-2">
+                                                    <span
+                                                        class="text-2xl font-mono font-bold {{ $timeLeft < 60 ? 'text-red-600' : 'text-blue-600' }}">
+                                                        {{ sprintf('%02d:%02d', floor($timeLeft / 60), $timeLeft % 60) }}
+                                                    </span>
+                                                    <p class="text-xs text-gray-500">Time remaining</p>
+                                                </div> --}}
+
+                                                <!-- Progress Bar -->
+                                                <div
+                                                    class="w-full bg-gray-200 h-1.5 mt-2 rounded-full overflow-hidden">
+                                                    <div class="bg-blue-600 h-full transition-all duration-1000"
+                                                        style="width: {{ ($timeLeft / $paymentTimeout) * 100 }}%">
+                                                    </div>
+                                                </div>
+
+                                                <!-- QR Code -->
+                                                <div class="mt-4 flex justify-center p-2 bg-white border rounded-xl">
                                                     @if ($khqrString)
-                                                        {{-- Render the SVG --}}
                                                         {!! $khqrString !!}
-                                                    @else
-                                                        {{-- Placeholder if generating --}}
-                                                        <div
-                                                            class="h-64 w-64 bg-gray-100 flex items-center justify-center">
-                                                            <span class="text-gray-400">Generating QR...</span>
-                                                        </div>
                                                     @endif
                                                 </div>
 
+                                                <!-- Amount -->
+                                                <div class="mt-2">
+                                                    <p class="text-lg font-bold">Total:
+                                                        ${{ number_format($this->total, 2) }}</p>
+                                                </div>
+
+                                                <!-- Status -->
                                                 <div class="mt-4">
-                                                    <p class="text-sm text-gray-500">
-                                                        Please scan this QR code with your Bakong App.
-                                                    </p>
-                                                    <div class="mt-4 flex justify-center items-center space-x-2">
+                                                    <div class="flex justify-center items-center space-x-2">
                                                         <div
-                                                            class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600">
+                                                            class="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600">
                                                         </div>
-                                                        <span class="text-sm text-blue-600">Waiting for
+                                                        <span class="text-sm text-gray-600">Waiting for
                                                             payment...</span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div class="mt-5 sm:mt-6">
-                                            <button type="button" wire:click="$set('showKhqrModal', false)"
-                                                class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
-                                                Cancel
+                                        <!-- Cancel Button -->
+                                        <div class="mt-6">
+                                            <button type="button"
+                                                wire:click="cancelPayment('Payment cancelled by customer')"
+                                                class="w-full inline-flex justify-center rounded-md border border-red-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-red-700 hover:bg-red-50 focus:outline-none sm:text-sm">
+                                                Cancel Order
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         @endif
+
                     </div>
                 </div>
             </div>
