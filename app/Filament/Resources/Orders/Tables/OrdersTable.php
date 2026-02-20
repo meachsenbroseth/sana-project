@@ -25,40 +25,74 @@ class OrdersTable
                     ->weight('bold')
                     ->copyable()
                     ->searchable(),
+
                 TextColumn::make('customer.name')
                     ->searchable()
                     ->sortable()
                     ->color('primary')
-                    ->url(fn($record) => $record->customer ? CustomerResource::getUrl('edit', [$record->customer]) : null),
+                    ->url(fn($record) => $record->customer ? CustomerResource::getUrl('edit', ['record' => $record->customer]) : null),
+
                 TextColumn::make('discount_amount')
-                    ->numeric()
+                    ->money('USD') // UPGRADE: Formatted as money to match the total column
                     ->sortable(),
+
                 TextColumn::make('total')
                     ->money('USD')
                     ->color('success')
                     ->weight('bold')
                     ->sortable(),
+
                 TextColumn::make('payment_status')
                     ->badge()
+                    // UPGRADE: Added colors so you can identify payment status at a glance
+                    ->color(fn (string $state): string => match ($state) {
+                        'paid' => 'success',
+                        'pending' => 'warning',
+                        'failed' => 'danger',
+                        default => 'gray',
+                    })
+                    // UPGRADE: Added icons for extra visual polish
+                    ->icon(fn (string $state): string => match ($state) {
+                        'paid' => 'heroicon-m-check-circle',
+                        'pending' => 'heroicon-m-clock',
+                        'failed' => 'heroicon-m-x-circle',
+                        default => 'heroicon-m-question-mark-circle',
+                    })
                     ->searchable(),
+
                 TextColumn::make('status')
-                    ->badge(),
+                    ->badge()
+                    // UPGRADE: Added colors for the fulfillment status
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'processing' => 'info',
+                        'shipped' => 'primary',
+                        'delivered' => 'success',
+                        'cancelled' => 'danger',
+                        default => 'gray',
+                    }),
+
                 TextColumn::make('items_count')
                     ->counts('items')
+                    ->label('Items') // Slightly cleaner header name
                     ->color('info')
                     ->badge(),
+
                 TextColumn::make('tracking_number')
                     ->toggleable()
                     ->copyable()
                     ->searchable(),
+
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('deleted_at')
                     ->dateTime()
                     ->sortable()

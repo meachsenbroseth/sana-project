@@ -18,25 +18,32 @@ class BrandForm
                 Section::make('Brand Information')->schema([
                     TextInput::make('name')
                         ->live(onBlur: true)
+                        // FIX: Auto-generates the slug when typing the name (only on create)
+                        ->afterStateUpdated(fn (string $operation, $state, callable $set) => $operation === 'create' ? $set('slug', Str::slug($state)) : null)
                         ->required(),
+
                     TextInput::make('slug')
                         ->disabled()
-                        ->visibleOn('edit')
+                        ->dehydrated() // FIX: Ensures the disabled field actually saves to the DB
                         ->unique(ignoreRecord: true)
                         ->required(),
+
                     FileUpload::make('image')
                         ->disk('public')
-                        ->directory('categories')
+                        ->directory('brands') // FIX: Changed from 'categories' to 'brands'
                         ->imageEditor()
                         ->preserveFilenames()
                         ->downloadable()
-                        ->image(),
+                        ->image()
+                        ->columnSpanFull(), // Optional: Makes the image uploader span the full width of its container for better UX
                 ])->columnSpanFull()
-                    ->columns(2),
+                  ->columns(2),
+
                 Section::make('Display Settings')->schema([
                     Toggle::make('is_active')
                         ->default(true)
                         ->required(),
+
                     TextInput::make('sort_order')
                         ->required()
                         ->numeric()

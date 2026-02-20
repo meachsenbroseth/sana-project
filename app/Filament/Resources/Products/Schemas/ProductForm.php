@@ -16,6 +16,7 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage; // Added for image deletion
 
 class ProductForm
 {
@@ -26,6 +27,8 @@ class ProductForm
                 Tabs::make('Product Details')
                     ->columnSpanFull()
                     ->tabs([
+
+                        // --- BASIC INFORMATION ---
                         Tab::make('Basic Information')
                             ->icon(Heroicon::InformationCircle)
                             ->schema([
@@ -36,6 +39,7 @@ class ProductForm
                                         ->unique(ignoreRecord: true)
                                         ->visible(fn (string $operation) => $operation === 'edit')
                                         ->disabled()
+                                        ->dehydrated() // FIX: Ensures the disabled field is sent to the DB
                                         ->required(),
                                     Select::make('category_id')
                                         ->relationship('category', 'name')
@@ -53,6 +57,8 @@ class ProductForm
                                         ->columnSpanFull(),
                                 ]),
                             ]),
+
+                        // --- PRICING & INVENTORY ---
                         Tab::make('Pricing & Inventory')
                             ->icon(Heroicon::CurrencyDollar)
                             ->schema([
@@ -60,6 +66,7 @@ class ProductForm
                                     TextInput::make('sku')
                                         ->label('SKU')
                                         ->disabled()
+                                        ->dehydrated() // FIX: Ensures the disabled SKU is sent to the DB
                                         ->unique(ignoreRecord: true)
                                         ->default(fn () => 'SKU-'.strtoupper(Str::random(8)))
                                         ->helperText('Stock Keeping Unit - unique identifier')
@@ -73,13 +80,13 @@ class ProductForm
                                         ->prefix('$'),
                                     TextInput::make('compare_price')
                                         ->numeric()
-                                        ->helperText('Oreginal price before discount')
+                                        ->helperText('Original price before discount') // Typo fixed
                                         ->minValue(0)
                                         ->step(0.01)
                                         ->prefix('$'),
                                     TextInput::make('cost_price')
                                         ->numeric()
-                                        ->helperText('cost from supplier (for profit calculation)')
+                                        ->helperText('Cost from supplier (for profit calculation)')
                                         ->minValue(0)
                                         ->step(0.01)
                                         ->prefix('$'),
@@ -88,7 +95,7 @@ class ProductForm
                                     Toggle::make('manage_stock')
                                         ->label('Manage Stock')
                                         ->default(true)
-                                        ->helperText('Enable to stock management for this product')
+                                        ->helperText('Enable stock management for this product')
                                         ->live(),
                                     TextInput::make('stock_quantity')
                                         ->label('Stock Quantity')
@@ -113,11 +120,13 @@ class ProductForm
                                         ->required(),
                                 ])->columns(2),
                             ]),
+
+                        // --- IMAGES ---
                         Tab::make('Images')
                             ->icon(Heroicon::Photo)
                             ->schema([
                                 Section::make('Product Images')
-                                    ->description('Upload mutiple images, The first image will be pimery imgage.')
+                                    ->description('Upload multiple images. The first image will be the primary image.') // Typos fixed
                                     ->schema([
                                         FileUpload::make('images')
                                             ->label('Product Images')
@@ -131,14 +140,22 @@ class ProductForm
                                             ->columnSpanFull()
                                             ->helperText('You can drag and drop to reorder images')
                                             ->saveRelationshipsUsing(function ($component, $state, $record) {
-                                                // delete exisiting images
+
+                                                // FIX: Delete physical files from disk before wiping DB records
+                                                $existingImages = $record->images()->get();
+                                                foreach ($existingImages as $image) {
+                                                    Storage::disk('public')->delete($image->image_path);
+                                                }
+
+                                                // Delete existing database records
                                                 $record->images()->delete();
 
+                                                // Save new images and relationships
                                                 if (is_array($state)) {
                                                     foreach ($state as $index => $imagePath) {
                                                         $record->images()->create([
                                                             'image_path' => $imagePath,
-                                                            'is_primary' => $index === 0,
+                                                            'is_primary' => $index === 0, // First image is primary
                                                             'sort_order' => $index,
                                                         ]);
                                                     }
@@ -147,6 +164,8 @@ class ProductForm
                                             ->dehydrated(false),
                                     ]),
                             ]),
+
+                        // --- SETTINGS ---
                         Tab::make('Setting')
                             ->icon(Heroicon::Cog6Tooth)
                             ->schema([
@@ -165,7 +184,7 @@ class ProductForm
                                     Toggle::make('is_featured')
                                         ->required(),
                                 ])->columns(2),
-                                Section::make('statistics')->schema([
+                                Section::make('Statistics')->schema([
                                     Placeholder::make('view_count')
                                         ->content(fn ($record) => $record?->view_count ?? 0),
                                     Placeholder::make('created_at')
@@ -173,6 +192,8 @@ class ProductForm
                                         ->content(fn ($record) => $record?->created_at?->diffForHumans() ?? '-'),
                                 ]),
                             ]),
+
+                        // --- SEO ---
                         Tab::make('SEO')
                             ->icon(Heroicon::MagnifyingGlass)
                             ->schema([
@@ -183,7 +204,6 @@ class ProductForm
                                 ]),
                             ]),
                     ]),
-
             ]);
     }
 }
