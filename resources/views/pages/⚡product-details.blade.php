@@ -140,6 +140,15 @@ new class extends Component {
                 <div>
                     <!-- Badges -->
                     <div class="flex flex-wrap gap-2 mb-4">
+                        @if ($product->status === 'new')
+                            <span class="bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded">
+                                New
+                            </span>
+                        @elseif ($product->status === 'used')
+                            <span class="bg-orange-100 text-orange-800 text-sm font-semibold px-3 py-1 rounded">
+                                Used
+                            </span>
+                        @endif
                         @if ($product->is_featured)
                             <span class="bg-yellow-100 text-yellow-800 text-sm font-semibold px-3 py-1 rounded">
                                 Featured

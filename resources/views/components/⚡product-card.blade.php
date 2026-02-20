@@ -79,6 +79,18 @@ new class extends Component {
                         </span>
                     @endif
                 </div>
+                <!-- Product Status Badge - Top Right -->
+                <div class="absolute top-2 right-2">
+                    @if ($product->status === 'new')
+                        <span class="bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                            New
+                        </span>
+                    @elseif ($product->status === 'used')
+                        <span class="bg-orange-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                            Used
+                        </span>
+                    @endif
+                </div>
             </div>
 
             <!-- Product Info -->

@@ -53,12 +53,12 @@ new class extends Component {
             <div class="mb-10 sm:mb-12">
                 <div
                     class="flex flex-wrap gap-2 justify-between items-end border-b border-gray-200 pb-3 sm:pb-4 mb-5 sm:mb-6">
-                    <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Featured Products</h2>
+                    <h3 class="text-xl sm:text-2xl font-bold text-gray-900">Featured Products</h3>
                     <a href="{{ route('products.index') }}"
                         class="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-800">View All →</a>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
                     @foreach ($featuredProducts as $product)
                         <livewire:product-card :key="'featured-' . $product->id" :product="$product" />
                     @endforeach
@@ -75,7 +75,7 @@ new class extends Component {
                         class="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-800">View All →</a>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
                     @foreach ($newArrivals as $product)
                         <livewire:product-card :key="'new-' . $product->id" :product="$product" />
                     @endforeach
