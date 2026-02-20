@@ -6,8 +6,8 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
@@ -34,7 +34,7 @@ class ProductForm
                                         ->required(),
                                     TextInput::make('slug')
                                         ->unique(ignoreRecord: true)
-                                        ->visible(fn(string $operation) => $operation === 'edit')
+                                        ->visible(fn (string $operation) => $operation === 'edit')
                                         ->disabled()
                                         ->required(),
                                     Select::make('category_id')
@@ -51,7 +51,7 @@ class ProductForm
                                 Section::make('Product Description')->schema([
                                     RichEditor::make('description')
                                         ->columnSpanFull(),
-                                ])
+                                ]),
                             ]),
                         Tab::make('Pricing & Inventory')
                             ->icon(Heroicon::CurrencyDollar)
@@ -61,7 +61,7 @@ class ProductForm
                                         ->label('SKU')
                                         ->disabled()
                                         ->unique(ignoreRecord: true)
-                                        ->default(fn() => 'SKU-' . strtoupper(Str::random(8)))
+                                        ->default(fn () => 'SKU-'.strtoupper(Str::random(8)))
                                         ->helperText('Stock Keeping Unit - unique identifier')
                                         ->required(),
                                     TextInput::make('price')
@@ -92,8 +92,8 @@ class ProductForm
                                         ->live(),
                                     TextInput::make('stock_quantity')
                                         ->label('Stock Quantity')
-                                        ->required(fn(callable $get) => $get('manage_stock'))
-                                        ->disabled(fn(callable $get) => !$get('manage_stock'))
+                                        ->required(fn (callable $get) => $get('manage_stock'))
+                                        ->disabled(fn (callable $get) => ! $get('manage_stock'))
                                         ->numeric()
                                         ->default(0),
                                     TextInput::make('low_stock_threshold')
@@ -106,7 +106,7 @@ class ProductForm
                                         ->options([
                                             'in_stock' => 'In Stock',
                                             'out_of_stock' => 'Out of Stock',
-                                            'pre_order' => 'Pre Order'
+                                            'pre_order' => 'Pre Order',
                                         ])
                                         ->grouped()
                                         ->default('in_stock')
@@ -139,18 +139,26 @@ class ProductForm
                                                         $record->images()->create([
                                                             'image_path' => $imagePath,
                                                             'is_primary' => $index === 0,
-                                                            'sort_order' => $index
+                                                            'sort_order' => $index,
                                                         ]);
                                                     }
                                                 }
                                             })
-                                            ->dehydrated(false)
-                                    ])
+                                            ->dehydrated(false),
+                                    ]),
                             ]),
                         Tab::make('Setting')
                             ->icon(Heroicon::Cog6Tooth)
                             ->schema([
                                 Section::make('Product status')->schema([
+                                    ToggleButtons::make('status')
+                                        ->options([
+                                            'new' => 'New',
+                                            'used' => 'Used',
+                                        ])
+                                        ->grouped()
+                                        ->default('new')
+                                        ->required(),
                                     Toggle::make('is_active')
                                         ->default(true)
                                         ->required(),
@@ -159,11 +167,11 @@ class ProductForm
                                 ])->columns(2),
                                 Section::make('statistics')->schema([
                                     Placeholder::make('view_count')
-                                        ->content(fn($record) => $record?->view_count ?? 0),
+                                        ->content(fn ($record) => $record?->view_count ?? 0),
                                     Placeholder::make('created_at')
                                         ->label('Created')
-                                        ->content(fn($record) => $record?->created_at?->diffForHumans() ?? '-')
-                                ])
+                                        ->content(fn ($record) => $record?->created_at?->diffForHumans() ?? '-'),
+                                ]),
                             ]),
                         Tab::make('SEO')
                             ->icon(Heroicon::MagnifyingGlass)
@@ -173,9 +181,8 @@ class ProductForm
                                     Textarea::make('meta_description')
                                         ->columnSpanFull(),
                                 ]),
-                            ])
+                            ]),
                     ]),
-
 
             ]);
     }

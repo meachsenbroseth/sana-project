@@ -3,10 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
-
 use Illuminate\Support\Str;
 
 class Product extends Model
@@ -27,6 +26,7 @@ class Product extends Model
         'low_stock_threshold',
         'manage_stock',
         'stock_status',
+        'status',
         'is_active',
         'is_featured',
         'meta_title',
@@ -80,6 +80,7 @@ class Product extends Model
         $query->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
             ->where('stock_quantity', '>', 0);
     }
+
     /**
      * Scope to filter by category
      */
@@ -89,7 +90,7 @@ class Product extends Model
         $query->where('category_id', $categoryId);
     }
 
-    /** 
+    /**
      * Scope to filter by brand
      */
     #[Scope]
@@ -107,7 +108,7 @@ class Product extends Model
         $query->whereBetween('price', [$min, $max]);
     }
 
-    //relationships
+    // relationships
     public function category()
     {
         return $this->belongsTo(Category::class);
@@ -117,29 +118,34 @@ class Product extends Model
     {
         return $this->belongsTo(Brand::class);
     }
+
     public function images()
     {
         return $this->hasMany(ProductImage::class);
     }
+
     public function primeImage()
     {
         return $this->hasOne(ProductImage::class)->where('is_primary', true);
     }
+
     public function reviews()
     {
         return $this->hasMany(Review::class);
     }
+
     public function approvedReviews()
     {
         return $this->hasMany(Review::class)->where('is_approved', true);
     }
 
-    //helpers methods
+    // helpers methods
     public function getDiscountPercentageAttribute()
     {
         if ($this->compare_price && $this->compare_price > $this->price) {
             return round((($this->compare_price - $this->price) / $this->compare_price) * 100);
         }
+
         return 0;
     }
 
@@ -168,7 +174,7 @@ class Product extends Model
                 $product->slug = Str::slug($product->name);
             }
             if (empty($product->sku)) {
-                $product->sku = 'SKU-' . strtoupper(Str::random(8));
+                $product->sku = 'SKU-'.strtoupper(Str::random(8));
             }
         });
 
