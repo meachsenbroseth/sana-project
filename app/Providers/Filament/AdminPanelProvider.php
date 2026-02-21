@@ -58,6 +58,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugin(
                 FilamentShieldPlugin::make()
-            );
+            )
+            ->darkMode(false)
+            ->brandLogo(asset('images/logo.png'))
+            ->brandLogoHeight(' 3rem');
     }
 }
