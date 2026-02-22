@@ -13,9 +13,9 @@
     @apply bg-main-primary;
 }
 
-/* .fi-topbar{
+.fi-topbar{
     @apply bg-main-primary;
-} */
+}
 
 .fi-sidebar-item-icon, .fi-sidebar-item-label, .fi-icon{
     @apply text-white;
@@ -56,15 +56,6 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     width: 20rem;
     height: 4rem;
 }
-.fi-topbar{
-    padding: 0px;
-}
-
-/* 1. Make the background of the header and toolbar blue */
-.fi-ta-header, 
-.fi-ta-header-toolbar {
-    @apply !bg-[#1d398f] !border-b-0; /* Removed bottom border for a cleaner look */
-}
 
 /* 2. Make the title text and standard icons white */
 .fi-ta-header h3,
@@ -92,4 +83,14 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     color: #1d398f !important; /* Make the number your brand's dark blue */
     background-color: #ffffff !important; /* Keep the badge background white */
     font-weight: bold !important;
+}
+
+.fi-global-search-ctn {
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    
+    /* Give it a nice, consistent width */
+    width: 100% !important;
+    max-width: 32rem !important; /* Adjust this value if you want it wider or narrower */
 }
