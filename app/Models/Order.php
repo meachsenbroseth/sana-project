@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Scope;
+use App\Observers\OrderObserver;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Mail; // <-- Add this
-use App\Mail\OrderConfirmation;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
+#[ObservedBy(OrderObserver::class)]
 class Order extends Model
 {
     use SoftDeletes;
@@ -37,64 +41,81 @@ class Order extends Model
         'admin_notes',
     ];
 
-    #[Scope()]
-    protected function ofStatus(Builder $query, string $status): void
+    // ==========================================
+    // SCOPES (Must be prefixed with 'scope')
+    // ==========================================
+
+    public function scopeOfStatus(Builder $query, string $status): void
     {
         $query->where('status', $status);
     }
 
-    protected function paymentStatus(Builder $query, string $status): void
+    public function scopePaymentStatus(Builder $query, string $status): void
     {
         $query->where('payment_status', $status);
     }
 
-    protected function pending(Builder $query): void
+    public function scopePending(Builder $query): void
     {
         $query->where('status', 'pending');
     }
 
-    protected function processing(Builder $query): void
+    public function scopeProcessing(Builder $query): void
     {
         $query->where('status', 'processing');
     }
 
-    protected function shipped(Builder $query): void
+    public function scopeShipped(Builder $query): void
     {
         $query->where('status', 'shipped');
     }
-    protected function delivered(Builder $query): void
+
+    public function scopeDelivered(Builder $query): void
     {
         $query->where('status', 'delivered');
     }
 
+    // ==========================================
+    // RELATIONSHIPS
+    // ==========================================
 
-    //relationships
-    public function customer()
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
-    public function items()
+
+    public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
-    public function statusHistories()
+
+    public function statusHistories(): HasMany
     {
         return $this->hasMany(OrderStatusHistory::class)->orderBy('created_at', 'desc');
     }
 
-    //heper method
-    protected function getShippingAttribute()
+    // ==========================================
+    // HELPER METHODS & ACCESSORS
+    // ==========================================
+
+    /**
+     * Modern Laravel 9+ Accessor for the full shipping address.
+     * Can be accessed via $order->shipping_address
+     */
+    protected function shippingAddress(): Attribute
     {
-        return implode(', ', array_filter([
-            $this->shipping_address_line_1,
-            $this->shipping_address_line_2,
-            $this->shipping_city,
-            $this->shipping_state,
-            $this->shipping_country,
-        ]));
+        return Attribute::make(
+            get: fn () => implode(', ', array_filter([
+                $this->shipping_address_line_1,
+                $this->shipping_address_line_2,
+                $this->shipping_city,
+                $this->shipping_state,
+                $this->shipping_country,
+            ]))
+        );
     }
 
-    public function updateStatus($newStatus, $notes = null, $userId = null)
+    public function updateStatus(string $newStatus, ?string $notes = null, ?int $userId = null): void
     {
         $this->update(['status' => $newStatus]);
 
@@ -105,26 +126,18 @@ class Order extends Model
         ]);
     }
 
-    protected static function boot()
+    // ==========================================
+    // BOOT METHODS
+    // ==========================================
+
+    protected static function boot(): void
     {
         parent::boot();
 
-        static::created(function ($order) {
+        // FIX: Must be `creating` (before save), not `created` (after save)
+        static::creating(function (Order $order) {
             if (empty($order->order_number)) {
-                $order->order_number = 'ORD-' . strtoupper(uniqid());
-            }
-        });
-
-        static::created(function($order){
-            $order->statusHistories()->create([
-                'status' => $order->status,
-                'notes' => 'Order created',
-            ]);
-
-
-            //order commpletion email
-            if ($order->customer && $order->customer->email) {
-                Mail::to($order->customer->email)->queue(new OrderConfirmation($order));
+                $order->order_number = 'ORD-' . strtoupper(Str::random(10));
             }
         });
     }

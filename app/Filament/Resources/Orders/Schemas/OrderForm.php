@@ -42,6 +42,33 @@ class OrderForm
                                         ->required(),
                                 ])->columns(2),
 
+                                // --- 1.5 SHIPPING INFORMATION ---
+                                Section::make('Shipping Information')->schema([
+                                    TextInput::make('shipping_full_name')
+                                        ->label('Recipient Name')
+                                        ->disabled(),
+                                    TextInput::make('shipping_phone')
+                                        ->label('Phone Number')
+                                        ->disabled(),
+                                    TextInput::make('shipping_address_line_1')
+                                        ->label('Address Line 1')
+                                        ->columnSpanFull()
+                                        ->disabled(),
+                                    TextInput::make('shipping_address_line_2')
+                                        ->label('Address Line 2')
+                                        ->columnSpanFull()
+                                        ->disabled(),
+                                    TextInput::make('shipping_city')
+                                        ->label('City')
+                                        ->disabled(),
+                                    TextInput::make('shipping_state')
+                                        ->label('State/Province')
+                                        ->disabled(),
+                                    TextInput::make('shipping_country')
+                                        ->label('Country')
+                                        ->disabled(),
+                                ])->columns(2),
+
                                 // --- 2. ORDER ITEMS ---
                                 Section::make('Order Items')->schema([
                                     Repeater::make('items')
@@ -53,7 +80,18 @@ class OrderForm
                                                 ->searchable()
                                                 ->preload()
                                                 ->required()
-                                                ->columnSpan(3), // Stripped out the complex closures here!
+                                                ->columnSpan(3),
+
+                                            // ADDED: Product SKU
+                                            TextInput::make('product_sku')
+                                                ->label('Product SKU')
+                                                ->copyable()
+                                                // ->extraInputAttributes([
+                                                //     'x-on:click' => '$clipboard($event.target.value); $tooltip(\'Copied!\')',
+                                                //     'style' => 'cursor: pointer;',
+                                                //     'title' => 'Highlight to copy',
+                                                // ])
+                                                ->columnSpan(3),
 
                                             TextInput::make('quantity')
                                                 ->numeric()
@@ -74,7 +112,7 @@ class OrderForm
                                                 ->prefix('$')
                                                 ->columnSpan(2),
                                         ])
-                                        ->columns(9)
+                                        ->columns(12) // UPGRADED: Expanded to 12 columns so the new SKU fits perfectly
                                 ]),
 
                                 // --- 3. FINANCIALS ---

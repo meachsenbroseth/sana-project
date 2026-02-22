@@ -61,6 +61,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->darkMode(false)
             ->brandLogo(asset('images/logo.png'))
-            ->brandLogoHeight(' 3rem');
+            ->brandLogoHeight(' 3rem')
+            ->databaseNotifications();
     }
 }

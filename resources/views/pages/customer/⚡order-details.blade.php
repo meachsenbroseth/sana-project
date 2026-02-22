@@ -63,7 +63,7 @@ new class extends Component
                             <span class="text-gray-500">Payment method:</span>
                             <span class="font-medium text-gray-900">
                                 @if($order->payment_method === 'KHQR')
-                                    ABA KHQR
+                                    Bakong KHQR
                                 @elseif($order->payment_method === 'cash_on_delivery')
                                     Cash on Delivery
                                 @else
