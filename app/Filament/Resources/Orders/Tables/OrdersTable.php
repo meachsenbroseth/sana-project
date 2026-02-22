@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Orders\Tables;
 
 use App\Filament\Resources\Customers\CustomerResource;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
@@ -120,8 +121,15 @@ class OrdersTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                ViewAction::make()
+                ->button()
+                ->color('info'),
+                DeleteAction::make()
+                ->button()
+                ->color('danger'),
+                EditAction::make()
+                ->button()
+                ->color('warning'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

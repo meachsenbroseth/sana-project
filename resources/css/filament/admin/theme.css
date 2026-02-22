@@ -1,0 +1,95 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+
+@theme{
+    --color-main-primary: #172457;
+    --color-main-secondary: #172457;        
+}
+
+.fi-sidebar-nav{
+    @apply bg-main-primary;
+}
+
+/* .fi-topbar{
+    @apply bg-main-primary;
+} */
+
+.fi-sidebar-item-icon, .fi-sidebar-item-label, .fi-icon{
+    @apply text-white;
+}
+
+.fi-sidebar-group-label{
+    @apply text-[#0a7cff];
+}
+
+.fi-sidebar-item-button:hover,
+.fi-sidebar-item-btn:hover {
+    @apply bg-[#8d9bac]/50; 
+}
+
+/* --- THE FIX --- */
+/* 1. Force the group wrappers to stay transparent so they don't turn blue */
+.fi-sidebar-group,
+.fi-sidebar-group.fi-active {
+    background-color: transparent ;
+}
+
+/* 2. STRICTLY target ONLY the button link of the active item */
+li.fi-sidebar-item.fi-active > a.fi-sidebar-item-btn,
+li.fi-sidebar-item.fi-active > button.fi-sidebar-item-btn {
+    background-color: #1e3a8a; /* Dark blue background */
+    border: 1px solid #3b82f6; /* Lighter blue border */
+    border-radius: 0.5rem; /* Optional: Gives it nice rounded corners */
+}
+
+/* 3. Ensure the text inside that specific active button is white */
+li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-label,
+li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
+    @apply text-white;
+}
+
+.fi-topbar-start {
+    @apply bg-main-primary;
+    width: 20rem;
+    height: 4rem;
+}
+.fi-topbar{
+    padding: 0px;
+}
+
+/* 1. Make the background of the header and toolbar blue */
+.fi-ta-header, 
+.fi-ta-header-toolbar {
+    @apply !bg-[#1d398f] !border-b-0; /* Removed bottom border for a cleaner look */
+}
+
+/* 2. Make the title text and standard icons white */
+.fi-ta-header h3,
+.fi-ta-header-toolbar .fi-icon-btn,
+.fi-ta-header-toolbar span {
+    @apply !text-white;
+}
+
+/* 3. Keep the Search Input looking normal (Dark text on white background) */
+.fi-ta-header-toolbar input {
+    @apply !text-gray-900 !bg-white;
+}
+
+/* 2. Make ALL title text and standard icons white */
+.fi-ta-header h3,
+.fi-ta-header h4,
+.fi-ta-header .fi-ta-header-heading,
+.fi-ta-header-toolbar .fi-icon-btn,
+.fi-ta-header-toolbar span {
+    @apply !text-white;
+}
+
+/* Override the white text specifically for the notification badge */
+.fi-ta-header-toolbar span.fi-badge {
+    color: #1d398f !important; /* Make the number your brand's dark blue */
+    background-color: #ffffff !important; /* Keep the badge background white */
+    font-weight: bold !important;
+}
