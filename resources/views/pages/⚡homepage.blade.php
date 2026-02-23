@@ -57,7 +57,7 @@ new class extends Component {
         <div
             class="absolute inset-0 {{ $bannerImage ? 'bg-black/45' : 'bg-gradient-to-r from-blue-900 to-indigo-800' }}">
         </div>
-
+{{--
         <div class="relative w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
             <div class="max-w-2xl">
                 <h2 class="text-4xl sm:text-5xl lg:text-7xl font-extrabold text-white mb-6 leading-tight">Next-Gen Gaming
@@ -71,7 +71,7 @@ new class extends Component {
                     </a>
                 </div>
             </div>
-        </div>
+        </div> --}}
     </div>
 
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
