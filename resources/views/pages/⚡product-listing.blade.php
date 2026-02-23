@@ -140,7 +140,7 @@ new class extends Component {
         }
     </style>
 
-    <div class="bg-gray-50 py-8 min-h-screen">
+    <div class="py-8 min-h-screen">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <nav class="mb-6 text-sm">
                 <ol class="flex items-center gap-2">

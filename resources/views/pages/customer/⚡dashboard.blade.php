@@ -43,7 +43,7 @@ new class extends Component {
 };
 ?>
 
-<div class="bg-gray-50 py-8">
+<div class="py-8">
     {{-- No surplus words or unnecessary actions. - Marcus Aurelius --}}
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div

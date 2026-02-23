@@ -47,7 +47,7 @@ new class extends Component {
 };
 ?>
 
-<div class="bg-[#faf9f6] min-h-screen pb-12">
+<div class="min-h-screen pb-12">
 
     <style>
         .hide-scrollbar::-webkit-scrollbar {
