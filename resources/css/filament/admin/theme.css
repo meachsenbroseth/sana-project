@@ -78,6 +78,23 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     @apply !text-white;
 }
 
+.fi-ta-header, 
+.fi-ta-header-toolbar {
+    @apply !bg-[#1d398f] !border-b-0; /* Removed bottom border for a cleaner look */
+}
+
+/* 2. Make the title text and standard icons white */
+.fi-ta-header h3,
+.fi-ta-header-toolbar .fi-icon-btn,
+.fi-ta-header-toolbar span {
+    @apply !text-white;
+}
+
+/* 3. Keep the Search Input looking normal (Dark text on white background) */
+.fi-ta-header-toolbar input {
+    @apply !text-gray-900 !bg-white;
+}
+
 /* Override the white text specifically for the notification badge */
 .fi-ta-header-toolbar span.fi-badge {
     color: #1d398f !important; /* Make the number your brand's dark blue */
@@ -93,4 +110,35 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     /* Give it a nice, consistent width */
     width: 100% !important;
     max-width: 32rem !important; /* Adjust this value if you want it wider or narrower */
+}
+
+
+/* Alternative: Solid blue background for form sections */
+.fi-section-header {
+    background-color: #1d398f !important;
+    padding: 0.75rem 1.5rem !important;
+    border-top-left-radius: 0.5rem !important;
+    border-top-right-radius: 0.5rem !important;
+}
+.fi-section-header-heading {
+    color: #ffffff !important;
+}
+
+
+/* Fix the missing icons on INACTIVE tabs */
+.fi-tabs-item:not(.fi-active) .fi-tabs-item-label,
+.fi-tabs-item:not(.fi-active) .fi-icon {
+    color: #4b5563 !important; /* Forces both the text AND the icon to be dark gray */
+}
+
+
+/* Make the active tab's text AND icon your brand blue */
+.fi-tabs-item.fi-active .fi-tabs-item-label,
+.fi-tabs-item.fi-active .fi-icon {
+    color: #1d398f !important; /* Brand blue instead of white */
+}
+
+/* Ensure the background is the default light gray (remove the old blue background rule if it's still there) */
+.fi-tabs-item.fi-active {
+    background-color: #f3f4f6 !important; 
 }
