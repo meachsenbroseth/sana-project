@@ -166,7 +166,7 @@ new class extends Component {
                             Clear Cart
                         </button>
                         <a href="{{ route('products.index') }}"
-                            class="text-blue-600 hover:text-indigo-700 font-medium">
+                            class="text-blue-600 hover:text-blue-700 font-medium">
                             ← Continue Shopping
                         </a>
                     </div>
@@ -199,16 +199,16 @@ new class extends Component {
 
                         @auth('customer')
                             <a href="/checkout"
-                                class="block w-full bg-blue-600 text-white text-center py-3 px-6 rounded-lg hover:bg-indigo-700 transition font-semibold">
+                                class="block w-full bg-blue-600 text-white text-center py-3 px-6 rounded-lg hover:bg-blue-700 transition font-semibold">
                                 Proceed to Checkout
                             </a>
                         @else
                             <a href="{{ route('login') }}"
-                                class="block w-full bg-blue-600 text-white text-center py-3 px-6 rounded-lg hover:bg-indigo-700 transition font-semibold">
+                                class="block w-full bg-blue-600 text-white text-center py-3 px-6 rounded-lg hover:bg-blue-700 transition font-semibold">
                                 Login to Checkout
                             </a>
                             <p class="text-sm text-gray-600 text-center mt-3">
-                                Or <a href="{{ route('register') }}" class="text-blue-600 hover:text-indigo-700">create an
+                                Or <a href="{{ route('register') }}" class="text-blue-600 hover:text-blue-700">create an
                                     account</a>
                             </p>
                         @endauth
@@ -256,7 +256,7 @@ new class extends Component {
                 <h2 class="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
                 <p class="text-gray-600 mb-6">Add some products to get started!</p>
                 <a href="{{ route('products.index') }}"
-                    class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition font-semibold">
+                    class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
                     Start Shopping
                 </a>
             </div>

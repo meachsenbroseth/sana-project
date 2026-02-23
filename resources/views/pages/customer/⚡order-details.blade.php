@@ -2,6 +2,8 @@
 
 use Livewire\Component;
 use App\Models\Order;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 new class extends Component
 {
@@ -14,25 +16,44 @@ new class extends Component
             ->with(['items.product.primeImage', 'statusHistories'])
             ->firstOrFail();
     }
+    public function downloadInvoice(): StreamedResponse
+    {
+        // Load a specific, print-friendly Blade view for the PDF
+        $pdf = Pdf::loadView('pdf.invoice', ['order' => $this->order]);
+        
+        // Trigger the download in the browser
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->output();
+        }, 'Invoice-' . $this->order->order_number . '.pdf');
+    }
 };
 ?>
 
 <div class="min-h-screen py-10">
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
 
-        <div class="mb-8">
-            <nav class="text-sm mb-4">
-                <ol class="flex items-center gap-2">
-                    <li><a href="{{ route('customer.dashboard') }}" class="text-gray-500 hover:text-gray-900">Account</a></li>
-                    <li class="text-gray-400">/</li>
-                    <li><a href="{{ route('customer.orders') }}" class="text-gray-500 hover:text-gray-900">Orders</a></li>
-                    <li class="text-gray-400">/</li>
-                    <li class="text-gray-900 font-medium">#{{ $order->order_number }}</li>
-                </ol>
-            </nav>
-            <h1 class="text-2xl font-bold text-gray-900">Order information</h1>
+<div class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+                <nav class="text-sm mb-4">
+                    <ol class="flex items-center gap-2">
+                        <li><a href="{{ route('customer.dashboard') }}" class="text-gray-500 hover:text-gray-900">Account</a></li>
+                        <li class="text-gray-400">/</li>
+                        <li><a href="{{ route('customer.orders') }}" class="text-gray-500 hover:text-gray-900">Orders</a></li>
+                        <li class="text-gray-400">/</li>
+                        <li class="text-gray-900 font-medium">#{{ $order->order_number }}</li>
+                    </ol>
+                </nav>
+                <h1 class="text-2xl font-bold text-gray-900">Order information</h1>
+            </div>
+            
+            <button wire:click="downloadInvoice" type="button" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-blue-800 focus:ring-4 focus:ring-gray-200 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Download Invoice
+            </button>
         </div>
-
+        
         <div class="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 p-8">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-10">
