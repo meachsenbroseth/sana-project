@@ -4,8 +4,7 @@ use Livewire\Component;
 use Livewire\Attributes\Computed;
 use App\Models\Address;
 use App\Models\Order;
-use App\Models\Setting;
-use App\Models\Customer;
+use App\Models\ShippingMethod;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
 
@@ -37,6 +36,7 @@ new class extends Component {
     // Order details
     public $paymentMethod = 'KHQR';
     public $customerNotes = '';
+    public $selectedShippingMethodId = null;
 
     public $showKhqrModal = false;
     public $khqrString = '';
@@ -73,6 +73,8 @@ new class extends Component {
                 $this->useExistingAddress = false;
             }
         }
+
+        $this->selectedShippingMethodId = $this->shippingMethods->first()?->id;
     }
 
     #[Computed]
@@ -99,6 +101,15 @@ new class extends Component {
         return $this->subtotal + $this->shippingCost;
     }
 
+    #[Computed]
+    public function shippingMethods()
+    {
+        return ShippingMethod::query()
+            ->active()
+            ->orderBy('name')
+            ->get();
+    }
+
     public function selectAddress($addressId)
     {
         $this->selectedAddressId = $addressId;
@@ -107,7 +118,7 @@ new class extends Component {
     public function nextStep()
     {
         if ($this->step === 1) {
-            if ($this->validateAddress()) {
+            if ($this->validateAddress() && $this->validateShippingMethod()) {
                 $this->step = 2;
             }
         } elseif ($this->step === 2) {
@@ -167,10 +178,30 @@ new class extends Component {
         }
     }
 
+    protected function validateShippingMethod()
+    {
+        if ($this->shippingMethods->isEmpty()) {
+            session()->flash('error', 'No active shipping methods are available right now.');
+            return false;
+        }
+
+        $shippingMethod = ShippingMethod::query()
+            ->active()
+            ->whereKey($this->selectedShippingMethodId)
+            ->first();
+
+        if (! $shippingMethod) {
+            session()->flash('error', 'Please select an active shipping method.');
+            return false;
+        }
+
+        return true;
+    }
+
     public function placeOrder()
     {
         // Validate address again before placing order
-        if (!$this->validateAddress()) {
+        if (!$this->validateAddress() || !$this->validateShippingMethod()) {
             $this->step = 1; // Go back to address step
             return;
         }
@@ -237,6 +268,16 @@ new class extends Component {
             }
         }
 
+        $selectedShippingMethod = ShippingMethod::query()
+            ->active()
+            ->whereKey($this->selectedShippingMethodId)
+            ->first();
+
+        if (! $selectedShippingMethod) {
+            DB::rollBack();
+            throw new \RuntimeException('Selected shipping method is not available.');
+        }
+
         // Calculate totals
         $subtotal = $this->getSubtotal();
         $shippingCost = $this->getShippingCost();
@@ -255,7 +296,7 @@ new class extends Component {
                 'shipping_cost' => $shippingCost,
                 'tax_amount' => $taxAmount,
                 'total' => $total,
-                'shipping_method' => 'standard',
+                'shipping_method' => $selectedShippingMethod->name,
                 'payment_method' => $this->paymentMethod,
                 'payment_status' => $paymentStatus,
                 'status' => $orderStatus,
@@ -381,15 +422,16 @@ new class extends Component {
 
     protected function getShippingCost()
     {
-        $subtotal = $this->getSubtotal();
-        $freeShippingThreshold = Setting::get('free_shipping_threshold', 100);
-        $flatRate = Setting::get('flat_shipping_rate', 10);
+        $shippingMethod = ShippingMethod::query()
+            ->active()
+            ->whereKey($this->selectedShippingMethodId)
+            ->first();
 
-        if ($freeShippingThreshold && $subtotal >= $freeShippingThreshold) {
+        if (! $shippingMethod) {
             return 0;
         }
 
-        return $flatRate;
+        return (float) $shippingMethod->cost;
     }
 };
 ?>
@@ -581,6 +623,32 @@ new class extends Component {
                             </div>
                         @endif
 
+                        <div class="mt-6 pt-6 border-t">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Shipping Method</h3>
+
+                            @if ($this->shippingMethods->isNotEmpty())
+                                <div class="grid gap-3">
+                                    @foreach ($this->shippingMethods as $shippingMethod)
+                                        <label class="relative cursor-pointer" wire:key="shipping-method-{{ $shippingMethod->id }}">
+                                            <input type="radio" wire:model.live="selectedShippingMethodId"
+                                                value="{{ $shippingMethod->id }}" class="peer sr-only">
+                                            <div
+                                                class="border-2 rounded-lg p-4 peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
+                                                <div class="flex items-center justify-between">
+                                                    <p class="font-semibold text-gray-900">{{ $shippingMethod->name }}</p>
+                                                    <p class="font-semibold text-blue-700">
+                                                        ${{ number_format($shippingMethod->cost, 2) }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-sm text-red-600">No active shipping methods are available right now.</p>
+                            @endif
+                        </div>
+
                         <div class="flex justify-between mt-6 pt-6 border-t">
                             <a href="{{ route('cart.index') }}" class="text-gray-600 hover:text-gray-900 font-medium">
                                 ← Back to Cart
@@ -725,6 +793,14 @@ new class extends Component {
                                 @endif
                             </span>
                         </div>
+                        @if ($selectedShippingMethodId)
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Method</span>
+                                <span class="font-medium text-gray-700">
+                                    {{ optional($this->shippingMethods->firstWhere('id', (int) $selectedShippingMethodId))->name ?? 'Not selected' }}
+                                </span>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="border-t pt-4">

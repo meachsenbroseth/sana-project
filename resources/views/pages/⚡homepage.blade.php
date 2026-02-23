@@ -3,6 +3,7 @@
 use Livewire\Component;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\SiteSetting;
 use App\Models\Brand; // Added Brand model
 
 new class extends Component {
@@ -21,12 +22,15 @@ new class extends Component {
 
         // Fetch newest products
         $newArrivals = Product::with('primeImage')->where('is_active', true)->latest()->take(10)->get();
+        $siteSetting = SiteSetting::query()->first();
+        $bannerImage = filled($siteSetting?->banner_image) ? asset('storage/' . $siteSetting->banner_image) : null;
 
         return [
             'topCategories' => $topCategories,
             'brands' => $brands,
             'featuredProducts' => $featuredProducts,
             'newArrivals' => $newArrivals,
+            'bannerImage' => $bannerImage,
         ];
     }
 };
@@ -47,7 +51,12 @@ new class extends Component {
 
     <div
         class="w-full relative shadow-sm min-h-[400px] sm:min-h-[500px] lg:min-h-[650px] flex items-center mb-12 sm:mb-20">
-        <div class="absolute inset-0 bg-gradient-to-r from-blue-900 to-indigo-800"></div>
+        @if ($bannerImage)
+            <img src="{{ $bannerImage }}" alt="Homepage banner" class="absolute inset-0 h-full w-full object-cover">
+        @endif
+        <div
+            class="absolute inset-0 {{ $bannerImage ? 'bg-black/45' : 'bg-gradient-to-r from-blue-900 to-indigo-800' }}">
+        </div>
 
         <div class="relative w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
             <div class="max-w-2xl">
