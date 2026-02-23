@@ -13,6 +13,7 @@ class SiteSettingFactory extends Factory
     {
         return [
             'banner_image' => null,
+            'banner_images' => null,
             'updated_at' => now(),
         ];
     }

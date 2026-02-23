@@ -7,7 +7,7 @@ use App\Models\SiteSetting;
 use App\Models\Brand; // Added Brand model
 
 new class extends Component {
-    public function with()
+    public function with(): array
     {
         // Fetch top 4 categories
         $topCategories = Category::withCount('products')->orderByDesc('products_count')->take(4)->get();
@@ -23,14 +23,25 @@ new class extends Component {
         // Fetch newest products
         $newArrivals = Product::with('primeImage')->where('is_active', true)->latest()->take(10)->get();
         $siteSetting = SiteSetting::query()->first();
-        $bannerImage = filled($siteSetting?->banner_image) ? asset('storage/' . $siteSetting->banner_image) : null;
+        $banners = collect($siteSetting?->normalizedBanners() ?? [])
+            ->where('status', 'active')
+            ->sortBy('sort_order')
+            ->map(function (array $banner): array {
+                return [
+                    'image' => asset('storage/' . $banner['image']),
+                    'title' => $banner['title'],
+                    'link' => $banner['link'],
+                    'sort_order' => $banner['sort_order'],
+                ];
+            })
+            ->values();
 
         return [
             'topCategories' => $topCategories,
             'brands' => $brands,
             'featuredProducts' => $featuredProducts,
             'newArrivals' => $newArrivals,
-            'bannerImage' => $bannerImage,
+            'banners' => $banners->all(),
         ];
     }
 };
@@ -49,29 +60,62 @@ new class extends Component {
         }
     </style>
 
-    <div
-        class="w-full relative shadow-sm min-h-[400px] sm:min-h-[500px] lg:min-h-[650px] flex items-center mb-12 sm:mb-20">
-        @if ($bannerImage)
-            <img src="{{ $bannerImage }}" alt="Homepage banner" class="absolute inset-0 h-full w-full object-cover">
-        @endif
-        <div
-            class="absolute inset-0 {{ $bannerImage ? 'bg-black/45' : 'bg-gradient-to-r from-blue-900 to-indigo-800' }}">
-        </div>
-{{--
-        <div class="relative w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-            <div class="max-w-2xl">
-                <h2 class="text-4xl sm:text-5xl lg:text-7xl font-extrabold text-white mb-6 leading-tight">Next-Gen Gaming
-                    <br> Gear Setup.</h2>
-                <p class="text-blue-100 mb-10 text-base sm:text-lg lg:text-xl leading-relaxed">Upgrade your battle
-                    station with the latest high-performance components available at Phanna Computer.</p>
-                <div>
-                    <a href="{{ route('products.index') }}"
-                        class="inline-block px-10 py-4 rounded-full text-base lg:text-lg font-bold text-white shadow-xl transition-all duration-500 ease-in-out bg-white/10 backdrop-blur-md border border-white/30 hover:bg-[#010F1C] hover:border-[#010F1C] hover:shadow-2xl hover:-translate-y-1">
-                        Shop Now
-                    </a>
+<div class="w-full mb-12 sm:mb-20">
+        <div class="mx-auto w-full max-w-[1920px]">
+            <div class="relative shadow-sm min-h-[400px] sm:min-h-[500px] lg:min-h-[650px] flex items-center w-full overflow-hidden group">
+                
+                @if (count($banners) > 0)
+                    <div class="absolute inset-0 w-full h-full" x-data="{
+                        banners: @js($banners),
+                        current: 0,
+                        autoSlide: null,
+                        startAutoSlide() {
+                            if (this.banners.length < 2 || this.autoSlide) {
+                                return;
+                            }
+                            this.autoSlide = setInterval(() => {
+                                this.current = (this.current + 1) % this.banners.length;
+                            }, 5000); // Swaps every 5 seconds
+                        },
+                        stopAutoSlide() {
+                            if (! this.autoSlide) {
+                                return;
+                            }
+                            clearInterval(this.autoSlide);
+                            this.autoSlide = null;
+                        }
+                    }" x-init="startAutoSlide()" @mouseenter="stopAutoSlide()" @mouseleave="startAutoSlide()">
+                        
+                        <template x-for="(banner, index) in banners" :key="index">
+                            <div class="absolute inset-0"
+                                x-show="current === index"
+                                x-transition:enter="transition ease-out duration-1000"
+                                x-transition:enter-start="opacity-0 transform scale-105"
+                                x-transition:enter-end="opacity-100 transform scale-100"
+                                x-transition:leave="transition ease-in duration-1000"
+                                x-transition:leave-start="opacity-100 transform scale-100"
+                                x-transition:leave-end="opacity-0">
+                                <template x-if="banner.link">
+                                    <a :href="banner.link" class="block h-full w-full">
+                                        <img :src="banner.image" :alt="banner.title ? banner.title : `Homepage banner ${index + 1}`"
+                                            class="h-full w-full object-cover">
+                                    </a>
+                                </template>
+                                <template x-if="!banner.link">
+                                    <img :src="banner.image" :alt="banner.title ? banner.title : `Homepage banner ${index + 1}`"
+                                        class="h-full w-full object-cover">
+                                </template>
+                            </div>
+                        </template>
+
+                    </div>
+                @endif
+                
+                <div class="absolute inset-0 pointer-events-none {{ count($banners) > 0 ? 'bg-black/20' : 'bg-gradient-to-r from-blue-900 to-indigo-800' }}">
                 </div>
+                
             </div>
-        </div> --}}
+        </div>
     </div>
 
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
