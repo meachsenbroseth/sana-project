@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Orders\Pages;
 
+use App\Filament\Exports\OrderExporter;
 use App\Filament\Resources\Orders\OrderResource;
+use Filament\Actions\ExportAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListOrders extends ListRecords
@@ -13,6 +15,8 @@ class ListOrders extends ListRecords
     {
         return [
             // CreateAction::make(),
+            ExportAction::make()
+            ->exporter(OrderExporter::class)
         ];
     }
 }
