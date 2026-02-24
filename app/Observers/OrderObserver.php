@@ -2,14 +2,17 @@
 
 namespace App\Observers;
 
-use App\Models\Order;
-use App\Models\User;
 use App\Filament\Resources\Orders\OrderResource;
-use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderConfirmation;
-
-use Filament\Notifications\Notification;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
+use App\Models\User;
 use Filament\Notifications\Actions\NotificationAction;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class OrderObserver
 {
@@ -32,21 +35,21 @@ class OrderObserver
         // 3. Notify the Admins in Filament
         $admins = User::all();
 
-Notification::make()
-    ->title('New Order Received! 🚀')
-    ->body("Order #{$order->order_number} has been placed for $" . number_format($order->total, 2) . ".")
-    ->icon('heroicon-o-shopping-bag')
-    ->success()
-    // ->actions([
-    //     NotificationAction::make('viewOrder')
-    //         ->label('View Order')
-    //         ->button()
-    //         ->url(fn () => OrderResource::getUrl(
-    //             'edit',
-    //             ['record' => $order->getKey()]
-    //         )),
-    // ])
-    ->sendToDatabase($admins);
+        Notification::make()
+            ->title('New Order Received! 🚀')
+            ->body("Order #{$order->order_number} has been placed for $".number_format($order->total, 2).'.')
+            ->icon('heroicon-o-shopping-bag')
+            ->success()
+            // ->actions([
+            //     NotificationAction::make('viewOrder')
+            //         ->label('View Order')
+            //         ->button()
+            //         ->url(fn () => OrderResource::getUrl(
+            //             'edit',
+            //             ['record' => $order->getKey()]
+            //         )),
+            // ])
+            ->sendToDatabase($admins);
     }
 
     /**
@@ -54,7 +57,86 @@ Notification::make()
      */
     public function updated(Order $order): void
     {
-        //
+        if (! $order->wasChanged('status')) {
+            return;
+        }
+
+        $originalStatus = (string) $order->getOriginal('status');
+        $newStatus = (string) $order->status;
+        $alreadyProcessed = $order->statusHistories()
+            ->where('status', 'processing')
+            ->exists();
+
+        $order->statusHistories()->create([
+            'status' => $newStatus,
+            'notes' => "Status changed from {$originalStatus} to {$newStatus}.",
+        ]);
+
+        if ($newStatus !== 'processing') {
+            return;
+        }
+
+        if ($originalStatus === 'processing') {
+            return;
+        }
+
+        if ($alreadyProcessed) {
+            Log::warning('Skipped stock deduction for order that was already processed before.', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+            ]);
+
+            return;
+        }
+
+        DB::transaction(function () use ($order): void {
+            $items = OrderItem::query()
+                ->where('order_id', $order->id)
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($items as $item) {
+                $product = Product::query()
+                    ->whereKey($item->product_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $product) {
+                    Log::warning('Skipped stock update because order item product no longer exists.', [
+                        'order_id' => $order->id,
+                        'order_item_id' => $item->id,
+                        'product_id' => $item->product_id,
+                    ]);
+
+                    continue;
+                }
+
+                $previousStock = (int) $product->stock_quantity;
+                $requestedQuantity = max((int) $item->quantity, 0);
+                $newStock = $previousStock > 0
+                    ? max($previousStock - $requestedQuantity, 0)
+                    : 0;
+                $newStockStatus = $newStock > 0 ? 'in_stock' : 'out_of_stock';
+                $isLowStock = $newStock <= (int) $product->low_stock_threshold;
+
+                $product->update([
+                    'stock_quantity' => $newStock,
+                    'stock_status' => $newStockStatus,
+                ]);
+
+                Log::info('Product stock updated after order moved to processing.', [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'order_item_id' => $item->id,
+                    'product_id' => $product->id,
+                    'previous_stock_quantity' => $previousStock,
+                    'deducted_quantity' => $requestedQuantity,
+                    'new_stock_quantity' => $newStock,
+                    'new_stock_status' => $newStockStatus,
+                    'is_low_stock' => $isLowStock,
+                ]);
+            }
+        });
     }
 
     /**
