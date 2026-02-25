@@ -4,6 +4,7 @@ use Livewire\Component;
 use Livewire\Attributes\Computed;
 use App\Models\Address;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\ShippingMethod;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
@@ -42,6 +43,7 @@ new class extends Component {
     public $khqrString = '';
     public $khqrMd5 = null;
     public $khqrStringRaw = null;
+    public $orderProcessing = false;
 
     public $paymentTimeout = 120; // 5 minutes in seconds
     public $paymentStartedAtTs = null;
@@ -307,15 +309,37 @@ new class extends Component {
 
         // Create order items
         foreach ($this->cart as $item) {
+            $product = Product::query()->lockForUpdate()->find($item['product_id']);
+
+            if (! $product) {
+                DB::rollBack();
+                throw new \RuntimeException('Product not found.');
+            }
+
             $unitAmount = $item['price'];
-            $quantity = $item['quantity'];
+            $quantity = (int) $item['quantity'];
             $totalAmount = $unitAmount * $quantity;
+
+            if ($paymentStatus === 'paid') {
+                $currentStock = (int) $product->stock_quantity;
+
+                if ($currentStock < $quantity) {
+                    DB::rollBack();
+                    throw new \RuntimeException('Insufficient stock for '.$product->name.'.');
+                }
+
+                $newStock = $currentStock - $quantity;
+                $product->update([
+                    'stock_quantity' => $newStock,
+                    'stock_status' => $newStock > 0 ? 'in_stock' : 'out_of_stock',
+                ]);
+            }
 
             OrderItem::create([
                 'order_id' => $order->id,
-                'product_id' => $item['product_id'],
+                'product_id' => $product->id,
                 'product_name' => $item['name'],
-                'product_sku' => $this->getProductSku($item),
+                'product_sku' => $product->sku,
                 'quantity' => $quantity,
                 'unit_amount' => $unitAmount,
                 'total_amount' => $totalAmount,
@@ -346,6 +370,7 @@ new class extends Component {
             if (isset($qrResponse->data['qr']) && isset($qrResponse->data['md5'])) {
                 $this->khqrStringRaw = $qrResponse->data['qr'];
                 $this->khqrMd5 = $qrResponse->data['md5'];
+                $this->orderProcessing = false;
 
                 $this->paymentStartedAtTs = now()->timestamp;
                 $this->timeLeft = $this->paymentTimeout;
@@ -371,6 +396,10 @@ new class extends Component {
             return;
         }
 
+        if ($this->orderProcessing) {
+            return;
+        }
+
         $elapsed = now()->timestamp - $this->paymentStartedAtTs;
         $this->timeLeft = max(0, $this->paymentTimeout - $elapsed);
 
@@ -386,13 +415,27 @@ new class extends Component {
 
             // If payment is SUCCESSFUL
             if (isset($result['responseCode']) && $result['responseCode'] === 0) {
+                $this->orderProcessing = true;
+
+                $existingOrder = Order::query()
+                    ->where('transaction_id', $this->khqrMd5)
+                    ->first();
+
+                if ($existingOrder) {
+                    $this->showKhqrModal = false;
+
+                    return redirect()->route('checkout.success', $existingOrder->id);
+                }
+
                 // ONLY NOW do we insert the order into the database!
                 $order = $this->finalizeOrderInDatabase('paid', 'processing', $this->khqrMd5);
+                $this->showKhqrModal = false;
 
                 // REDIRECT UPDATED HERE FOR KHQR
                 return redirect()->route('checkout.success', $order->id)->with('success', 'Payment successful!');
             }
         } catch (\Exception $e) {
+            $this->orderProcessing = false;
             // Log error silently while polling
         }
     }
@@ -401,14 +444,8 @@ new class extends Component {
     {
         // Close modal and clear QR variables WITHOUT saving to database
         $this->showKhqrModal = false;
-        $this->reset(['khqrString', 'khqrMd5', 'timeLeft', 'paymentStartedAtTs']);
+        $this->reset(['khqrString', 'khqrMd5', 'timeLeft', 'paymentStartedAtTs', 'orderProcessing']);
         session()->flash('error', $reason);
-    }
-
-    protected function getProductSku($item)
-    {
-        $product = \App\Models\Product::find($item['product_id']);
-        return $product ? $product->sku : '';
     }
 
     protected function getSubtotal()
