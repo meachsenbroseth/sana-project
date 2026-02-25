@@ -3,44 +3,57 @@
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
 
+/* =====================================================
+   THEME COLORS
+   ===================================================== */
 @theme {
     --color-main-primary: #172457;
     --color-main-secondary: #172457;
 }
 
-/* Sidebar & topbar background */
-.fi-sidebar-nav {
+
+/* =====================================================
+   1. SIDEBAR & TOPBAR
+   ===================================================== */
+
+/* Background colors */
+.fi-sidebar-nav,
+.fi-topbar,
+.fi-topbar-start {
     @apply bg-main-primary;
 }
 
-.fi-topbar {
-    @apply bg-main-primary;
+/* Fixed topbar start width */
+.fi-topbar-start {
+    width: 20rem;
+    height: 4rem;
 }
 
-/* Sidebar icons and labels */
+/* Sidebar icons & labels */
 .fi-sidebar-item-icon,
 .fi-sidebar-item-label,
 .fi-icon {
     @apply text-white;
 }
 
+/* Sidebar group title */
 .fi-sidebar-group-label {
     @apply text-[#0a7cff];
 }
 
-/* Sidebar item hover effect */
+/* Hover effect */
 .fi-sidebar-item-button:hover,
 .fi-sidebar-item-btn:hover {
     @apply bg-[#8d9bac]/50;
 }
 
-/* Ensure sidebar groups stay transparent */
+/* Transparent sidebar groups */
 .fi-sidebar-group,
 .fi-sidebar-group.fi-active {
     background-color: transparent;
 }
 
-/* Active sidebar item button – dark blue with light border */
+/* Active sidebar item */
 li.fi-sidebar-item.fi-active > a.fi-sidebar-item-btn,
 li.fi-sidebar-item.fi-active > button.fi-sidebar-item-btn {
     background-color: #1e3a8a;
@@ -48,46 +61,53 @@ li.fi-sidebar-item.fi-active > button.fi-sidebar-item-btn {
     border-radius: 0.5rem;
 }
 
-/* Active sidebar item text & icon in white */
+/* Active sidebar text */
 li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-label,
 li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     @apply text-white;
 }
 
-/* Fixed-width topbar start area */
-.fi-topbar-start {
-    @apply bg-main-primary;
-    width: 20rem;
-    height: 4rem;
-}
 
-/* Table header – dark blue background, white text/icons */
+/* =====================================================
+   2. TABLE HEADERS
+   ===================================================== */
+
+/* Header background */
 .fi-ta-header,
 .fi-ta-header-toolbar {
     @apply !bg-[#1d398f] !border-b-0;
 }
 
+/* Shared white text for blue headers */
 .fi-ta-header h3,
 .fi-ta-header h4,
 .fi-ta-header .fi-ta-header-heading,
 .fi-ta-header-toolbar .fi-icon-btn,
-.fi-ta-header-toolbar span {
+.fi-ta-header-toolbar span,
+.fi-fo-repeater-item-header .fi-fo-repeater-item-header-label,
+.fi-fo-repeater-item-header h3,
+.fi-fo-repeater-item-header .fi-icon-btn {
     @apply !text-white;
 }
 
-/* Search input inside table header – normal dark text */
+/* Search input */
 .fi-ta-header-toolbar input {
     @apply !text-gray-900 !bg-white;
 }
 
-/* Notification badge inside table header – inverted colors */
+/* Notification badge */
 .fi-ta-header-toolbar span.fi-badge {
     color: #1d398f !important;
     background-color: #ffffff !important;
     font-weight: bold !important;
 }
 
-/* Global search – centered with max width */
+
+/* =====================================================
+   3. GLOBAL SEARCH
+   ===================================================== */
+
+/* Center search bar */
 .fi-global-search-ctn {
     position: absolute;
     left: 50%;
@@ -96,7 +116,12 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     max-width: 32rem;
 }
 
-/* Form section header – dark blue with white heading */
+
+/* =====================================================
+   4. SECTION & REPEATER HEADERS
+   ===================================================== */
+
+/* Section header */
 .fi-section-header {
     background-color: #1d398f;
     padding: 0.75rem 1.5rem;
@@ -108,13 +133,33 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     color: #ffffff;
 }
 
-/* Inactive tabs – dark gray text and icons */
+.fi-section-header-description {
+    color: #ffffff !important;
+    opacity: 0.8;
+}
+
+/* Repeater header */
+.fi-fo-repeater-item-header {
+    background-color: #1d398f;
+    border-color: #1d398f;
+}
+
+.fi-fo-repeater-item-header .fi-icon-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+
+/* =====================================================
+   5. TABS
+   ===================================================== */
+
+/* Inactive tabs */
 .fi-tabs-item:not(.fi-active) .fi-tabs-item-label,
 .fi-tabs-item:not(.fi-active) .fi-icon {
     color: #4b5563;
 }
 
-/* Active tab – brand blue text and icon, light gray background */
+/* Active tabs */
 .fi-tabs-item.fi-active .fi-tabs-item-label,
 .fi-tabs-item.fi-active .fi-icon {
     color: #1d398f;
@@ -124,65 +169,25 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     background-color: #f3f4f6;
 }
 
-/* Repeater item header – dark blue background */
-.fi-fo-repeater-item-header {
-    background-color: #1d398f;
-    border-color: #1d398f;
-}
 
-/* Repeater header label – white */
-.fi-fo-repeater-item-header .fi-fo-repeater-item-header-label,
-.fi-fo-repeater-item-header h3 {
-    color: #ffffff;
-}
+/* =====================================================
+   6. DROPDOWN, FILTER & COLUMN VISIBILITY FIXES
+   ===================================================== */
 
-/* Repeater header icons – white with hover effect */
-.fi-fo-repeater-item-header .fi-icon-btn {
-    color: #ffffff;
-}
-
-.fi-fo-repeater-item-header .fi-icon-btn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Description text inside dark headers */
-.fi-section-header-description {
-    color: #ffffff !important; /* Pure white */
-    opacity: 0.8; /* Slightly transparent to distinguish it from the main title */
-}
-
-/* 1. FORCE all text inside the Select Dropdown Options to be Dark Gray */
-.fi-select-input-option-label,
+/* Shared readable text color across dropdown systems */
+.fi-ta-filters-dropdown .fi-fo-field-label,
+.fi-ta-filters-dropdown .fi-fo-field-label span,
+.fi-ta-col-manager-item,
+.fi-ta-col-manager-item span,
+.fi-ta-col-manager-item label,
+.fi-ta-col-manager-label,
+.fi-ta-col-manager-label span,
+.fi-select-input-option,
 .fi-select-input-option span,
-.fi-select-input-option {
-    color: #1f2937 !important; /* Dark Gray */
-}
-
-/* 2. Ensure the background of the dropdown is White */
-.fi-select-input-dropdown,
-.fi-dropdown-panel {
-    background-color: #ffffff !important;
-    border: 1px solid #e5e7eb !important;
-}
-
-/* 3. Fix the hover state (when you mouse over an option) */
-.fi-select-input-option:hover {
-    background-color: #f3f4f6 !important; /* Light Gray background */
-}
-
-.fi-select-input-option:hover span {
-    color: #000000 !important; /* Black text on hover */
-}
-
-
-/* FIX: Make text visible in Single Select Dropdowns */
+.fi-select-input-option-label,
 .fi-dropdown-list-item,
 .fi-dropdown-list-item span,
-.fi-dropdown-list-item-label {
-    color: #1f2937 !important; /* Dark Gray */
-}
-
-/* Fix the text displayed inside the closed filter box */
+.fi-dropdown-list-item-label,
 .fi-select-input-btn,
 .fi-select-input-btn span,
 .fi-select-input-value-label,
@@ -190,39 +195,47 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     color: #1f2937 !important;
 }
 
-/* Form field labels
-.fi-fo-field-wrp label {
-    color: #1f2937 !important;
-} */
-
-
-/* Fix invisible labels inside the Filter Menu */
-.fi-ta-filters-dropdown .fi-fo-field-label span,
-.fi-ta-filters-dropdown .fi-fo-field-label {
-    color: #1f2937 !important; /* Dark Gray */
-}
-
-
-/* Fix invisible text in the Column Toggle Menu */
-.fi-ta-col-manager-item span,
-.fi-ta-col-manager-item label,
-.fi-ta-col-manager-item {
-    color: #1f2937 !important; /* Dark Gray */
-}
-
-/* Optional: Add a hover effect so you can see which column you are toggling */
-.fi-ta-col-manager-item:hover {
-    background-color: #f3f4f6 !important;
-}
-
-/* FORCE the text inside the Column Toggle list to be dark */
-.fi-ta-col-manager-label span,
-.fi-ta-col-manager-label {
-    color: #1f2937 !important; /* Dark Gray */
-}
-
-/* Optional: Fix the background color on hover */
+/* Shared hover behavior */
 .fi-ta-col-manager-item:hover,
-.fi-ta-col-manager-label:hover {
+.fi-ta-col-manager-label:hover,
+.fi-select-input-option:hover {
     background-color: #f3f4f6 !important;
+}
+
+/* Strong hover contrast */
+.fi-select-input-option:hover span {
+    color: #000000 !important;
+}
+
+/* Dropdown container */
+.fi-select-input-dropdown,
+.fi-dropdown-panel {
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+}
+
+
+/* =====================================================
+   7. CHECKBOX STYLING
+   ===================================================== */
+
+/* Default checkbox */
+.fi-checkbox-input {
+    border: 1px solid #d1d5db !important;
+    background-color: #ffffff !important;
+    color: #1d398f !important;
+    width: 1rem !important;
+    height: 1rem !important;
+}
+
+/* Checked state */
+.fi-checkbox-input:checked {
+    background-color: #1d398f !important;
+    border-color: #1d398f !important;
+}
+
+/* Focus ring */
+.fi-checkbox-input:focus {
+    box-shadow: 0 0 0 2px rgba(29, 57, 143, 0.2) !important;
+    ring-color: #1d398f !important;
 }
