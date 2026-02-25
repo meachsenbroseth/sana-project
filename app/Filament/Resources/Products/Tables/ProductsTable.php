@@ -9,10 +9,12 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
-use Filament\Tables\Columns\IconColumn;
+// use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\TrashedFilter;
+// use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Filament\Tables\Filters\TernaryFilter;
+use Illuminate\Database\Eloquent\Builder;
 
 class ProductsTable
 {
@@ -68,18 +70,26 @@ class ProductsTable
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                TrashedFilter::make(),
+                TernaryFilter::make('stock_status')
+                    ->label('Stock Availability')
+                    ->placeholder('All Products')
+                    ->trueLabel('In Stock')
+                    ->falseLabel('Out of Stock')
+                    ->queries(
+                        true: fn(Builder $query) => $query->where('stock_quantity', '>', 0),
+                        false: fn(Builder $query) => $query->where('stock_quantity', '<=', 0),
+                    ),
             ])
             ->recordActions([
                 ViewAction::make()
-                ->button()
-                ->color('info'),
+                    ->button()
+                    ->color('info'),
                 DeleteAction::make()
-                ->button()
-                ->color('danger'),
+                    ->button()
+                    ->color('danger'),
                 EditAction::make()
-                ->button()
-                ->color('warning'),
+                    ->button()
+                    ->color('warning'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -3,73 +3,70 @@
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
 
-
-@theme{
+@theme {
     --color-main-primary: #172457;
-    --color-main-secondary: #172457;        
+    --color-main-secondary: #172457;
 }
 
-.fi-sidebar-nav{
+/* Sidebar & topbar background */
+.fi-sidebar-nav {
     @apply bg-main-primary;
 }
 
-.fi-topbar{
+.fi-topbar {
     @apply bg-main-primary;
 }
 
-.fi-sidebar-item-icon, .fi-sidebar-item-label, .fi-icon{
+/* Sidebar icons and labels */
+.fi-sidebar-item-icon,
+.fi-sidebar-item-label,
+.fi-icon {
     @apply text-white;
 }
 
-.fi-sidebar-group-label{
+.fi-sidebar-group-label {
     @apply text-[#0a7cff];
 }
 
+/* Sidebar item hover effect */
 .fi-sidebar-item-button:hover,
 .fi-sidebar-item-btn:hover {
-    @apply bg-[#8d9bac]/50; 
+    @apply bg-[#8d9bac]/50;
 }
 
-/* --- THE FIX --- */
-/* 1. Force the group wrappers to stay transparent so they don't turn blue */
+/* Ensure sidebar groups stay transparent */
 .fi-sidebar-group,
 .fi-sidebar-group.fi-active {
-    background-color: transparent ;
+    background-color: transparent;
 }
 
-/* 2. STRICTLY target ONLY the button link of the active item */
+/* Active sidebar item button – dark blue with light border */
 li.fi-sidebar-item.fi-active > a.fi-sidebar-item-btn,
 li.fi-sidebar-item.fi-active > button.fi-sidebar-item-btn {
-    background-color: #1e3a8a; /* Dark blue background */
-    border: 1px solid #3b82f6; /* Lighter blue border */
-    border-radius: 0.5rem; /* Optional: Gives it nice rounded corners */
+    background-color: #1e3a8a;
+    border: 1px solid #3b82f6;
+    border-radius: 0.5rem;
 }
 
-/* 3. Ensure the text inside that specific active button is white */
+/* Active sidebar item text & icon in white */
 li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-label,
 li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     @apply text-white;
 }
 
+/* Fixed-width topbar start area */
 .fi-topbar-start {
     @apply bg-main-primary;
     width: 20rem;
     height: 4rem;
 }
 
-/* 2. Make the title text and standard icons white */
-.fi-ta-header h3,
-.fi-ta-header-toolbar .fi-icon-btn,
-.fi-ta-header-toolbar span {
-    @apply !text-white;
+/* Table header – dark blue background, white text/icons */
+.fi-ta-header,
+.fi-ta-header-toolbar {
+    @apply !bg-[#1d398f] !border-b-0;
 }
 
-/* 3. Keep the Search Input looking normal (Dark text on white background) */
-.fi-ta-header-toolbar input {
-    @apply !text-gray-900 !bg-white;
-}
-
-/* 2. Make ALL title text and standard icons white */
 .fi-ta-header h3,
 .fi-ta-header h4,
 .fi-ta-header .fi-ta-header-heading,
@@ -78,67 +75,154 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     @apply !text-white;
 }
 
-.fi-ta-header, 
-.fi-ta-header-toolbar {
-    @apply !bg-[#1d398f] !border-b-0; /* Removed bottom border for a cleaner look */
-}
-
-/* 2. Make the title text and standard icons white */
-.fi-ta-header h3,
-.fi-ta-header-toolbar .fi-icon-btn,
-.fi-ta-header-toolbar span {
-    @apply !text-white;
-}
-
-/* 3. Keep the Search Input looking normal (Dark text on white background) */
+/* Search input inside table header – normal dark text */
 .fi-ta-header-toolbar input {
     @apply !text-gray-900 !bg-white;
 }
 
-/* Override the white text specifically for the notification badge */
+/* Notification badge inside table header – inverted colors */
 .fi-ta-header-toolbar span.fi-badge {
-    color: #1d398f !important; /* Make the number your brand's dark blue */
-    background-color: #ffffff !important; /* Keep the badge background white */
+    color: #1d398f !important;
+    background-color: #ffffff !important;
     font-weight: bold !important;
 }
 
+/* Global search – centered with max width */
 .fi-global-search-ctn {
-    position: absolute !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    
-    /* Give it a nice, consistent width */
-    width: 100% !important;
-    max-width: 32rem !important; /* Adjust this value if you want it wider or narrower */
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 32rem;
 }
 
-
-/* Alternative: Solid blue background for form sections */
+/* Form section header – dark blue with white heading */
 .fi-section-header {
-    background-color: #1d398f !important;
-    padding: 0.75rem 1.5rem !important;
-    border-top-left-radius: 0.5rem !important;
-    border-top-right-radius: 0.5rem !important;
+    background-color: #1d398f;
+    padding: 0.75rem 1.5rem;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
 }
+
 .fi-section-header-heading {
-    color: #ffffff !important;
+    color: #ffffff;
 }
 
-
-/* Fix the missing icons on INACTIVE tabs */
+/* Inactive tabs – dark gray text and icons */
 .fi-tabs-item:not(.fi-active) .fi-tabs-item-label,
 .fi-tabs-item:not(.fi-active) .fi-icon {
-    color: #4b5563 !important; /* Forces both the text AND the icon to be dark gray */
+    color: #4b5563;
 }
 
-
-/* Make the active tab's text AND icon your brand blue */
+/* Active tab – brand blue text and icon, light gray background */
 .fi-tabs-item.fi-active .fi-tabs-item-label,
 .fi-tabs-item.fi-active .fi-icon {
-    color: #1d398f !important; /* Brand blue instead of white */
+    color: #1d398f;
 }
 
-/* Ensure the background is the default light gray (remove the old blue background rule if it's still there) */
 .fi-tabs-item.fi-active {
-    background-color: #f3f4f6 !important; 
+    background-color: #f3f4f6;
+}
+
+/* Repeater item header – dark blue background */
+.fi-fo-repeater-item-header {
+    background-color: #1d398f;
+    border-color: #1d398f;
+}
+
+/* Repeater header label – white */
+.fi-fo-repeater-item-header .fi-fo-repeater-item-header-label,
+.fi-fo-repeater-item-header h3 {
+    color: #ffffff;
+}
+
+/* Repeater header icons – white with hover effect */
+.fi-fo-repeater-item-header .fi-icon-btn {
+    color: #ffffff;
+}
+
+.fi-fo-repeater-item-header .fi-icon-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Description text inside dark headers */
+.fi-section-header-description {
+    color: #ffffff !important; /* Pure white */
+    opacity: 0.8; /* Slightly transparent to distinguish it from the main title */
+}
+
+/* 1. FORCE all text inside the Select Dropdown Options to be Dark Gray */
+.fi-select-input-option-label,
+.fi-select-input-option span,
+.fi-select-input-option {
+    color: #1f2937 !important; /* Dark Gray */
+}
+
+/* 2. Ensure the background of the dropdown is White */
+.fi-select-input-dropdown,
+.fi-dropdown-panel {
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+}
+
+/* 3. Fix the hover state (when you mouse over an option) */
+.fi-select-input-option:hover {
+    background-color: #f3f4f6 !important; /* Light Gray background */
+}
+
+.fi-select-input-option:hover span {
+    color: #000000 !important; /* Black text on hover */
+}
+
+
+/* FIX: Make text visible in Single Select Dropdowns */
+.fi-dropdown-list-item,
+.fi-dropdown-list-item span,
+.fi-dropdown-list-item-label {
+    color: #1f2937 !important; /* Dark Gray */
+}
+
+/* Fix the text displayed inside the closed filter box */
+.fi-select-input-btn,
+.fi-select-input-btn span,
+.fi-select-input-value-label,
+.fi-select-input-placeholder {
+    color: #1f2937 !important;
+}
+
+/* Form field labels
+.fi-fo-field-wrp label {
+    color: #1f2937 !important;
+} */
+
+
+/* Fix invisible labels inside the Filter Menu */
+.fi-ta-filters-dropdown .fi-fo-field-label span,
+.fi-ta-filters-dropdown .fi-fo-field-label {
+    color: #1f2937 !important; /* Dark Gray */
+}
+
+
+/* Fix invisible text in the Column Toggle Menu */
+.fi-ta-col-manager-item span,
+.fi-ta-col-manager-item label,
+.fi-ta-col-manager-item {
+    color: #1f2937 !important; /* Dark Gray */
+}
+
+/* Optional: Add a hover effect so you can see which column you are toggling */
+.fi-ta-col-manager-item:hover {
+    background-color: #f3f4f6 !important;
+}
+
+/* FORCE the text inside the Column Toggle list to be dark */
+.fi-ta-col-manager-label span,
+.fi-ta-col-manager-label {
+    color: #1f2937 !important; /* Dark Gray */
+}
+
+/* Optional: Fix the background color on hover */
+.fi-ta-col-manager-item:hover,
+.fi-ta-col-manager-label:hover {
+    background-color: #f3f4f6 !important;
 }
