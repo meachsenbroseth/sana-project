@@ -17,6 +17,9 @@ class ListOrders extends ListRecords
             // CreateAction::make(),
             ExportAction::make()
             ->exporter(OrderExporter::class)
+            ->label('Export Orders')
+            ->icon('heroicon-o-arrow-down-tray')
+            ->color('primary'),
         ];
     }
 }

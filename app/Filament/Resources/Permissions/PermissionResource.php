@@ -17,7 +17,7 @@ use UnitEnum;
 
 class PermissionResource extends Resource
 {
-    protected static string|UnitEnum|null $navigationGroup = 'Filament Shield';
+    protected static string|UnitEnum|null $navigationGroup = 'System Management';
 
     protected static ?string $navigationLabel = 'Permissions';
 
