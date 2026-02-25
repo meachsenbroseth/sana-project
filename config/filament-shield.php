@@ -172,6 +172,18 @@ return [
                 'update',
                 'delete',
             ],
+            \App\Filament\Resources\Employees\EmployeeResource::class => [
+                'view',
+                'create',
+                'update',
+                'delete',
+            ],
+            \App\Filament\Resources\Permissions\PermissionResource::class => [
+                'view',
+                'create',
+                'update',
+                'delete',
+            ],
         ],
         'exclude' => [
             //
