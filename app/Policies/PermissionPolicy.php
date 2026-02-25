@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Foundation\Auth\User as AuthUser;
 use Spatie\Permission\Models\Permission;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class PermissionPolicy
 {
     use HandlesAuthorization;
-
+    
     public function viewAny(AuthUser $authUser): bool
     {
         return $authUser->can('ViewAny:Permission');
@@ -66,4 +66,5 @@ class PermissionPolicy
     {
         return $authUser->can('Reorder:Permission');
     }
+
 }

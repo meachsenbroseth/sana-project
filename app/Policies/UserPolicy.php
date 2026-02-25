@@ -2,72 +2,66 @@
 
 namespace App\Policies;
 
-use App\Filament\Resources\Employees\EmployeeResource;
-use App\Models\User;
+use Illuminate\Foundation\Auth\User as AuthUser;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class UserPolicy
 {
-    public function viewAny(User $user): bool
+    use HandlesAuthorization;
+    
+    public function viewAny(AuthUser $authUser): bool
     {
-        return $user->can(EmployeeResource::getPermissionKey('viewAny'));
+        return $authUser->can('ViewAny:User');
     }
 
-    public function view(User $user, User $record): bool
+    public function view(AuthUser $authUser): bool
     {
-        return $user->can(EmployeeResource::getPermissionKey('view'));
+        return $authUser->can('View:User');
     }
 
-    public function create(User $user): bool
+    public function create(AuthUser $authUser): bool
     {
-        return $user->can(EmployeeResource::getPermissionKey('create'));
+        return $authUser->can('Create:User');
     }
 
-    public function update(User $user, User $record): bool
+    public function update(AuthUser $authUser): bool
     {
-        return $user->can(EmployeeResource::getPermissionKey('update'));
+        return $authUser->can('Update:User');
     }
 
-    public function delete(User $user, User $record): bool
+    public function delete(AuthUser $authUser): bool
     {
-        if ($user->is($record)) {
-            return false;
-        }
-
-        return $user->can(EmployeeResource::getPermissionKey('delete'));
+        return $authUser->can('Delete:User');
     }
 
-    public function deleteAny(User $user): bool
+    public function restore(AuthUser $authUser): bool
     {
-        return $user->can(EmployeeResource::getPermissionKey('delete'));
+        return $authUser->can('Restore:User');
     }
 
-    public function forceDelete(User $user, User $record): bool
+    public function forceDelete(AuthUser $authUser): bool
     {
-        return false;
+        return $authUser->can('ForceDelete:User');
     }
 
-    public function forceDeleteAny(User $user): bool
+    public function forceDeleteAny(AuthUser $authUser): bool
     {
-        return false;
+        return $authUser->can('ForceDeleteAny:User');
     }
 
-    public function restore(User $user, User $record): bool
+    public function restoreAny(AuthUser $authUser): bool
     {
-        return false;
+        return $authUser->can('RestoreAny:User');
     }
 
-    public function restoreAny(User $user): bool
+    public function replicate(AuthUser $authUser): bool
     {
-        return false;
+        return $authUser->can('Replicate:User');
     }
 
-    public function replicate(User $user, User $record): bool
+    public function reorder(AuthUser $authUser): bool
     {
-        return false;
+        return $authUser->can('Reorder:User');
     }
 
-    public function reorder(User $user): bool
-    {
-        return false;
-    }
 }
