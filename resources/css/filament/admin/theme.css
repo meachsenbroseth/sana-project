@@ -16,44 +16,37 @@
    1. SIDEBAR & TOPBAR
    ===================================================== */
 
-/* Background colors */
 .fi-sidebar-nav,
 .fi-topbar,
 .fi-topbar-start {
     @apply bg-main-primary;
 }
 
-/* Fixed topbar start width */
 .fi-topbar-start {
     width: 20rem;
     height: 4rem;
 }
 
-/* Sidebar icons & labels */
 .fi-sidebar-item-icon,
 .fi-sidebar-item-label,
 .fi-icon {
     @apply text-white;
 }
 
-/* Sidebar group title */
 .fi-sidebar-group-label {
     @apply text-[#0a7cff];
 }
 
-/* Hover effect */
 .fi-sidebar-item-button:hover,
 .fi-sidebar-item-btn:hover {
     @apply bg-[#8d9bac]/50;
 }
 
-/* Transparent sidebar groups */
 .fi-sidebar-group,
 .fi-sidebar-group.fi-active {
     background-color: transparent;
 }
 
-/* Active sidebar item */
 li.fi-sidebar-item.fi-active > a.fi-sidebar-item-btn,
 li.fi-sidebar-item.fi-active > button.fi-sidebar-item-btn {
     background-color: #1e3a8a;
@@ -61,7 +54,6 @@ li.fi-sidebar-item.fi-active > button.fi-sidebar-item-btn {
     border-radius: 0.5rem;
 }
 
-/* Active sidebar text */
 li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-label,
 li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     @apply text-white;
@@ -72,13 +64,11 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
    2. TABLE HEADERS
    ===================================================== */
 
-/* Header background */
 .fi-ta-header,
 .fi-ta-header-toolbar {
     @apply !bg-[#1d398f] !border-b-0;
 }
 
-/* Shared white text for blue headers */
 .fi-ta-header h3,
 .fi-ta-header h4,
 .fi-ta-header .fi-ta-header-heading,
@@ -90,12 +80,10 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     @apply !text-white;
 }
 
-/* Search input */
 .fi-ta-header-toolbar input {
     @apply !text-gray-900 !bg-white;
 }
 
-/* Notification badge */
 .fi-ta-header-toolbar span.fi-badge {
     color: #1d398f !important;
     background-color: #ffffff !important;
@@ -107,7 +95,6 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
    3. GLOBAL SEARCH
    ===================================================== */
 
-/* Center search bar */
 .fi-global-search-ctn {
     position: absolute;
     left: 50%;
@@ -121,7 +108,6 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
    4. SECTION & REPEATER HEADERS
    ===================================================== */
 
-/* Section header */
 .fi-section-header {
     background-color: #1d398f;
     padding: 0.75rem 1.5rem;
@@ -138,7 +124,6 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     opacity: 0.8;
 }
 
-/* Repeater header */
 .fi-fo-repeater-item-header {
     background-color: #1d398f;
     border-color: #1d398f;
@@ -153,13 +138,11 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
    5. TABS
    ===================================================== */
 
-/* Inactive tabs */
 .fi-tabs-item:not(.fi-active) .fi-tabs-item-label,
 .fi-tabs-item:not(.fi-active) .fi-icon {
     color: #4b5563;
 }
 
-/* Active tabs */
 .fi-tabs-item.fi-active .fi-tabs-item-label,
 .fi-tabs-item.fi-active .fi-icon {
     color: #1d398f;
@@ -174,7 +157,6 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
    6. DROPDOWN, FILTER & COLUMN VISIBILITY FIXES
    ===================================================== */
 
-/* Shared readable text color across dropdown systems */
 .fi-ta-filters-dropdown .fi-fo-field-label,
 .fi-ta-filters-dropdown .fi-fo-field-label span,
 .fi-ta-col-manager-item,
@@ -195,19 +177,16 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     color: #1f2937 !important;
 }
 
-/* Shared hover behavior */
 .fi-ta-col-manager-item:hover,
 .fi-ta-col-manager-label:hover,
 .fi-select-input-option:hover {
     background-color: #f3f4f6 !important;
 }
 
-/* Strong hover contrast */
 .fi-select-input-option:hover span {
     color: #000000 !important;
 }
 
-/* Dropdown container */
 .fi-select-input-dropdown,
 .fi-dropdown-panel {
     background-color: #ffffff !important;
@@ -219,7 +198,6 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
    7. CHECKBOX STYLING
    ===================================================== */
 
-/* Default checkbox */
 .fi-checkbox-input {
     border: 1px solid #d1d5db !important;
     background-color: #ffffff !important;
@@ -228,14 +206,40 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     height: 1rem !important;
 }
 
-/* Checked state */
 .fi-checkbox-input:checked {
     background-color: #1d398f !important;
     border-color: #1d398f !important;
 }
 
-/* Focus ring */
 .fi-checkbox-input:focus {
     box-shadow: 0 0 0 2px rgba(29, 57, 143, 0.2) !important;
     ring-color: #1d398f !important;
+}
+
+
+/* =====================================================
+   8. FORM INPUT ICONS
+   ===================================================== */
+
+.fi-input-wrp .fi-icon,
+.fi-input-wrp .fi-icon-btn,
+.fi-input-wrp-actions .fi-icon {
+    color: #6b7280 !important;
+}
+
+.fi-input-wrp .fi-icon-btn:hover .fi-icon,
+.fi-input-wrp-actions .fi-icon-btn:hover .fi-icon {
+    color: #1f2937 !important;
+}
+
+.fi-btn .fi-icon {
+    color: currentColor !important;
+}
+
+.fi-icon-btn:not(.fi-ta-header-toolbar .fi-icon-btn) .fi-icon {
+    color: #4b5563 !important;
+}
+
+.fi-badge .fi-icon {
+    color: currentColor !important;
 }
