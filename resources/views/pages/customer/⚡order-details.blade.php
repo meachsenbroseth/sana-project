@@ -2,6 +2,8 @@
 
 use Livewire\Component;
 use App\Models\Order;
+use App\Models\Review;
+use App\Models\OrderItem;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -9,13 +11,30 @@ new class extends Component
 {
     public Order $order;
 
-    public function mount($id)
+    public array $reviewedProductIds = [];
+
+    public bool $showReviewModal = false;
+
+    public ?int $reviewingItemId = null;
+
+    public int $rating = 5;
+
+    public string $comment = '';
+
+    public function mount($id): void
     {
         $this->order = Order::where('id', $id)
             ->where('customer_id', auth('customer')->id())
             ->with(['items.product.primeImage', 'statusHistories'])
             ->firstOrFail();
+
+        $this->reviewedProductIds = Review::query()
+            ->where('customer_id', auth('customer')->id())
+            ->where('order_id', $this->order->id)
+            ->pluck('product_id')
+            ->all();
     }
+
     public function downloadInvoice(): StreamedResponse
     {
         // Load a specific, print-friendly Blade view for the PDF
@@ -26,6 +45,98 @@ new class extends Component
             echo $pdf->output();
         }, 'Invoice-' . $this->order->order_number . '.pdf');
     }
+
+    public function openReviewModal(int $itemId): void
+    {
+        $item = $this->order->items->firstWhere('id', $itemId);
+
+        if (! $item instanceof OrderItem) {
+            return;
+        }
+
+        if ($this->order->status !== 'delivered' || ! $item->product) {
+            return;
+        }
+
+        if (in_array((int) $item->product_id, $this->reviewedProductIds, true)) {
+            return;
+        }
+
+        $this->reviewingItemId = $item->id;
+        $this->rating = 5;
+        $this->comment = '';
+        $this->resetErrorBag();
+        $this->showReviewModal = true;
+    }
+
+    public function closeReviewModal(): void
+    {
+        $this->showReviewModal = false;
+        $this->reviewingItemId = null;
+        $this->rating = 5;
+        $this->comment = '';
+        $this->resetErrorBag();
+    }
+
+    public function submitReview(): void
+    {
+        $this->validate([
+            'rating' => ['required', 'integer', 'between:1,5'],
+            'comment' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $item = $this->reviewingItem;
+
+        if (! $item instanceof OrderItem || ! $item->product) {
+            $this->addError('comment', 'Invalid product review request.');
+
+            return;
+        }
+
+        if ($this->order->status !== 'delivered') {
+            $this->addError('comment', 'You can only review delivered orders.');
+
+            return;
+        }
+
+        $alreadyReviewed = Review::query()
+            ->where('customer_id', auth('customer')->id())
+            ->where('order_id', $this->order->id)
+            ->where('product_id', $item->product_id)
+            ->exists();
+
+        if ($alreadyReviewed) {
+            $this->addError('comment', 'You have already reviewed this product for this order.');
+
+            return;
+        }
+
+        Review::query()->create([
+            'customer_id' => auth('customer')->id(),
+            'product_id' => $item->product_id,
+            'order_id' => $this->order->id,
+            'rating' => $this->rating,
+            'comment' => $this->comment,
+            'is_verified_purchase' => true,
+            'is_approved' => false,
+        ]);
+
+        $this->reviewedProductIds[] = (int) $item->product_id;
+        $this->closeReviewModal();
+        session()->flash('review_success', 'Review submitted and awaiting approval.');
+    }
+
+    public function getReviewingItemProperty(): ?OrderItem
+    {
+        if (! $this->reviewingItemId) {
+            return null;
+        }
+
+        $item = $this->order->items->firstWhere('id', $this->reviewingItemId);
+
+        return $item instanceof OrderItem ? $item : null;
+    }
+
 };
 ?>
 
@@ -53,6 +164,12 @@ new class extends Component
                 Download Invoice
             </button>
         </div>
+
+        @if (session()->has('review_success'))
+            <div class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                {{ session('review_success') }}
+            </div>
+        @endif
         
         <div class="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 p-8">
 
@@ -170,6 +287,16 @@ new class extends Component
                                     <span class="text-gray-900">Total:</span>
                                     <span class="text-gray-900">${{ number_format($item->total_amount ?? $item->subtotal, 2) }}</span>
                                 </div>
+
+                                @if ($order->status === 'delivered' && $item->product && !in_array((int) $item->product_id, $reviewedProductIds, true))
+                                    <button
+                                        wire:click="openReviewModal({{ $item->id }})"
+                                        type="button"
+                                        class="mt-3 w-full rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 transition"
+                                    >
+                                        Write Review
+                                    </button>
+                                @endif
                             </div>
                         </div>
                     @endforeach
@@ -247,4 +374,79 @@ new class extends Component
 
         </div>
     </div>
+
+    @if ($showReviewModal && $this->reviewingItem && $this->reviewingItem->product)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/50" wire:click="closeReviewModal"></div>
+            <div class="relative z-10 w-full max-w-xl rounded-xl bg-white shadow-2xl">
+                <div class="flex items-start justify-between border-b border-gray-100 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Write Review</h3>
+                    <button wire:click="closeReviewModal" type="button" class="text-gray-400 hover:text-gray-700">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <form wire:submit="submitReview" class="space-y-5 px-6 py-5">
+                    <div class="flex items-center gap-4">
+                        <div class="h-16 w-16 overflow-hidden rounded-md border border-gray-100 bg-gray-50">
+                            @if ($this->reviewingItem->product->primeImage)
+                                <img
+                                    src="{{ asset('storage/' . $this->reviewingItem->product->primeImage->image_path) }}"
+                                    alt="{{ $this->reviewingItem->product_name }}"
+                                    class="h-full w-full object-cover"
+                                >
+                            @endif
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Product</p>
+                            <p class="font-semibold text-gray-900">{{ $this->reviewingItem->product_name }}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-gray-700">Rating</label>
+                        <div class="flex items-center gap-2">
+                            @for ($star = 1; $star <= 5; $star++)
+                                <button
+                                    type="button"
+                                    wire:click="$set('rating', {{ $star }})"
+                                    class="text-2xl leading-none {{ $rating >= $star ? 'text-yellow-400' : 'text-gray-300' }}"
+                                >
+                                    &#9733;
+                                </button>
+                            @endfor
+                        </div>
+                        @error('rating')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="review-comment" class="mb-2 block text-sm font-medium text-gray-700">Review</label>
+                        <textarea
+                            id="review-comment"
+                            wire:model="comment"
+                            rows="4"
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            placeholder="Share your experience with this product"
+                        ></textarea>
+                        @error('comment')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+                        <button type="button" wire:click="closeReviewModal" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700" wire:loading.attr="disabled" wire:target="submitReview">
+                            Submit Review
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
 </div>

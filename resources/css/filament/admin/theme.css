@@ -243,3 +243,9 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
 .fi-badge .fi-icon {
     color: currentColor !important;
 }
+
+
+.fi-ta-icon .fi-icon,
+.fi-ta-icon-item .fi-icon {
+    color: currentColor !important;
+}
