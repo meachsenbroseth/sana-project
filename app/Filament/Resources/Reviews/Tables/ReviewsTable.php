@@ -2,19 +2,13 @@
 
 namespace App\Filament\Resources\Reviews\Tables;
 
-use App\Filament\Resources\Customers\CustomerResource;
-use App\Filament\Resources\Products\ProductResource;
-use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
-
-use function Livewire\str;
 
 class ReviewsTable
 {
@@ -23,20 +17,16 @@ class ReviewsTable
         return $table
             ->columns([
                 TextColumn::make('product.name')
-                    ->url(fn($record) => ProductResource::getUrl('edit', [$record->product]))
-                    ->weight('bold')
+                    ->searchable()
                     ->sortable(),
                 TextColumn::make('customer.name')
-                    ->url(fn($record) => CustomerResource::getUrl('edit', [$record->customer]))
-                    ->weight('bold')
+                    ->searchable()
                     ->sortable(),
                 TextColumn::make('rating')
-                    ->formatStateUsing(fn($state) => str_repeat('⭐', $state))
-                    ->color('warning')
+                    ->badge()
                     ->sortable(),
                 TextColumn::make('title')
-                    ->limit(150)
-                    ->wrap()
+                    ->limit(80)
                     ->searchable(),
                 TextColumn::make('comment')
                     ->limit(50)
@@ -54,6 +44,7 @@ class ReviewsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 TernaryFilter::make('is_approved')
                     ->label('Approval Status')
@@ -70,23 +61,20 @@ class ReviewsTable
                     ->native(false),
             ])
             ->recordActions([
-                Action::make('approve')
-                ->icon(Heroicon::CheckCircle)
-                ->color('success')
-                ->action(fn($record) => $record->update(['is_approved'=> true]))
-                ->visible(fn($record)=>!$record->is_approved)
-                ->requiresConfirmation(),
-                  Action::make('reject')
-                ->icon(Heroicon::XCircle)
-                ->color('denger')
-                ->action(fn($record) => $record->update(['is_approved'=> false]))
-                ->visible(fn($record)=>$record->is_approved)
-                ->requiresConfirmation(),
                 EditAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    BulkAction::make('approve')
+                        ->label('Approve')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(fn ($records) => $records->each->update(['is_approved' => true])),
+                    BulkAction::make('reject')
+                        ->label('Reject')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(fn ($records) => $records->each->delete()),
                 ]),
             ]);
     }

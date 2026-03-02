@@ -118,7 +118,7 @@ new class extends Component {
 
                         <div class="px-6 py-4 border-t border-gray-100 flex justify-end bg-[#fcfcfc]">
                             <a href="{{ route('customer.orders.show', $order->id) }}"
-                                class="inline-flex items-center justify-center gap-2 bg-[#0a0a0a] text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 transition shadow-sm">
+                                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-blue-800 focus:ring-4 focus:ring-gray-200 transition-all">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

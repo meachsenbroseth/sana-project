@@ -3,8 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Review extends Model
 {
@@ -18,6 +19,15 @@ class Review extends Model
         'is_verified_purchase',
         'is_approved',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'rating' => 'integer',
+            'is_verified_purchase' => 'boolean',
+            'is_approved' => 'boolean',
+        ];
+    }
 
     #[Scope]
     protected function approved(Builder $query): void
@@ -37,19 +47,18 @@ class Review extends Model
         $query->where('rating', $rating);
     }
 
-        // Relationships
-    public function product()
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
-    public function customer()
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function order()
+    public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
-    }   
+    }
 }

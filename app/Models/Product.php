@@ -5,12 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Product extends Model
 {
     use SoftDeletes;
+
+    protected $withCount = [
+        'approvedReviews as reviews_count',
+    ];
 
     protected $fillable = [
         'category_id',
@@ -109,38 +116,40 @@ class Product extends Model
     }
 
     // relationships
-    public function category()
+    public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
-    public function brand()
+    public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
     }
 
-    public function images()
+    public function images(): HasMany
     {
         return $this->hasMany(ProductImage::class);
     }
 
-    public function primeImage()
+    public function primeImage(): HasOne
     {
         return $this->hasOne(ProductImage::class)->where('is_primary', true);
     }
 
-    public function reviews()
+    public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
     }
 
-    public function approvedReviews()
+    public function approvedReviews(): HasMany
     {
-        return $this->hasMany(Review::class)->where('is_approved', true);
+        return $this->hasMany(Review::class)
+            ->where('is_approved', true)
+            ->latest();
     }
 
     // helpers methods
-    public function getDiscountPercentageAttribute()
+    public function getDiscountPercentageAttribute(): int
     {
         if ($this->compare_price && $this->compare_price > $this->price) {
             return round((($this->compare_price - $this->price) / $this->compare_price) * 100);
@@ -149,27 +158,22 @@ class Product extends Model
         return 0;
     }
 
-    public function getAverageRatingAttribute()
+    public function getAverageRatingAttribute(): float
     {
-        return $this->approvedReviews()->avg('rating') ?? 0;
+        return round((float) ($this->approvedReviews()->avg('rating') ?? 0), 1);
     }
 
-    public function getReviewsCountAttribute()
-    {
-        return $this->approvedReviews()->count();
-    }
-
-    public function incrementViews()
+    public function incrementViews(): void
     {
         $this->increment('view_count');
     }
 
     // Events
-    protected static function boot()
+    protected static function boot(): void
     {
         parent::boot();
 
-        static::creating(function ($product) {
+        static::creating(function (self $product): void {
             if (empty($product->slug)) {
                 $product->slug = Str::slug($product->name);
             }
@@ -178,7 +182,7 @@ class Product extends Model
             }
         });
 
-        static::updating(function ($product) {
+        static::updating(function (self $product): void {
             if ($product->isDirty('name') && empty($product->slug)) {
                 $product->slug = Str::slug($product->name);
             }

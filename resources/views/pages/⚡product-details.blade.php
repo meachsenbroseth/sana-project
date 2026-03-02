@@ -372,6 +372,13 @@ new class extends Component {
             <!-- Tab Content -->
             <div class="p-8">
                 <div x-show="activeTab === 'reviews'" x-cloak>
+                    @if (auth('customer')->check() &&
+                            !$product->reviews()->where('customer_id', auth('customer')->id())->exists())
+                        <div class="mb-8">
+                            <livewire:product-review-form :product="$product" :key="'review-form-'.$product->id" />
+                        </div>
+                    @endif
+
                     @if ($product->approvedReviews->count() > 0)
                         <div class="space-y-6">
                             @foreach ($product->approvedReviews as $review)
