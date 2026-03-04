@@ -51,6 +51,7 @@ class Product extends Model
         'manage_stock' => 'boolean',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
+        'embedding' => 'array',
     ];
 
     #[Scope]
@@ -146,6 +147,19 @@ class Product extends Model
         return $this->hasMany(Review::class)
             ->where('is_approved', true)
             ->latest();
+    }
+
+    /**
+     * Get the text representation used for generating embeddings (name, brand, category, description).
+     */
+    public function toEmbeddingText(): string
+    {
+        return implode(' ', array_filter([
+            $this->name,
+            $this->brand?->name,
+            $this->category?->name,
+            $this->description,
+        ], fn ($value) => $value !== null && $value !== ''));
     }
 
     // helpers methods
