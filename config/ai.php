@@ -20,6 +20,8 @@ return [
     'default_for_embeddings' => 'openai',
     'default_for_reranking' => 'cohere',
 
+    'gemini_model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+
     /*
     |--------------------------------------------------------------------------
     | Caching

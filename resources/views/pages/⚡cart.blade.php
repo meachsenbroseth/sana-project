@@ -6,17 +6,17 @@ use Livewire\Attributes\Computed;
 new class extends Component {
     public array $cart = [];
 
-    public function mount()
+    public function mount(): void
     {
         $this->loadCart();
     }
 
-    public function loadCart()
+    public function loadCart(): void
     {
         $this->cart = session()->get('cart', []);
     }
 
-    public function updateQuantity(string $cartKey, int $quantity)
+    public function updateQuantity(string $cartKey, int $quantity): void
     {
         if ($quantity < 1) {
             return;
@@ -36,7 +36,7 @@ new class extends Component {
         }
     }
 
-    public function removeItem(string $cartKey)
+    public function removeItem(string $cartKey): void
     {
         $cart = session()->get('cart', []);
 
@@ -49,10 +49,11 @@ new class extends Component {
 
             $this->dispatch('cart-updated');
 
-             session()->flash('success','Item removed from cart');
+            session()->flash('success', 'Item removed from cart');
         }
     }
-    public function clearCart()
+
+    public function clearCart(): void
     {
         session()->forget('cart');
         $this->loadCart();
@@ -60,10 +61,11 @@ new class extends Component {
 
         session()->flash('success', 'Cart cleared');
     }
+
     #[Computed]
     public function subtotal(): float
     {
-        return collect($this->cart)->sum(fn($item) => $item['price'] * $item['quantity']);
+        return collect($this->cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
     }
 };
 ?>
@@ -261,5 +263,6 @@ new class extends Component {
                 </a>
             </div>
         @endif
+
     </div>
 </div>
