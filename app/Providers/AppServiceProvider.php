@@ -7,6 +7,7 @@ use App\Observers\ReviewObserver;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -25,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (request()->server('HTTP_X_FORWARDED_PROTO') === 'https') {
+        URL::forceScheme('https');
+    }
         $this->configureDefaults();
 
         Review::observe(ReviewObserver::class);

@@ -106,10 +106,7 @@ new class extends Component {
     #[Computed]
     public function shippingMethods()
     {
-        return ShippingMethod::query()
-            ->active()
-            ->orderBy('name')
-            ->get();
+        return ShippingMethod::query()->active()->orderBy('name')->get();
     }
 
     public function selectAddress($addressId)
@@ -187,12 +184,9 @@ new class extends Component {
             return false;
         }
 
-        $shippingMethod = ShippingMethod::query()
-            ->active()
-            ->whereKey($this->selectedShippingMethodId)
-            ->first();
+        $shippingMethod = ShippingMethod::query()->active()->whereKey($this->selectedShippingMethodId)->first();
 
-        if (! $shippingMethod) {
+        if (!$shippingMethod) {
             session()->flash('error', 'Please select an active shipping method.');
             return false;
         }
@@ -270,12 +264,9 @@ new class extends Component {
             }
         }
 
-        $selectedShippingMethod = ShippingMethod::query()
-            ->active()
-            ->whereKey($this->selectedShippingMethodId)
-            ->first();
+        $selectedShippingMethod = ShippingMethod::query()->active()->whereKey($this->selectedShippingMethodId)->first();
 
-        if (! $selectedShippingMethod) {
+        if (!$selectedShippingMethod) {
             DB::rollBack();
             throw new \RuntimeException('Selected shipping method is not available.');
         }
@@ -311,7 +302,7 @@ new class extends Component {
         foreach ($this->cart as $item) {
             $product = Product::query()->lockForUpdate()->find($item['product_id']);
 
-            if (! $product) {
+            if (!$product) {
                 DB::rollBack();
                 throw new \RuntimeException('Product not found.');
             }
@@ -325,7 +316,7 @@ new class extends Component {
 
                 if ($currentStock < $quantity) {
                     DB::rollBack();
-                    throw new \RuntimeException('Insufficient stock for '.$product->name.'.');
+                    throw new \RuntimeException('Insufficient stock for ' . $product->name . '.');
                 }
 
                 $newStock = $currentStock - $quantity;
@@ -417,9 +408,7 @@ new class extends Component {
             if (isset($result['responseCode']) && $result['responseCode'] === 0) {
                 $this->orderProcessing = true;
 
-                $existingOrder = Order::query()
-                    ->where('transaction_id', $this->khqrMd5)
-                    ->first();
+                $existingOrder = Order::query()->where('transaction_id', $this->khqrMd5)->first();
 
                 if ($existingOrder) {
                     $this->showKhqrModal = false;
@@ -459,12 +448,9 @@ new class extends Component {
 
     protected function getShippingCost()
     {
-        $shippingMethod = ShippingMethod::query()
-            ->active()
-            ->whereKey($this->selectedShippingMethodId)
-            ->first();
+        $shippingMethod = ShippingMethod::query()->active()->whereKey($this->selectedShippingMethodId)->first();
 
-        if (! $shippingMethod) {
+        if (!$shippingMethod) {
             return 0;
         }
 
@@ -479,47 +465,53 @@ new class extends Component {
         <h1 class="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
 
         <!-- Progress Steps -->
-        <div class="mb-8">
-            <div class="flex items-center justify-center">
-                <div class="flex items-center">
-                    <div class="flex items-center {{ $step >= 1 ? 'text-blue-600' : 'text-gray-400' }}">
-                        <div
-                            class="flex items-center justify-center w-10 h-10 rounded-full border-2 {{ $step >= 1 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300' }}">
-                            @if ($step > 1)
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 13l4 4L19 7" />
-                                </svg>
-                            @else
-                                1
-                            @endif
-                        </div>
-                        <span class="ml-2 font-medium">Shipping</span>
+        <div class="mb-8 px-2 sm:px-0">
+            <div class="flex items-center justify-between w-full max-w-3xl mx-auto">
+
+                <div class="flex flex-col sm:flex-row items-center {{ $step >= 1 ? 'text-blue-600' : 'text-gray-400' }}">
+                    <div
+                        class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 {{ $step >= 1 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white' }}">
+                        @if ($step > 1)
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                        @else
+                            1
+                        @endif
                     </div>
-                    <div class="w-24 h-1 mx-4 {{ $step >= 2 ? 'bg-blue-600' : 'bg-gray-300' }}"></div>
-                    <div class="flex items-center {{ $step >= 2 ? 'text-blue-600' : 'text-gray-400' }}">
-                        <div
-                            class="flex items-center justify-center w-10 h-10 rounded-full border-2 {{ $step >= 2 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300' }}">
-                            @if ($step > 2)
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 13l4 4L19 7" />
-                                </svg>
-                            @else
-                                3
-                            @endif
-                        </div>
-                        <span class="ml-2 font-medium">Review</span>
-                    </div>
-                    <div class="w-24 h-1 mx-4 {{ $step >= 3 ? 'bg-blue-600' : 'bg-gray-300' }}"></div>
-                    <div class="flex items-center {{ $step >= 3 ? 'text-blue-600' : 'text-gray-400' }}">
-                        <div
-                            class="flex items-center justify-center w-10 h-10 rounded-full border-2 {{ $step >= 3 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300' }}">
-                            3
-                        </div>
-                        <span class="ml-2 font-medium">Payment</span>
-                    </div>
+                    <span class="mt-2 sm:mt-0 sm:ml-2 text-xs sm:text-sm font-medium text-center">Shipping</span>
                 </div>
+
+                <div class="flex-1 h-1 mx-2 sm:mx-4 rounded {{ $step >= 2 ? 'bg-blue-600' : 'bg-gray-300' }}"></div>
+
+                <div
+                    class="flex flex-col sm:flex-row items-center {{ $step >= 2 ? 'text-blue-600' : 'text-gray-400' }}">
+                    <div
+                        class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 {{ $step >= 2 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white' }}">
+                        @if ($step > 2)
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                        @else
+                            2
+                        @endif
+                    </div>
+                    <span class="mt-2 sm:mt-0 sm:ml-2 text-xs sm:text-sm font-medium text-center">Review</span>
+                </div>
+
+                <div class="flex-1 h-1 mx-2 sm:mx-4 rounded {{ $step >= 3 ? 'bg-blue-600' : 'bg-gray-300' }}"></div>
+
+                <div
+                    class="flex flex-col sm:flex-row items-center {{ $step >= 3 ? 'text-blue-600' : 'text-gray-400' }}">
+                    <div
+                        class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 {{ $step >= 3 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white' }}">
+                        3
+                    </div>
+                    <span class="mt-2 sm:mt-0 sm:ml-2 text-xs sm:text-sm font-medium text-center">Payment</span>
+                </div>
+
             </div>
         </div>
 
@@ -624,7 +616,8 @@ new class extends Component {
 
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">City/Province *</label>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">City/Province
+                                            *</label>
                                         <input type="text" wire:model="city"
                                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                         @error('city')
@@ -666,13 +659,15 @@ new class extends Component {
                             @if ($this->shippingMethods->isNotEmpty())
                                 <div class="grid gap-3">
                                     @foreach ($this->shippingMethods as $shippingMethod)
-                                        <label class="relative cursor-pointer" wire:key="shipping-method-{{ $shippingMethod->id }}">
+                                        <label class="relative cursor-pointer"
+                                            wire:key="shipping-method-{{ $shippingMethod->id }}">
                                             <input type="radio" wire:model.live="selectedShippingMethodId"
                                                 value="{{ $shippingMethod->id }}" class="peer sr-only">
                                             <div
                                                 class="border-2 rounded-lg p-4 peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
                                                 <div class="flex items-center justify-between">
-                                                    <p class="font-semibold text-gray-900">{{ $shippingMethod->name }}</p>
+                                                    <p class="font-semibold text-gray-900">{{ $shippingMethod->name }}
+                                                    </p>
                                                     <p class="font-semibold text-blue-700">
                                                         ${{ number_format($shippingMethod->cost, 2) }}
                                                     </p>
@@ -686,12 +681,14 @@ new class extends Component {
                             @endif
                         </div>
 
-                        <div class="flex justify-between mt-6 pt-6 border-t">
-                            <a href="{{ route('cart.index') }}" class="text-gray-600 hover:text-gray-900 font-medium">
+                        <div
+                            class="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t w-full">
+                            <a href="{{ route('cart.index') }}"
+                                class="w-full sm:w-auto text-center text-gray-600 hover:text-gray-900 font-medium py-2">
                                 ← Back to Cart
                             </a>
                             <button wire:click="nextStep"
-                                class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                                class="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
                                 Continue to Review
                             </button>
                         </div>
@@ -736,12 +733,14 @@ new class extends Component {
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
                         </div>
 
-                        <div class="flex justify-between pt-6 border-t">
-                            <button wire:click="previousStep" class="text-gray-600 hover:text-gray-900 font-medium">
+                        <div
+                            class="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t w-full">
+                            <button wire:click="previousStep"
+                                class="w-full sm:w-auto text-center text-gray-600 hover:text-gray-900 font-medium py-2">
                                 ← Back to Shipping
                             </button>
                             <button wire:click="nextStep"
-                                class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                                class="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
                                 Continue to Payment
                             </button>
                         </div>
@@ -796,17 +795,17 @@ new class extends Component {
                                 </div>
                             </label>
                         </div>
-
-                        <div class="flex justify-between pt-6 border-t">
-                            <button wire:click="previousStep" class="text-gray-600 hover:text-gray-900 font-medium">
+                        <div
+                            class="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t w-full">
+                            <button wire:click="previousStep"
+                                class="w-full sm:w-auto text-center text-gray-600 hover:text-gray-900 font-medium py-2">
                                 ← Back to Review
                             </button>
                             <button wire:click="placeOrder"
-                                class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                                class="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-sm">
                                 Place Order
                             </button>
                         </div>
-                    </div>
                 @endif
             </div>
 
