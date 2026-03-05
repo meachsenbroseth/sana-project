@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class Product extends Model
@@ -39,6 +40,7 @@ class Product extends Model
         'meta_title',
         'meta_description',
         'view_count',
+        'embedding',
     ];
 
     protected $casts = [
@@ -181,6 +183,44 @@ class Product extends Model
     {
         $this->increment('view_count');
     }
+
+    /**
+     * Get products mathematically similar to this one using vector search.
+     */
+    public function similarProducts(int $limit = 4)
+    {
+        // Fallback: If this product hasn't been embedded yet, just return same-category items
+        if (empty($this->embedding)) {
+            return static::query()
+                ->where('id', '!=', $this->id)
+                ->where('is_active', true)
+                ->where('stock_status', 'in_stock')
+                ->where('category_id', $this->category_id)
+                ->with(['brand', 'category', 'primeImage'])
+                ->limit($limit)
+                ->get();
+        }
+
+        $cacheKey = sprintf('product:%d:similar:%d', $this->id, $limit);
+
+        return Cache::remember($cacheKey, now()->addMinutes(60), function () use ($limit) {
+            
+            // Format the PHP array into a string Postgres understands: '[0.1, -0.02, ...]'
+            $embeddingString = '[' . implode(',', $this->embedding) . ']';
+
+            return static::query()
+                ->where('id', '!=', $this->id)
+                ->where('is_active', true)
+                ->where('stock_status', 'in_stock')
+                ->whereNotNull('embedding')
+                // pgvector <-> operator calculates Euclidean distance
+                ->orderByRaw('embedding <-> ?::vector', [$embeddingString])
+                ->with(['brand', 'category', 'primeImage'])
+                ->limit($limit)
+                ->get();
+        });
+    }
+
 
     // Events
     protected static function boot(): void
