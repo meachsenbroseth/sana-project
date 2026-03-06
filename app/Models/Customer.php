@@ -3,10 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Scope;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 class Customer extends Authenticatable
 {
@@ -17,6 +16,9 @@ class Customer extends Authenticatable
         'email',
         'password',
         'phone',
+        'google_id',
+        'facebook_id', 
+        'provider',
         'date_of_birth',
         'gender',
         'is_active',
@@ -26,7 +28,6 @@ class Customer extends Authenticatable
         'password',
         'remember_token',
     ];
-
 
     protected function casts()
     {
@@ -44,8 +45,7 @@ class Customer extends Authenticatable
         $builder->where('is_active', true);
     }
 
-
-    //relationships
+    // relationships
     public function address()
     {
         return $this->hasMany(Address::class);

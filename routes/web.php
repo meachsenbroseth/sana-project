@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\FacebookAuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\CheckoutController;
 use Illuminate\Support\Facades\Route;
@@ -35,6 +36,11 @@ Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])
     ->name('google.login');
 
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
+
+Route::get('/auth/facebook', [FacebookAuthController::class, 'redirect'])
+    ->name('facebook.login');
+
+Route::get('/auth/facebook/callback', [FacebookAuthController::class, 'callback']);
 
 // Route::view('dashboard', 'dashboard')
 //     ->middleware(['auth', 'verified'])

@@ -102,11 +102,11 @@
                     </div>
 
                     <div class="mt-6 grid grid-cols-2 gap-3">
-                        <a wire:navigate href="{{ route('google.login') }}" 
+                        <a href="{{ route('google.login') }}" 
                            class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                             <span>Google</span>
                         </a>
-                        <a wire:navigate href="{{ route('home') }}" 
+                        <a href="{{ route('facebook.login') }}" 
                            class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                             <span>Facebook</span>
                         </a>
