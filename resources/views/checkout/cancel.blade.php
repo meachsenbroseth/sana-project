@@ -38,14 +38,14 @@
 
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="{{ route('checkout') }}"
+                    <a wire:navigate href="{{ route('checkout') }}"
                        class="inline-flex items-center justify-center bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition font-semibold">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                         </svg>
                         Try Payment Again
                     </a>
-                    <a href="{{ route('customer.orders.show', $order->id) }}"
+                    <a wire:navigate href="{{ route('customer.orders.show', $order->id) }}"
                        class="inline-flex items-center justify-center bg-gray-200 text-gray-900 px-8 py-3 rounded-lg hover:bg-gray-300 transition font-semibold">
                         View Order Details
                     </a>
@@ -56,7 +56,7 @@
                     <p class="text-gray-600 mb-4">Need help with your order?</p>
                     <p class="text-sm text-gray-600">
                         Contact our support team at
-                        <a href="mailto:{{ config('mail.from.address') }}" class="text-blue-600 hover:text-indigo-700 font-medium">
+                        <a wire:navigate href="mailto:{{ config('mail.from.address') }}" class="text-blue-600 hover:text-indigo-700 font-medium">
                             {{ config('mail.from.address') }}
                         </a>
                     </p>
@@ -65,7 +65,7 @@
 
             <!-- Back to Home -->
             <p class="mt-6 text-center text-gray-600">
-                <a href="{{ route('home') }}" class="text-blue-600 hover:text-indigo-700 font-medium">
+                <a wire:navigate href="{{ route('home') }}" class="text-blue-600 hover:text-indigo-700 font-medium">
                     ← Back to Home
                 </a>
             </p>

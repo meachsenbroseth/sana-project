@@ -683,7 +683,7 @@ new class extends Component {
 
                         <div
                             class="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t w-full">
-                            <a href="{{ route('cart.index') }}"
+                            <a wire:navigate href="{{ route('cart.index') }}"
                                 class="w-full sm:w-auto text-center text-gray-600 hover:text-gray-900 font-medium py-2">
                                 ← Back to Cart
                             </a>

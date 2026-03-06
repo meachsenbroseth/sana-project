@@ -147,9 +147,9 @@ new class extends Component
             <div>
                 <nav class="text-sm mb-4">
                     <ol class="flex items-center gap-2">
-                        <li><a href="{{ route('customer.dashboard') }}" class="text-gray-500 hover:text-gray-900">Account</a></li>
+                        <li><a wire:navigate href="{{ route('customer.dashboard') }}" class="text-gray-500 hover:text-gray-900">Account</a></li>
                         <li class="text-gray-400">/</li>
-                        <li><a href="{{ route('customer.orders') }}" class="text-gray-500 hover:text-gray-900">Orders</a></li>
+                        <li><a wire:navigate href="{{ route('customer.orders') }}" class="text-gray-500 hover:text-gray-900">Orders</a></li>
                         <li class="text-gray-400">/</li>
                         <li class="text-gray-900 font-medium">#{{ $order->order_number }}</li>
                     </ol>

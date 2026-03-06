@@ -12,7 +12,7 @@ new class extends Component {
 
         {{-- Logo --}}
         <div class="flex-shrink-0 flex items-center lg:w-1/4">
-            <a href="{{ route('home') }}" wire:navigate class="flex flex-shrink-0 hover:opacity-80 transition-opacity">
+            <a wire:navigate href="{{ route('home') }}" class="flex flex-shrink-0 hover:opacity-80 transition-opacity">
                 <img src="{{ asset('images/logo.png') }}" alt="Phanna Computer"
                     class="w-28 h-auto sm:w-auto sm:h-10 object-contain">
             </a>

@@ -42,17 +42,17 @@ new class extends Component {
                     <p class="text-xs text-gray-500 truncate mt-0.5">{{ $customer->email }}</p>
                 </div>
 
-                <a href="{{ route('customer.dashboard') }}" wire:navigate
+                <a wire:navigate href="{{ route('customer.dashboard') }}"
                     class="flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg hover:bg-gray-50 text-gray-700">
                     My Account
                 </a>
 
-                <a href="{{ route('customer.profile') }}" wire:navigate
+                <a wire:navigate href="{{ route('customer.profile') }}"
                     class="flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg hover:bg-gray-50 text-gray-700">
                     Profile
                 </a>
 
-                <a href="{{ route('customer.orders') }}" wire:navigate
+                <a wire:navigate href="{{ route('customer.orders') }}"
                     class="flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg hover:bg-gray-50 text-gray-700">
                     My Orders
                 </a>
@@ -68,7 +68,7 @@ new class extends Component {
             </div>
         </div>
     @else
-        <a href="{{ route('login') }}" wire:navigate class="flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
+        <a wire:navigate href="{{ route('login') }}" class="flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
             <span class="text-sm font-medium text-gray-700">Login</span>
         </a>
     @endauth

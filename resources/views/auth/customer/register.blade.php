@@ -11,7 +11,7 @@
         <div class="max-w-md w-full">
             <!-- Logo -->
             <div class="text-center mb-8">
-                <a href="{{ route('home') }}" class="text-3xl font-bold text-blue-600">
+                <a wire:navigate href="{{ route('home') }}" class="text-3xl font-bold text-blue-600">
                     {{ config('app.name') }}
                 </a>
                 <h2 class="mt-6 text-3xl font-bold text-gray-900">
@@ -19,7 +19,7 @@
                 </h2>
                 <p class="mt-2 text-sm text-gray-600">
                     Already have an account?
-                    <a href="{{ route('login') }}" class="font-medium text-blue-600 hover:text-indigo-500">
+                    <a wire:navigate href="{{ route('login') }}" class="font-medium text-blue-600 hover:text-indigo-500">
                         Sign in
                     </a>
                 </p>
@@ -113,9 +113,9 @@
                                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-indigo-500 mt-1">
                             <span class="ml-2 text-sm text-gray-600">
                                 I agree to the 
-                                <a href="#" class="text-blue-600 hover:text-indigo-500">Terms and Conditions</a>
+                                <a wire:navigate href="#" class="text-blue-600 hover:text-indigo-500">Terms and Conditions</a>
                                 and
-                                <a href="#" class="text-blue-600 hover:text-indigo-500">Privacy Policy</a>
+                                <a wire:navigate href="#" class="text-blue-600 hover:text-indigo-500">Privacy Policy</a>
                             </span>
                         </label>
                     </div>
@@ -141,7 +141,7 @@
 
             <!-- Back to Home -->
             <p class="mt-6 text-center text-sm text-gray-600">
-                <a href="{{ route('home') }}" class="font-medium text-blue-600 hover:text-indigo-500">
+                <a wire:navigate href="{{ route('home') }}" class="font-medium text-blue-600 hover:text-indigo-500">
                     ← Back to Home
                 </a>
             </p>

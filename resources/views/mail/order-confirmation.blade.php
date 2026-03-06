@@ -74,9 +74,9 @@
         <p class="strong">Here's what you ordered:</p>
 
         <div class="links-container">
-            <a href="{{ route('customer.orders.show', $order->id) }}">View order</a>
+            <a wire:navigate href="{{ route('customer.orders.show', $order->id) }}">View order</a>
             <span style="color: #cbd5e1;">|</span>
-            <a href="{{ route('home') }}" style="margin-left: 15px;">Go to our shop</a>
+            <a wire:navigate href="{{ route('home') }}" style="margin-left: 15px;">Go to our shop</a>
         </div>
 
         <table class="items-table">

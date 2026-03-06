@@ -96,7 +96,7 @@ new class extends Component {
                                 x-transition:leave-start="opacity-100 transform scale-100"
                                 x-transition:leave-end="opacity-0">
                                 <template x-if="banner.link">
-                                    <a :href="banner.link" class="block h-full w-full">
+                                    <a wire:navigate :href="banner.link" class="block h-full w-full">
                                         <img :src="banner.image" :alt="banner.title ? banner.title : `Homepage banner ${index + 1}`"
                                             class="h-full w-full object-cover">
                                     </a>
@@ -125,7 +125,7 @@ new class extends Component {
                 <div class="flex flex-wrap gap-4 justify-between items-center mb-6 sm:mb-8">
                     <h2 class="text-xl sm:text-2xl font-bold text-gray-900 uppercase tracking-wide">Shop Top Categories
                     </h2>
-                    <a href="{{ route('products.index') }}"
+                    <a wire:navigate href="{{ route('products.index') }}"
                         class="px-5 py-2.5 bg-white border border-gray-200 rounded-full text-sm font-semibold text-gray-900 hover:border-gray-900 transition-colors shadow-sm">
                         All Products →
                     </a>
@@ -133,7 +133,7 @@ new class extends Component {
 
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     @foreach ($topCategories as $index => $category)
-                        <a href="{{ route('products.index', ['category' => $category->slug]) }}"
+                        <a wire:navigate href="{{ route('products.index', ['category' => $category->slug]) }}"
                             class="relative group rounded-2xl sm:rounded-[2rem] overflow-hidden aspect-[3/4] sm:aspect-[4/5] block bg-gray-900 shadow-sm">
                             @php
                                 $placeholders = [
@@ -205,7 +205,7 @@ new class extends Component {
                     <div x-ref="slider"
                         class="flex overflow-x-auto gap-4 sm:gap-6 snap-x snap-mandatory hide-scrollbar w-full py-4 px-2 scroll-smooth">
                         @foreach ($brands as $brand)
-                            <a href="{{ route('products.index', ['brand' => $brand->slug]) }}"
+                            <a wire:navigate href="{{ route('products.index', ['brand' => $brand->slug]) }}"
                                 class="flex-none w-40 sm:w-48 h-24 sm:h-28 bg-white border border-gray-100 rounded-xl flex items-center justify-center snap-center shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                                 @if (isset($brand->image) && $brand->image)
                                     <img src="{{ asset('storage/' . $brand->image) }}" alt="{{ $brand->name }}"
@@ -235,7 +235,7 @@ new class extends Component {
                 <div
                     class="flex flex-wrap gap-2 justify-between items-end border-b border-gray-200 pb-3 sm:pb-4 mb-5 sm:mb-6">
                     <h3 class="text-xl sm:text-2xl font-bold text-gray-900">Featured Products</h3>
-                    <a href="{{ route('products.index') }}"
+                    <a wire:navigate href="{{ route('products.index') }}"
                         class="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-800">View All →</a>
                 </div>
 
@@ -252,7 +252,7 @@ new class extends Component {
                 <div
                     class="flex flex-wrap gap-2 justify-between items-end border-b border-gray-200 pb-3 sm:pb-4 mb-5 sm:mb-6">
                     <h2 class="text-xl sm:text-2xl font-bold text-gray-900">New Arrivals</h2>
-                    <a href="{{ route('products.index') }}"
+                    <a wire:navigate href="{{ route('products.index') }}"
                         class="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-800">View All →</a>
                 </div>
 

@@ -30,7 +30,7 @@ new class extends Component {
 ?>
 
 <div>
-    <a href="{{ route('cart.index') }}" wire:navigate
+    <a wire:navigate href="{{ route('cart.index') }}"
         class="{{ $floating ? 'group relative flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg shadow-blue-600/30 transition hover:scale-105 hover:bg-blue-700' : 'relative' }}">
         <svg class="{{ $floating ? 'h-6 w-6 text-white' : 'h-5 w-5 text-gray-700' }}" xmlns="http://www.w3.org/2000/svg"
             width="24" height="24"

@@ -165,7 +165,7 @@ new class extends Component {
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <nav class="mb-6 text-sm">
                 <ol class="flex items-center gap-2">
-                    <li><a href="{{ route('home') }}" class="text-gray-500 hover:text-blue-600">Home</a></li>
+                    <li><a wire:navigate href="{{ route('home') }}" class="text-gray-500 hover:text-blue-600">Home</a></li>
                     <li class="text-gray-400">/</li>
                     <li class="text-gray-900 font-medium">Shop</li>
                 </ol>

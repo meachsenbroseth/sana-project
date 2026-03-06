@@ -96,7 +96,7 @@
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="{{ route('customer.orders.show', $order->id) }}"
+                    <a wire:navigate href="{{ route('customer.orders.show', $order->id) }}"
                         class="inline-flex items-center justify-center bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition font-semibold">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -104,7 +104,7 @@
                         </svg>
                         View Order Details
                     </a>
-                    <a href="{{ route('products.index') }}"
+                    <a wire:navigate href="{{ route('products.index') }}"
                         class="inline-flex items-center justify-center bg-gray-200 text-gray-900 px-8 py-3 rounded-lg hover:bg-gray-300 transition font-semibold">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -142,7 +142,7 @@
             </div>
 
             <p class="mt-6 text-center text-gray-600">
-                <a href="{{ route('home') }}" class="text-blue-600 hover:text-indigo-700 font-medium">
+                <a wire:navigate href="{{ route('home') }}" class="text-blue-600 hover:text-indigo-700 font-medium">
                     ← Back to Home
                 </a>
             </p>

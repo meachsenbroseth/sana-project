@@ -93,11 +93,11 @@ new class extends Component {
         <!-- Breadcrumb -->
         <nav class="mb-6 text-sm">
             <ol class="flex items-center gap-2">
-                <li><a href="{{ route('home') }}" class="text-gray-500 hover:text-blue-600">Home</a></li>
+                <li><a wire:navigate href="{{ route('home') }}" class="text-gray-500 hover:text-blue-600">Home</a></li>
                 <li class="text-gray-400">/</li>
-                <li><a href="{{ route('products.index') }}" class="text-gray-500 hover:text-blue-600">Shop</a></li>
+                <li><a wire:navigate href="{{ route('products.index') }}" class="text-gray-500 hover:text-blue-600">Shop</a></li>
                 <li class="text-gray-400">/</li>
-                <li><a href="{{ route('products.index', ['category' => $product->category->slug]) }}"
+                <li><a wire:navigate href="{{ route('products.index', ['category' => $product->category->slug]) }}"
                         class="text-gray-500 hover:text-blue-600">{{ $product->category->name }}</a></li>
                 <li class="text-gray-400">/</li>
                 <li class="text-gray-900 font-medium">{{ $product->name }}</li>
@@ -333,7 +333,7 @@ new class extends Component {
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600">Category:</span>
-                            <a href="{{ route('products.index', ['category' => $product->category->slug]) }}"
+                            <a wire:navigate href="{{ route('products.index', ['category' => $product->category->slug]) }}"
                                 class="font-medium text-blue-600 hover:text-indigo-700">
                                 {{ $product->category->name }}
                             </a>
@@ -341,7 +341,7 @@ new class extends Component {
                         @if ($product->brand)
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Brand:</span>
-                                <a href="{{ route('products.index', ['brand' => $product->brand->slug]) }}"
+                                <a wire:navigate href="{{ route('products.index', ['brand' => $product->brand->slug]) }}"
                                     class="font-medium text-blue-600 hover:text-indigo-700">
                                     {{ $product->brand->name }}
                                 </a>

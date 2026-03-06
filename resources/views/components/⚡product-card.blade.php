@@ -48,7 +48,7 @@ new class extends Component {
 ?>
 <div>
     <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
-        <a href="{{ route('products.show', $this->product->slug) }}">
+        <a wire:navigate href="{{ route('products.show', $this->product->slug) }}">
             <!-- Product Image -->
             <div class="relative aspect-square overflow-hidden bg-gray-100">
                 @if ($product->primeImage)

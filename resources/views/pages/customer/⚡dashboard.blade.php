@@ -136,7 +136,7 @@ new class extends Component {
                 <div class="bg-white rounded-lg shadow-sm p-6">
                     <h2 class="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
                     <div class="space-y-3">
-                        <a href="{{ route('customer.orders') }}"
+                        <a wire:navigate href="{{ route('customer.orders') }}"
                             class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition group">
                             <div
                                 class="w-10 h-10 bg-indigo-100 text-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition">
@@ -151,7 +151,7 @@ new class extends Component {
                             </div>
                         </a>
 
-                        <a href="{{ route('customer.profile') }}"
+                        <a wire:navigate href="{{ route('customer.profile') }}"
                             class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition group">
                             <div
                                 class="w-10 h-10 bg-indigo-100 text-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition">
@@ -166,7 +166,7 @@ new class extends Component {
                             </div>
                         </a>
 
-                        <a href="{{ route('products.index') }}"
+                        <a wire:navigate href="{{ route('products.index') }}"
                             class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition group">
                             <div
                                 class="w-10 h-10 bg-indigo-100 text-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition">
@@ -206,7 +206,7 @@ new class extends Component {
                 <div class="bg-white rounded-lg shadow-sm p-6">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-xl font-bold text-gray-900">Recent Orders</h2>
-                        <a href="{{ route('customer.orders') }}"
+                        <a wire:navigate href="{{ route('customer.orders') }}"
                             class="text-blue-600 hover:text-indigo-700 font-medium text-sm">
                             View All →
                         </a>
@@ -215,7 +215,7 @@ new class extends Component {
                     @if ($this->recentOrders->count() > 0)
                         <div class="space-y-4">
                             @foreach ($this->recentOrders as $order)
-                                <a href="{{ route('customer.orders.show', $order->id) }}"
+                                <a wire:navigate href="{{ route('customer.orders.show', $order->id) }}"
                                     class="block border rounded-lg p-4 hover:border-blue-600 hover:shadow-md transition">
 
                                     <div class="flex items-center justify-between mb-3">
@@ -277,7 +277,7 @@ new class extends Component {
                                     d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                             </svg>
                             <p class="text-gray-600 mb-4">No orders yet</p>
-                            <a href="{{ route('products.index') }}"
+                            <a wire:navigate href="{{ route('products.index') }}"
                                 class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">
                                 Start Shopping
                             </a>

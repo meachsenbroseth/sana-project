@@ -195,7 +195,7 @@ new class extends Component
             <h1 class="text-3xl font-bold text-gray-900 mb-2">My Profile</h1>
             <nav class="text-sm">
                 <ol class="flex items-center gap-2">
-                    <li><a href="{{ route('customer.dashboard') }}" class="text-gray-500 hover:text-blue-600">Account</a></li>
+                    <li><a wire:navigate href="{{ route('customer.dashboard') }}" class="text-gray-500 hover:text-blue-600">Account</a></li>
                     <li class="text-gray-400">/</li>
                     <li class="text-gray-900 font-medium">Profile</li>
                 </ol>

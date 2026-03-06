@@ -11,7 +11,7 @@
         <div class="max-w-md w-full">
             <!-- Logo -->
             <div class="text-center mb-8">
-                <a href="{{ route('home') }}" class="text-3xl font-bold text-blue-600">
+                <a wire:navigate href="{{ route('home') }}" class="text-3xl font-bold text-blue-600">
                     {{ config('app.name') }}
                 </a>
                 <h2 class="mt-6 text-3xl font-bold text-gray-900">
@@ -19,7 +19,7 @@
                 </h2>
                 <p class="mt-2 text-sm text-gray-600">
                     Don't have an account?
-                    <a href="{{ route('register') }}" class="font-medium text-blue-600 hover:text-indigo-500">
+                    <a wire:navigate href="{{ route('register') }}" class="font-medium text-blue-600 hover:text-indigo-500">
                         Sign up
                     </a>
                 </p>
@@ -77,7 +77,7 @@
                             <span class="ml-2 text-sm text-gray-600">Remember me</span>
                         </label>
 
-                        <a href="{{ route('password.request') }}" 
+                        <a wire:navigate href="{{ route('password.request') }}" 
                            class="text-sm font-medium text-blue-600 hover:text-indigo-500">
                             Forgot password?
                         </a>
@@ -102,11 +102,11 @@
                     </div>
 
                     <div class="mt-6 grid grid-cols-2 gap-3">
-                        <a href="{{ route('home') }}" 
+                        <a wire:navigate href="{{ route('home') }}" 
                            class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                             <span>Google</span>
                         </a>
-                        <a href="{{ route('home') }}" 
+                        <a wire:navigate href="{{ route('home') }}" 
                            class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                             <span>Facebook</span>
                         </a>
@@ -116,7 +116,7 @@
 
             <!-- Back to Home -->
             <p class="mt-6 text-center text-sm text-gray-600">
-                <a href="{{ route('home') }}" class="font-medium text-blue-600 hover:text-indigo-500">
+                <a wire:navigate href="{{ route('home') }}" class="font-medium text-blue-600 hover:text-indigo-500">
                     ← Back to Home
                 </a>
             </p>

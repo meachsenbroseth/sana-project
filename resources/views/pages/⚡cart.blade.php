@@ -75,7 +75,7 @@ new class extends Component {
         <!-- Breadcrumb -->
         <nav class="mb-6 text-sm">
             <ol class="flex items-center gap-2">
-                <li><a href="{{ route('home') }}" class="text-gray-500 hover:text-blue-600">Home</a></li>
+                <li><a wire:navigate href="{{ route('home') }}" class="text-gray-500 hover:text-blue-600">Home</a></li>
                 <li class="text-gray-400">/</li>
                 <li class="text-gray-900 font-medium">Shopping Cart</li>
             </ol>
@@ -167,7 +167,7 @@ new class extends Component {
                             class="text-red-600 hover:text-red-700 font-medium">
                             Clear Cart
                         </button>
-                        <a href="{{ route('products.index') }}"
+                        <a wire:navigate href="{{ route('products.index') }}"
                             class="text-blue-600 hover:text-blue-700 font-medium">
                             ← Continue Shopping
                         </a>
@@ -200,17 +200,17 @@ new class extends Component {
                         </div>
 
                         @auth('customer')
-                            <a href="/checkout"
+                            <a wire:navigate href="/checkout"
                                 class="block w-full bg-blue-600 text-white text-center py-3 px-6 rounded-lg hover:bg-blue-700 transition font-semibold">
                                 Proceed to Checkout
                             </a>
                         @else
-                            <a href="{{ route('login') }}"
+                            <a wire:navigate href="{{ route('login') }}"
                                 class="block w-full bg-blue-600 text-white text-center py-3 px-6 rounded-lg hover:bg-blue-700 transition font-semibold">
                                 Login to Checkout
                             </a>
                             <p class="text-sm text-gray-600 text-center mt-3">
-                                Or <a href="{{ route('register') }}" class="text-blue-600 hover:text-blue-700">create an
+                                Or <a wire:navigate href="{{ route('register') }}" class="text-blue-600 hover:text-blue-700">create an
                                     account</a>
                             </p>
                         @endauth
@@ -257,7 +257,7 @@ new class extends Component {
                 </svg>
                 <h2 class="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
                 <p class="text-gray-600 mb-6">Add some products to get started!</p>
-                <a href="{{ route('products.index') }}"
+                <a wire:navigate href="{{ route('products.index') }}"
                     class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
                     Start Shopping
                 </a>
