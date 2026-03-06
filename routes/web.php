@@ -4,6 +4,7 @@ use App\Http\Controllers\CheckoutController;
 use Illuminate\Support\Facades\Route;
 
 Route::livewire('/', 'pages::homepage')->name('home');
+Route::livewire('/about', 'pages::about-page')->name('about');
 Route::livewire('/products', 'pages::product-listing')->name('products.index');
 Route::livewire('/products/{slug}', 'pages::product-details')->name('products.show');
 Route::livewire('/chatbot', 'pages::chatbot')->name('chatbot');

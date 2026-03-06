@@ -57,11 +57,11 @@ new class extends Component {
                 class="pe-24"
             />
 
-            @if (trim($searchQuery) !== '')
+            {{-- @if (trim($searchQuery) !== '')
                 <flux:button type="submit" variant="primary" class="absolute right-1 top-1/2 -translate-y-1/2 h-8">
                     Search
                 </flux:button>
-            @endif
+            @endif --}}
 
             @if (mb_strlen(trim($searchQuery)) >= 2)
                 <div class="absolute mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg z-50 overflow-hidden">
