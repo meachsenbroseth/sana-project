@@ -1,14 +1,37 @@
 <?php
 
+use App\Models\Product;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 new class extends Component {
     public string $searchQuery = '';
 
-    public function submitSearch()
+    #[Computed]
+    public function suggestedProducts(): Collection
     {
-        if (!empty(trim($this->searchQuery))) {
-            $this->redirectRoute('products.index', ['search' => $this->searchQuery], navigate: true);
+        $searchTerm = trim($this->searchQuery);
+
+        if (mb_strlen($searchTerm) < 2) {
+            return new Collection();
+        }
+
+        return Product::search($searchTerm)
+            ->query(function (Builder $query): void {
+                $query->active()->with(['brand']);
+            })
+            ->take(5)
+            ->get();
+    }
+
+    public function submitSearch(): void
+    {
+        $searchTerm = trim($this->searchQuery);
+
+        if ($searchTerm !== '') {
+            $this->redirectRoute('products.index', ['search' => $searchTerm], navigate: true);
         }
     }
 };
@@ -25,25 +48,34 @@ new class extends Component {
 
     <div :class="searchOpen ? 'fixed top-16 left-0 w-full px-4 py-3 bg-white shadow-md z-50 border-b border-gray-100' : 'hidden sm:block sm:relative sm:w-full'" x-cloak>
         <form wire:submit="submitSearch" class="relative w-full">
-            <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"
-                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-
-            <input type="text"
-                wire:model="searchQuery"
+            <flux:input
+                type="text"
+                wire:model.live.debounce.300ms="searchQuery"
+                icon="magnifying-glass"
                 placeholder="Search products..."
-                class="pl-10 w-full h-10 rounded-md border border-gray-300 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-black focus:border-black focus:outline-none px-3 text-sm transition-colors"
                 autocomplete="off"
-                required
-            >
+                class="pe-24"
+            />
 
-            @if($searchQuery)
-                <button type="submit" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black text-white p-1.5 rounded text-xs font-bold hover:bg-gray-800 transition">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                </button>
+            @if (trim($searchQuery) !== '')
+                <flux:button type="submit" variant="primary" class="absolute right-1 top-1/2 -translate-y-1/2 h-8">
+                    Search
+                </flux:button>
+            @endif
+
+            @if (mb_strlen(trim($searchQuery)) >= 2)
+                <div class="absolute mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg z-50 overflow-hidden">
+                    @forelse ($this->suggestedProducts as $product)
+                        <a href="{{ route('products.show', $product->slug) }}"
+                            wire:navigate
+                            class="block border-b border-gray-100 last:border-b-0 px-3 py-2 hover:bg-gray-50 transition-colors">
+                            <p class="text-sm font-medium text-gray-900">{{ $product->name }}</p>
+                            <p class="text-xs text-gray-500">{{ $product->brand?->name ?? 'Unknown brand' }}</p>
+                        </a>
+                    @empty
+                        <p class="px-3 py-2 text-sm text-gray-500">No products found.</p>
+                    @endforelse
+                </div>
             @endif
         </form>
     </div>

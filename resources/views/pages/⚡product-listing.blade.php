@@ -1,12 +1,14 @@
 <?php
 
-use Livewire\Component;
-use Livewire\Attributes\Url;
-use Livewire\Attributes\Computed;
-use Livewire\WithPagination;
-use App\Models\Product;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 new class extends Component {
     use WithPagination;
@@ -45,19 +47,38 @@ new class extends Component {
     }
 
     #[Computed]
-    public function products()
+    public function products(): LengthAwarePaginator
     {
+        $searchTerm = trim($this->search);
+        $searchMatchedProductIds = [];
+
+        if ($searchTerm !== '') {
+            $searchMatchedProductIds = Product::search($searchTerm)
+                ->query(function (Builder $query): void {
+                    $query->active();
+                })
+                ->keys()
+                ->all();
+
+            if ($searchMatchedProductIds === []) {
+                return Product::query()
+                    ->whereRaw('1 = 0')
+                    ->paginate(9);
+            }
+        }
+
         return Product::active()
-            ->when($this->category, fn($q) => $q->whereHas('category', fn($c) => $c->where('slug', $this->category)))
-            ->when($this->brand, fn($q) => $q->whereHas('brand', fn($b) => $b->where('slug', $this->brand)))
-            ->when($this->featured, fn($q) => $q->where('is_featured', true))
-            ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
+            ->with(['brand', 'category', 'primeImage'])
+            ->when($this->category, fn (Builder $query) => $query->whereHas('category', fn (Builder $categoryQuery) => $categoryQuery->where('slug', $this->category)))
+            ->when($this->brand, fn (Builder $query) => $query->whereHas('brand', fn (Builder $brandQuery) => $brandQuery->where('slug', $this->brand)))
+            ->when($this->featured, fn (Builder $query) => $query->where('is_featured', true))
+            ->when($searchTerm !== '', fn (Builder $query) => $query->whereKey($searchMatchedProductIds))
             ->whereBetween('price', [$this->minPrice, $this->maxPrice])
-            ->when($this->sort === 'price_low', fn($q) => $q->orderBy('price'))
-            ->when($this->sort === 'price_high', fn($q) => $q->orderByDesc('price'))
-            ->when($this->sort === 'newest', fn($q) => $q->latest())
-            ->when($this->sort === 'name_asc', fn($q) => $q->orderBy('name'))
-            ->when($this->sort === 'name_desc', fn($q) => $q->orderByDesc('name'))
+            ->when($this->sort === 'price_low', fn (Builder $query) => $query->orderBy('price'))
+            ->when($this->sort === 'price_high', fn (Builder $query) => $query->orderByDesc('price'))
+            ->when($this->sort === 'newest', fn (Builder $query) => $query->latest())
+            ->when($this->sort === 'name_asc', fn (Builder $query) => $query->orderBy('name'))
+            ->when($this->sort === 'name_desc', fn (Builder $query) => $query->orderByDesc('name'))
             ->paginate(9);
     }
 

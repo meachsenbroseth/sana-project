@@ -11,11 +11,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Laravel\Scout\Searchable;
 
 class Product extends Model
 {
-    use SoftDeletes;
-    
+    use Searchable, SoftDeletes;
 
     protected $withCount = [
         'approvedReviews as reviews_count',
@@ -152,6 +152,32 @@ class Product extends Model
             ->latest();
     }
 
+    public function searchableAs(): string
+    {
+        return 'products_index';
+    }
+
+    public function shouldBeSearchable(): bool
+    {
+        return $this->is_active;
+    }
+
+    public function makeAllSearchableUsing(Builder $query): Builder
+    {
+        return $query->with(['brand:id,name', 'category:id,name']);
+    }
+
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => (string) $this->getKey(),
+            'name' => $this->name,
+            'brand' => $this->brand?->name,
+            'category' => $this->category?->name,
+            'description' => strip_tags((string) $this->description),
+        ];
+    }
+
     /**
      * Get the text representation used for generating embeddings (name, brand, category, description).
      */
@@ -205,9 +231,9 @@ class Product extends Model
         $cacheKey = sprintf('product:%d:similar:%d', $this->id, $limit);
 
         return Cache::remember($cacheKey, now()->addMinutes(60), function () use ($limit) {
-            
+
             // Format the PHP array into a string Postgres understands: '[0.1, -0.02, ...]'
-            $embeddingString = '[' . implode(',', $this->embedding) . ']';
+            $embeddingString = '['.implode(',', $this->embedding).']';
 
             return static::query()
                 ->where('id', '!=', $this->id)
@@ -221,7 +247,6 @@ class Product extends Model
                 ->get();
         });
     }
-
 
     // Events
     protected static function boot(): void
