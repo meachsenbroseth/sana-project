@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 Route::livewire('/', 'pages::homepage')->name('home');
 Route::livewire('/products', 'pages::product-listing')->name('products.index');
 Route::livewire('/products/{slug}', 'pages::product-details')->name('products.show');
-Route::livewire('/product-coach', 'pages::product-coach')->name('products.coach');
+Route::livewire('/chatbot', 'pages::chatbot')->name('chatbot');
 Route::livewire('/cart', 'pages::cart')->name('cart.index');
 
 Route::middleware('auth:customer')->group(function () {
@@ -29,8 +29,8 @@ Route::middleware('auth:customer')->group(function () {
     })->name('logout');
 });
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+// Route::view('dashboard', 'dashboard')
+//     ->middleware(['auth', 'verified'])
+//     ->name('dashboard');
 
 require __DIR__.'/settings.php';

@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 class Product extends Model
 {
     use SoftDeletes;
+    
 
     protected $withCount = [
         'approvedReviews as reviews_count',

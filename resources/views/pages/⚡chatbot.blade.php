@@ -41,7 +41,7 @@ new class extends Component {
         $this->botMessages = session()->get('product_coach_messages', [
             [
                 'role' => 'assistant',
-                'content' => 'Hi! I can help you compare and choose products from our catalog. What are you looking for?',
+                'content' => 'សួស្តី! ខ្ញុំអាចជួយអ្នកប្រៀបធៀប និងជ្រើសរើសផលិតផលពីហាងរបស់យើង។ តើអ្នកកំពុងស្វែងរកអ្វី?',
             ],
         ]);
     }
@@ -57,8 +57,8 @@ new class extends Component {
         $validated = $this->validate([
             'question' => ['required', 'string', 'max:500'],
         ], [
-            'question.required' => 'Please enter a question first.',
-            'question.max' => 'Please keep your question under 500 characters.',
+            'question.required' => 'សូមបញ្ចូលសំណួរជាមុនសិន។',
+            'question.max' => 'សូមកំណត់សំណួរអ្នកឲ្យក្រោម 500 តួអក្សរ។',
         ]);
 
         $question = trim($validated['question']);
@@ -87,12 +87,12 @@ new class extends Component {
             $answer = trim((string) ($result['value'] ?? $result->text ?? ''));
 
             if ($answer === '') {
-                $answer = 'I could not generate a response right now. Please try again.';
+                $answer = 'ខ្ញុំមិនអាចបង្កើតចម្លើយបាននៅពេលនេះទេ។ សូមព្យាយាមម្ដងទៀត។';
             }
         } catch (\Throwable $exception) {
             report($exception);
 
-            $answer = 'I ran into an issue while answering. Please try again in a moment.';
+            $answer = 'មានបញ្ហាកើតឡើងពេលកំពុងឆ្លើយ។ សូមព្យាយាមម្ដងទៀតនៅពេលបន្តិចទៀត។';
         }
 
         $this->botMessages[] = [
@@ -110,28 +110,28 @@ new class extends Component {
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <nav class="mb-6 text-sm">
             <ol class="flex items-center gap-2">
-                <li><a href="{{ route('home') }}" wire:navigate class="text-gray-500 hover:text-blue-600">Home</a></li>
+                <li><a href="{{ route('home') }}" wire:navigate class="text-gray-500 hover:text-blue-600">ទំព័រដើម</a></li>
                 <li class="text-gray-400">/</li>
-                <li class="text-gray-900 font-medium">Product Coach</li>
+                <li class="text-gray-900 font-medium">Chatbot</li>
             </ol>
         </nav>
 
         <div class="mb-6 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
-            <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl">Product Coach</h1>
+            <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl">ជំនួយការជ្រើសរើសផលិតផល</h1>
             <p class="mt-2 text-sm text-gray-700 sm:text-base">
-                Ask about laptops, accessories, and product comparisons across our catalog.
-                Catalog context loaded: <span class="font-semibold">{{ count($products) }} products</span>.
+                អ្នកអាចសួរអំពី Laptop, Accessories និងការប្រៀបធៀបផលិតផលក្នុងហាងរបស់យើង។
+                ទិន្នន័យផលិតផលដែលបានផ្ទុក: <span class="font-semibold">{{ count($products) }} ផលិតផល</span>.
             </p>
             <p class="mt-2 text-sm text-gray-600">
-                Try: "Best gaming laptop under $1500" or "Compare two options for video editing".
+                ឧទាហរណ៍: "Laptop Gaming ល្អបំផុតក្រោម $1500" ឬ "ប្រៀបធៀបជម្រើសពីរដែលសមស្របសម្រាប់ Video Editing"
             </p>
         </div>
 
         <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <div class="mb-4 flex items-center justify-between">
-                <h2 class="text-xl font-bold text-gray-900">Chat</h2>
+                <h2 class="text-xl font-bold text-gray-900">ជជែក</h2>
                 <button wire:click="clearChat" class="text-sm font-medium text-blue-600 hover:text-blue-700">
-                    Clear Chat
+                    លុបការជជែក
                 </button>
             </div>
 
@@ -149,10 +149,10 @@ new class extends Component {
             <form wire:submit="askProductCoach" class="mt-4 space-y-3">
                 <div>
                     <label for="product-coach-question" class="mb-1 block text-sm font-medium text-gray-700">
-                        Ask Product Coach
+                        សួរជំនួយការផលិតផល
                     </label>
                     <textarea id="product-coach-question" wire:model="question" rows="3"
-                        placeholder="Example: Which option has better value for gaming?"
+                        placeholder="ឧទាហរណ៍: មួយណាមានតម្លៃសមរម្យសម្រាប់ Gaming?"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                     @error('question')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -163,10 +163,10 @@ new class extends Component {
                     <button type="submit"
                         class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                         wire:loading.attr="disabled" wire:target="askProductCoach">
-                        Ask Coach
+                        សួរ
                     </button>
                     <p wire:loading wire:target="askProductCoach" class="text-sm text-gray-500">
-                        Thinking...
+                        កំពុងគិត...
                     </p>
                 </div>
             </form>

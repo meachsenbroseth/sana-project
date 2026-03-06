@@ -96,13 +96,33 @@ class ComputerStoreSeeder extends Seeder
     private function seedProducts(array $categoryMap, array $brandMap): array
     {
         $rows = [
+            // --- Laptops ---
             ['name' => 'Dell XPS 15', 'slug' => 'dell-xps-15', 'sku' => 'LAP-DELL-XPS15', 'category_slug' => 'laptops', 'brand_slug' => 'dell', 'description' => '15-inch premium laptop.', 'price' => 1699.99, 'compare_price' => 1799.99, 'cost_price' => 1400.00, 'stock_quantity' => 20, 'low_stock_threshold' => 5, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => true],
+            ['name' => 'ASUS ROG Zephyrus G14', 'slug' => 'asus-rog-zephyrus-g14', 'sku' => 'LAP-ASUS-G14', 'category_slug' => 'laptops', 'brand_slug' => 'asus', 'description' => 'Ultra-portable 14-inch gaming laptop with Ryzen 9.', 'price' => 1499.00, 'compare_price' => 1649.00, 'cost_price' => 1250.00, 'stock_quantity' => 15, 'low_stock_threshold' => 3, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => true],
+            ['name' => 'HP Spectre x360', 'slug' => 'hp-spectre-x360', 'sku' => 'LAP-HP-SPEC360', 'category_slug' => 'laptops', 'brand_slug' => 'hp', 'description' => 'Premium 2-in-1 convertible laptop.', 'price' => 1349.99, 'compare_price' => 1499.99, 'cost_price' => 1100.00, 'stock_quantity' => 10, 'low_stock_threshold' => 2, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => false],
+            ['name' => 'MSI Stealth 16 Studio', 'slug' => 'msi-stealth-16', 'sku' => 'LAP-MSI-ST16', 'category_slug' => 'laptops', 'brand_slug' => 'msi', 'description' => 'Slim and powerful laptop for creators and gamers.', 'price' => 1899.00, 'compare_price' => 1999.00, 'cost_price' => 1600.00, 'stock_quantity' => 8, 'low_stock_threshold' => 2, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => true],
+
+            // --- Desktop PCs ---
             ['name' => 'HP Pavilion Gaming Desktop', 'slug' => 'hp-pavilion-gaming-desktop', 'sku' => 'DESK-HP-PAVILION', 'category_slug' => 'desktop-pcs', 'brand_slug' => 'hp', 'description' => 'Gaming desktop with dedicated graphics.', 'price' => 1199.99, 'compare_price' => 1299.99, 'cost_price' => 980.00, 'stock_quantity' => 12, 'low_stock_threshold' => 4, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => true],
+            ['name' => 'MSI Infinite RS Desktop', 'slug' => 'msi-infinite-rs-desktop', 'sku' => 'DESK-MSI-INFINITE-RS', 'category_slug' => 'desktop-pcs', 'brand_slug' => 'msi', 'description' => 'Workstation-grade desktop for creators.', 'price' => 2399.00, 'compare_price' => 2599.00, 'cost_price' => 2100.00, 'stock_quantity' => 7, 'low_stock_threshold' => 2, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => true],
+            ['name' => 'Dell Alienware Aurora R15', 'slug' => 'dell-alienware-aurora-r15', 'sku' => 'DESK-DELL-AURR15', 'category_slug' => 'desktop-pcs', 'brand_slug' => 'dell', 'description' => 'High-performance liquid-cooled gaming desktop.', 'price' => 2899.99, 'compare_price' => null, 'cost_price' => 2400.00, 'stock_quantity' => 4, 'low_stock_threshold' => 2, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => true],
+
+            // --- Computer Components ---
             ['name' => 'ASUS GeForce RTX 4070', 'slug' => 'asus-geforce-rtx-4070', 'sku' => 'COMP-ASUS-RTX4070', 'category_slug' => 'computer-components', 'brand_slug' => 'asus', 'description' => 'High-end graphics card for 1440p gaming.', 'price' => 599.99, 'compare_price' => 649.99, 'cost_price' => 520.00, 'stock_quantity' => 15, 'low_stock_threshold' => 5, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => true],
             ['name' => 'Intel Core i7-14700K', 'slug' => 'intel-core-i7-14700k', 'sku' => 'COMP-INTEL-I714700K', 'category_slug' => 'computer-components', 'brand_slug' => 'intel', 'description' => 'Desktop processor for demanding workloads.', 'price' => 429.99, 'compare_price' => 469.99, 'cost_price' => 360.00, 'stock_quantity' => 25, 'low_stock_threshold' => 8, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => false],
-            ['name' => 'MSI Infinite RS Desktop', 'slug' => 'msi-infinite-rs-desktop', 'sku' => 'DESK-MSI-INFINITE-RS', 'category_slug' => 'desktop-pcs', 'brand_slug' => 'msi', 'description' => 'Workstation-grade desktop for creators.', 'price' => 2399.00, 'compare_price' => 2599.00, 'cost_price' => 2100.00, 'stock_quantity' => 7, 'low_stock_threshold' => 2, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => true],
+            ['name' => 'Intel Core i9-14900K', 'slug' => 'intel-core-i9-14900k', 'sku' => 'COMP-INTEL-I914900K', 'category_slug' => 'computer-components', 'brand_slug' => 'intel', 'description' => 'Flagship 24-core desktop processor.', 'price' => 589.99, 'compare_price' => 629.99, 'cost_price' => 490.00, 'stock_quantity' => 10, 'low_stock_threshold' => 3, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => true],
+            ['name' => 'MSI MAG B650 Tomahawk WiFi', 'slug' => 'msi-mag-b650-tomahawk', 'sku' => 'COMP-MSI-B650', 'category_slug' => 'computer-components', 'brand_slug' => 'msi', 'description' => 'ATX Motherboard for AMD Ryzen 7000 Series.', 'price' => 219.99, 'compare_price' => 239.99, 'cost_price' => 175.00, 'stock_quantity' => 30, 'low_stock_threshold' => 10, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => false],
+
+            // --- Monitors ---
             ['name' => 'Dell 27-inch QHD Monitor', 'slug' => 'dell-27-inch-qhd-monitor', 'sku' => 'MON-DELL-27-QHD', 'category_slug' => 'monitors', 'brand_slug' => 'dell', 'description' => '27-inch IPS monitor with QHD resolution.', 'price' => 329.00, 'compare_price' => 359.00, 'cost_price' => 280.00, 'stock_quantity' => 16, 'low_stock_threshold' => 5, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => true],
+            ['name' => 'ASUS ROG Swift 360Hz', 'slug' => 'asus-rog-swift-360hz', 'sku' => 'MON-ASUS-ROG360', 'category_slug' => 'monitors', 'brand_slug' => 'asus', 'description' => '24.5-inch 1080p Esports gaming monitor.', 'price' => 499.00, 'compare_price' => 549.00, 'cost_price' => 410.00, 'stock_quantity' => 8, 'low_stock_threshold' => 2, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => true],
+            ['name' => 'HP OMEN 27i', 'slug' => 'hp-omen-27i', 'sku' => 'MON-HP-OMEN27', 'category_slug' => 'monitors', 'brand_slug' => 'hp', 'description' => '27-inch 165Hz Nano IPS Gaming Monitor.', 'price' => 399.99, 'compare_price' => 449.99, 'cost_price' => 310.00, 'stock_quantity' => 22, 'low_stock_threshold' => 6, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => false],
+
+            // --- Gaming Accessories ---
             ['name' => 'Logitech G Pro X Superlight', 'slug' => 'logitech-g-pro-x-superlight', 'sku' => 'ACC-LOGI-GPROX-SL', 'category_slug' => 'gaming-accessories', 'brand_slug' => 'logitech', 'description' => 'Wireless ultra-light gaming mouse.', 'price' => 129.00, 'compare_price' => 149.00, 'cost_price' => 102.00, 'stock_quantity' => 40, 'low_stock_threshold' => 10, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => true],
+            ['name' => 'Logitech G915 TKL', 'slug' => 'logitech-g915-tkl', 'sku' => 'ACC-LOGI-G915', 'category_slug' => 'gaming-accessories', 'brand_slug' => 'logitech', 'description' => 'Tenkeyless lightspeed wireless mechanical keyboard.', 'price' => 199.99, 'compare_price' => 229.99, 'cost_price' => 150.00, 'stock_quantity' => 25, 'low_stock_threshold' => 5, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => true],
+            ['name' => 'Logitech G502 Hero', 'slug' => 'logitech-g502-hero', 'sku' => 'ACC-LOGI-G502', 'category_slug' => 'gaming-accessories', 'brand_slug' => 'logitech', 'description' => 'High performance wired gaming mouse with adjustable weights.', 'price' => 49.99, 'compare_price' => 79.99, 'cost_price' => 35.00, 'stock_quantity' => 50, 'low_stock_threshold' => 15, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => false],
+            ['name' => 'Dell Alienware AW410K Keyboard', 'slug' => 'dell-alienware-aw410k', 'sku' => 'ACC-DELL-AW410K', 'category_slug' => 'gaming-accessories', 'brand_slug' => 'dell', 'description' => 'RGB mechanical gaming keyboard with Cherry MX Brown switches.', 'price' => 109.99, 'compare_price' => 129.99, 'cost_price' => 85.00, 'stock_quantity' => 18, 'low_stock_threshold' => 4, 'manage_stock' => true, 'stock_status' => 'in_stock', 'status' => 'new', 'is_active' => true, 'is_featured' => false],
         ];
 
         $map = [];
@@ -133,11 +153,33 @@ class ComputerStoreSeeder extends Seeder
     private function seedProductImages(array $productMap): void
     {
         $rows = [
+            // Laptops
             ['sku' => 'LAP-DELL-XPS15', 'image_path' => 'products/dell-xps-15-front.jpg', 'alt_text' => 'Dell XPS 15 front', 'is_primary' => true, 'sort_order' => 1],
+            ['sku' => 'LAP-ASUS-G14', 'image_path' => 'products/asus-g14-front.jpg', 'alt_text' => 'ASUS ROG G14', 'is_primary' => true, 'sort_order' => 1],
+            ['sku' => 'LAP-HP-SPEC360', 'image_path' => 'products/hp-spectre-360.jpg', 'alt_text' => 'HP Spectre x360', 'is_primary' => true, 'sort_order' => 1],
+            ['sku' => 'LAP-MSI-ST16', 'image_path' => 'products/msi-stealth-16.jpg', 'alt_text' => 'MSI Stealth 16 Studio', 'is_primary' => true, 'sort_order' => 1],
+
+            // Desktops
             ['sku' => 'DESK-HP-PAVILION', 'image_path' => 'products/hp-pavilion-desktop.jpg', 'alt_text' => 'HP Pavilion desktop', 'is_primary' => true, 'sort_order' => 1],
+            ['sku' => 'DESK-MSI-INFINITE-RS', 'image_path' => 'products/msi-infinite-rs.jpg', 'alt_text' => 'MSI Infinite RS desktop', 'is_primary' => true, 'sort_order' => 1],
+            ['sku' => 'DESK-DELL-AURR15', 'image_path' => 'products/dell-aurora-r15.jpg', 'alt_text' => 'Dell Alienware Aurora R15', 'is_primary' => true, 'sort_order' => 1],
+
+            // Components
             ['sku' => 'COMP-ASUS-RTX4070', 'image_path' => 'products/asus-rtx-4070.jpg', 'alt_text' => 'ASUS RTX 4070', 'is_primary' => true, 'sort_order' => 1],
+            ['sku' => 'COMP-INTEL-I714700K', 'image_path' => 'products/intel-i7-14700k.jpg', 'alt_text' => 'Intel Core i7-14700K', 'is_primary' => true, 'sort_order' => 1],
+            ['sku' => 'COMP-INTEL-I914900K', 'image_path' => 'products/intel-i9-14900k.jpg', 'alt_text' => 'Intel Core i9-14900K', 'is_primary' => true, 'sort_order' => 1],
+            ['sku' => 'COMP-MSI-B650', 'image_path' => 'products/msi-b650-tomahawk.jpg', 'alt_text' => 'MSI MAG B650 Motherboard', 'is_primary' => true, 'sort_order' => 1],
+
+            // Monitors
             ['sku' => 'MON-DELL-27-QHD', 'image_path' => 'products/dell-27-qhd-monitor.jpg', 'alt_text' => 'Dell QHD monitor', 'is_primary' => true, 'sort_order' => 1],
+            ['sku' => 'MON-ASUS-ROG360', 'image_path' => 'products/asus-rog-360hz.jpg', 'alt_text' => 'ASUS ROG 360Hz Monitor', 'is_primary' => true, 'sort_order' => 1],
+            ['sku' => 'MON-HP-OMEN27', 'image_path' => 'products/hp-omen-27i.jpg', 'alt_text' => 'HP OMEN 27i Monitor', 'is_primary' => true, 'sort_order' => 1],
+
+            // Accessories
             ['sku' => 'ACC-LOGI-GPROX-SL', 'image_path' => 'products/logitech-superlight.jpg', 'alt_text' => 'Logitech G Pro X Superlight', 'is_primary' => true, 'sort_order' => 1],
+            ['sku' => 'ACC-LOGI-G915', 'image_path' => 'products/logitech-g915.jpg', 'alt_text' => 'Logitech G915 Keyboard', 'is_primary' => true, 'sort_order' => 1],
+            ['sku' => 'ACC-LOGI-G502', 'image_path' => 'products/logitech-g502.jpg', 'alt_text' => 'Logitech G502 Hero Mouse', 'is_primary' => true, 'sort_order' => 1],
+            ['sku' => 'ACC-DELL-AW410K', 'image_path' => 'products/dell-aw410k.jpg', 'alt_text' => 'Alienware AW410K Keyboard', 'is_primary' => true, 'sort_order' => 1],
         ];
 
         foreach ($rows as $row) {
