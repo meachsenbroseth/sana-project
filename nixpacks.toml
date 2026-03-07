@@ -1,14 +1,14 @@
 providers = ["php"]
 
 [phases.setup]
-# We put nodejs_20 right here in the list so it installs smoothly with PHP!
+# Upgraded to PHP 8.4 to match your composer.lock!
 nixPkgs = [
-    "php83",
-    "php83Packages.composer",
-    "php83Extensions.intl",
-    "php83Extensions.zip",
-    "php83Extensions.pdo_mysql",
-    "php83Extensions.mbstring",
+    "php84",
+    "php84Packages.composer",
+    "php84Extensions.intl",
+    "php84Extensions.zip",
+    "php84Extensions.pdo_mysql",
+    "php84Extensions.mbstring",
     "nodejs_20"
 ]
 
