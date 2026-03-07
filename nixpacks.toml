@@ -1,7 +1,6 @@
 providers = ["php"]
 
 [phases.setup]
-# Upgraded to PHP 8.4 to match your composer.lock!
 nixPkgs = [
     "php84",
     "php84Packages.composer",
@@ -10,7 +9,8 @@ nixPkgs = [
     "php84Extensions.pdo_pgsql",
     "php84Extensions.pgsql",
     "php84Extensions.mbstring",
-    "nodejs_20"
+    "nodejs_20",
+    "nginx" 
 ]
 
 [phases.build]
