@@ -24,6 +24,8 @@ class ProductsTable
             ->columns([
                 TextColumn::make('name')
                     ->searchable(),
+                TextColumn::make('sku')
+                    ->searchable(),
                 TextColumn::make('category.name')
                     ->sortable()
                     ->searchable()
