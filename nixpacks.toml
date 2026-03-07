@@ -1,14 +1,15 @@
-providers = ["php", "node"]
+providers = ["php"]
 
 [phases.setup]
-# This forces Railway to use PHP 8.3 and installs your missing extensions!
+# We put nodejs_20 right here in the list so it installs smoothly with PHP!
 nixPkgs = [
     "php83",
     "php83Packages.composer",
     "php83Extensions.intl",
     "php83Extensions.zip",
     "php83Extensions.pdo_mysql",
-    "php83Extensions.mbstring"
+    "php83Extensions.mbstring",
+    "nodejs_20"
 ]
 
 [phases.build]
