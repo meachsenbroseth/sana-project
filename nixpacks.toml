@@ -9,13 +9,16 @@ nixPkgs = [
     "php84Extensions.pdo_pgsql",
     "php84Extensions.pgsql",
     "php84Extensions.mbstring",
+    "php84Extensions.gd",
+    "php84Extensions.exif",
     "nodejs_20",
-    "nginx" 
+    "nginx"
 ]
 
 [phases.build]
 cmds = [
     "composer install --optimize-autoloader --no-dev --no-interaction",
     "npm install",
-    "npm run build"
+    "npm run build",
+    "php artisan storage:link"
 ]
