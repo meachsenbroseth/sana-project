@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
@@ -18,7 +19,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles;
+    use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -30,7 +31,8 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         'phone',
-        'is_active', 
+        'avatar',
+        'is_active',
     ];
 
     /**
@@ -71,19 +73,26 @@ class User extends Authenticatable implements FilamentUser
             ->implode('');
     }
 
-    //Local Scopes
+    // Local Scopes
     #[Scope()]
-    public function active(Builder $builder){
+    public function active(Builder $builder)
+    {
         $builder->where('is_active', true);
     }
 
-    //relations
-    public function oderStatusHistories(){
+    // relations
+    public function oderStatusHistories()
+    {
         return $this->hasMany(OrderStatusHistory::class);
     }
 
-        public function canAccessPanel(Panel $panel): bool
+    public function canAccessPanel(Panel $panel): bool
     {
         return str_ends_with($this->email, '@example.com');
+    }
+
+    public function getAvatarUrlAttribute(): string
+    {
+        return $this->avatar ? Storage::url($this->avatar) : 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&color=7F9CF5&background=EBF4FF';
     }
 }
