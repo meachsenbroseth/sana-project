@@ -39,4 +39,5 @@ return [
     'shipping_method' => 'Shipping Method',
     'transaction_id' => 'Transaction ID',
     'order_date' => 'Order Date',
+    'email' => 'Email address',
 ];

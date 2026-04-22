@@ -122,8 +122,8 @@ class OrdersTable
                         'delivered' => __('order.status.delivered'),
                         'cancelled' => __('order.status.cancelled'),
                     ])
-                    ->native(false) // Keeps the modern search box style
-                    ->indicator(__('order.status')),
+                    ->native(false), // Keeps the modern search box style
+                    // ->indicator(__('order.status')),
 
                 // 2. Payment Status Filter (Updated)
                 SelectFilter::make('payment_status')

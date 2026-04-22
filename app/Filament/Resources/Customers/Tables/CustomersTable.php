@@ -21,7 +21,7 @@ class CustomersTable
                     ->label(__('table.name'))
                     ->searchable(),
                 TextColumn::make('email')
-                    ->label(__('customer.email'))
+                    ->label(__('table.email'))
                     ->searchable(),
                 TextColumn::make('email_verified_at')
                     ->label(__('table.email_verified_at'))
