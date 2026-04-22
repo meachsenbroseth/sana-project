@@ -17,8 +17,6 @@ use UnitEnum;
 
 class CategoryResource extends Resource
 {
-    protected static string | UnitEnum | null $navigationGroup = 'Catalog';
-
     protected static ?string $model = Category::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Tag;
@@ -49,5 +47,15 @@ class CategoryResource extends Resource
             'create' => CreateCategory::route('/create'),
             'edit' => EditCategory::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return __('nav.catalog');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('nav.category');
     }
 }

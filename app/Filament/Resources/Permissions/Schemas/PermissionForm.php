@@ -12,7 +12,7 @@ class PermissionForm
     {
         return $schema
             ->components([
-                Section::make('Permission')
+                Section::make(__('permission.section'))
                     ->schema([
                         TextInput::make('name')
                             ->required()

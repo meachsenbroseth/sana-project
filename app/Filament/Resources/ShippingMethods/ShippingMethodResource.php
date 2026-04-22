@@ -17,8 +17,6 @@ use UnitEnum;
 
 class ShippingMethodResource extends Resource
 {
-    protected static string|UnitEnum|null $navigationGroup = 'Settings';
-
     protected static ?string $model = ShippingMethod::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Truck;
@@ -49,5 +47,15 @@ class ShippingMethodResource extends Resource
             'create' => CreateShippingMethod::route('/create'),
             'edit' => EditShippingMethod::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return __('nav.settings');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('nav.shipping_method');
     }
 }

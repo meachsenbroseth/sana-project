@@ -15,7 +15,7 @@ class BrandForm
     {
         return $schema
             ->components([
-                Section::make('Brand Information')->schema([
+                Section::make(__('brand.sections.information'))->schema([
                     TextInput::make('name')
                         ->live(onBlur: true)
                         // FIX: Auto-generates the slug when typing the name (only on create)
@@ -37,9 +37,9 @@ class BrandForm
                         ->image()
                         ->columnSpanFull(), // Optional: Makes the image uploader span the full width of its container for better UX
                 ])->columnSpanFull()
-                  ->columns(2),
+                    ->columns(2),
 
-                Section::make('Display Settings')->schema([
+                Section::make(__('brand.sections.display_settings'))->schema([
                     Toggle::make('is_active')
                         ->default(true)
                         ->required(),

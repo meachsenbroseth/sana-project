@@ -23,7 +23,7 @@ class PermissionsTable
                     ->sortable(),
                 TextColumn::make('roles_count')
                     ->counts('roles')
-                    ->label('Roles')
+                    ->label(__('permission.roles'))
                     ->badge(),
                 TextColumn::make('created_at')
                     ->dateTime()

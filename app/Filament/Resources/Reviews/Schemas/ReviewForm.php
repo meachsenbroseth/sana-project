@@ -18,12 +18,12 @@ class ReviewForm
     {
         return $schema
             ->components([
-                Section::make('Review Details')->schema([
+                Section::make(__('review.sections.details'))->schema([
                     Placeholder::make('product_name')
-                        ->label('Product')
+                        ->label(__('nav.product'))
                         ->content(fn (?Review $record): string => $record?->product?->name ?? '-'),
                     Placeholder::make('customer_name')
-                        ->label('Customer')
+                        ->label(__('nav.customer'))
                         ->content(fn (?Review $record): string => $record?->customer?->name ?? '-'),
                     Select::make('rating')
                         ->options([
@@ -40,15 +40,15 @@ class ReviewForm
                     Textarea::make('comment')
                         ->rows(5),
                     Placeholder::make('is_verified_purchase')
-                        ->label('Verified Purchase')
+                        ->label(__('review.verified_purchase'))
                         ->content(fn (?Review $record): HtmlString => new HtmlString(
                             $record?->is_verified_purchase
-                                ? '<span class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">Verified</span>'
-                                : '<span class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">Not Verified</span>'
+                                ? '<span class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">'.__('review.verified').'</span>'
+                                : '<span class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">'.__('review.not_verified').'</span>'
                         )),
                     Toggle::make('is_approved')
-                        ->label('Approved')
-                        ->helperText('Only approved reviews are publicly visible.')
+                        ->label(__('review.approved'))
+                        ->helperText(__('review.approved_help'))
                         ->required(),
                 ])->columns(2),
             ]);

@@ -12,8 +12,8 @@ use Filament\Actions\ViewAction;
 // use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 // use Filament\Tables\Filters\TrashedFilter;
-use Filament\Tables\Table;
 use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 class ProductsTable
@@ -48,7 +48,7 @@ class ProductsTable
                     ->badge(),
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'new' => 'success',
                         'used' => 'warning',
                         default => 'gray',
@@ -73,13 +73,13 @@ class ProductsTable
             ->defaultSort('created_at', 'desc')
             ->filters([
                 TernaryFilter::make('stock_status')
-                    ->label('Stock Availability')
-                    ->placeholder('All Products')
-                    ->trueLabel('In Stock')
-                    ->falseLabel('Out of Stock')
+                    ->label(__('product.stock_availability'))
+                    ->placeholder(__('product.all_products'))
+                    ->trueLabel(__('product.stock_status.in_stock'))
+                    ->falseLabel(__('product.stock_status.out_of_stock'))
                     ->queries(
-                        true: fn(Builder $query) => $query->where('stock_quantity', '>', 0),
-                        false: fn(Builder $query) => $query->where('stock_quantity', '<=', 0),
+                        true: fn (Builder $query) => $query->where('stock_quantity', '>', 0),
+                        false: fn (Builder $query) => $query->where('stock_quantity', '<=', 0),
                     ),
             ])
             ->recordActions([

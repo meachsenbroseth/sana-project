@@ -19,8 +19,6 @@ use UnitEnum;
 
 class OrderResource extends Resource
 {
-    protected static string | UnitEnum | null $navigationGroup = 'Sales';
-    
     protected static ?string $model = Order::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::ShoppingCart;
@@ -51,6 +49,16 @@ class OrderResource extends Resource
             'create' => CreateOrder::route('/create'),
             'edit' => EditOrder::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return __('nav.sales');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('nav.order');
     }
 
     public static function getRecordRouteBindingEloquentQuery(): Builder

@@ -47,17 +47,17 @@ class ReviewsTable
             ->defaultSort('created_at', 'desc')
             ->filters([
                 TernaryFilter::make('is_approved')
-                    ->label('Approval Status')
+                    ->label(__('review.approval_status'))
                     ->boolean()
-                    ->trueLabel('Approved only')
-                    ->falseLabel('Pending only')
+                    ->trueLabel(__('review.approved_only'))
+                    ->falseLabel(__('review.pending_only'))
                     ->native(false),
 
                 TernaryFilter::make('is_verified_purchase')
-                    ->label('Verified Purchase')
+                    ->label(__('review.verified_purchase'))
                     ->boolean()
-                    ->trueLabel('Verified only')
-                    ->falseLabel('Unverified only')
+                    ->trueLabel(__('review.verified_only'))
+                    ->falseLabel(__('review.unverified_only'))
                     ->native(false),
             ])
             ->recordActions([
@@ -66,12 +66,12 @@ class ReviewsTable
             ->toolbarActions([
                 BulkActionGroup::make([
                     BulkAction::make('approve')
-                        ->label('Approve')
+                        ->label(__('review.approve'))
                         ->color('success')
                         ->requiresConfirmation()
                         ->action(fn ($records) => $records->each->update(['is_approved' => true])),
                     BulkAction::make('reject')
-                        ->label('Reject')
+                        ->label(__('review.reject'))
                         ->color('danger')
                         ->requiresConfirmation()
                         ->action(fn ($records) => $records->each->delete()),

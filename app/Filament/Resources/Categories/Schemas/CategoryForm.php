@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\Categories\Schemas;
 
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -16,7 +16,7 @@ class CategoryForm
     {
         return $schema
             ->components([
-                Section::make('Category Information')
+                Section::make(__('category.sections.information'))
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([
@@ -44,7 +44,7 @@ class CategoryForm
                             ->required(),
                     ]),
 
-                Section::make('Display Settings')->schema([
+                Section::make(__('category.sections.display_settings'))->schema([
                     Toggle::make('is_active')
                         ->default(true)
                         ->required(),
@@ -55,7 +55,7 @@ class CategoryForm
                         ->default(0),
                 ])->columns(2),
 
-                Section::make('SEO')->schema([
+                Section::make(__('category.sections.seo'))->schema([
                     TextInput::make('meta_title'),
                     Textarea::make('meta_description')
                         ->columnSpanFull(),

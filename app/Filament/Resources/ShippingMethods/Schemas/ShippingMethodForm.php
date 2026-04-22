@@ -13,7 +13,7 @@ class ShippingMethodForm
     {
         return $schema
             ->components([
-                Section::make('Shipping Method Information')
+                Section::make(__('shipping_method.sections.information'))
                     ->schema([
                         TextInput::make('name')
                             ->required()
@@ -29,8 +29,8 @@ class ShippingMethodForm
                             ->inline()
                             ->default('active')
                             ->options([
-                                'active' => 'Active',
-                                'inactive' => 'Inactive',
+                                'active' => __('shipping_method.status.active'),
+                                'inactive' => __('shipping_method.status.inactive'),
                             ]),
                     ])
                     ->columns(2),

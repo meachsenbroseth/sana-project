@@ -24,8 +24,8 @@ class ShippingMethodsTable
                     ->sortable(),
                 SelectColumn::make('status')
                     ->options([
-                        'active' => 'Active',
-                        'inactive' => 'Inactive',
+                        'active' => __('shipping_method.status.active'),
+                        'inactive' => __('shipping_method.status.inactive'),
                     ]),
                 TextColumn::make('created_at')
                     ->dateTime()
@@ -39,8 +39,8 @@ class ShippingMethodsTable
             ->filters([
                 SelectFilter::make('status')
                     ->options([
-                        'active' => 'Active',
-                        'inactive' => 'Inactive',
+                        'active' => __('shipping_method.status.active'),
+                        'inactive' => __('shipping_method.status.inactive'),
                     ]),
             ])
             ->recordActions([

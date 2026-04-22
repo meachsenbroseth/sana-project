@@ -21,10 +21,6 @@ use UnitEnum;
 
 class EmployeeResource extends Resource
 {
-    protected static string|UnitEnum|null $navigationGroup = 'System Management';
-
-    protected static ?string $navigationLabel = 'Employees';
-
     protected static ?string $model = User::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
@@ -59,12 +55,22 @@ class EmployeeResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return 'employee';
+        return __('nav.employee');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'employees';
+        return __('nav.employees');
+    }
+
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return __('nav.system_management');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('nav.employees');
     }
 
     public static function getEloquentQuery(): Builder

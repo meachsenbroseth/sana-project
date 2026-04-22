@@ -16,10 +16,10 @@ class ListOrders extends ListRecords
         return [
             // CreateAction::make(),
             ExportAction::make()
-            ->exporter(OrderExporter::class)
-            ->label('Export Orders')
-            ->icon('heroicon-o-arrow-down-tray')
-            ->color('primary'),
+                ->exporter(OrderExporter::class)
+                ->label(__('order.export_orders'))
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('primary'),
         ];
     }
 }

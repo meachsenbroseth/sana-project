@@ -20,7 +20,7 @@ class CustomersTable
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('email')
-                    ->label('Email address')
+                    ->label(__('customer.email'))
                     ->searchable(),
                 TextColumn::make('email_verified_at')
                     ->dateTime()
@@ -52,14 +52,14 @@ class CustomersTable
             ])
             ->recordActions([
                 ViewAction::make()
-                ->button()
-                ->color('info'),
+                    ->button()
+                    ->color('info'),
                 DeleteAction::make()
-                ->button()
-                ->color('danger'),
+                    ->button()
+                    ->color('danger'),
                 EditAction::make()
-                ->button()
-                ->color('warning'),
+                    ->button()
+                    ->color('warning'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

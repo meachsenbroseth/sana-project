@@ -17,27 +17,27 @@ class CustomerForm
     {
         return $schema
             ->components([
-                Section::make('Common Information')->schema([
+                Section::make(__('customer.sections.common_information'))->schema([
                     TextInput::make('name')
                         ->required(),
                     TextInput::make('email')
-                        ->label('Email address')
+                        ->label(__('customer.email'))
                         ->unique(ignoreRecord: true)
                         ->email()
                         ->required(),
                     DateTimePicker::make('email_verified_at')
-                    ->native(false)
-                    ->native()
-                    ->displayFormat('M d, Y')
-                    ->required(),
+                        ->native(false)
+                        ->native()
+                        ->displayFormat('M d, Y')
+                        ->required(),
                     TextInput::make('phone')
                         ->tel(),
                     DatePicker::make('date_of_birth'),
                     Select::make('gender')
                         ->options([
-                            'male' => 'Male',
-                            'female' => 'Female',
-                            'other' => 'Other',
+                            'male' => __('customer.gender.male'),
+                            'female' => __('customer.gender.female'),
+                            'other' => __('customer.gender.other'),
                         ])
                         ->native(false)
                         ->required(),
@@ -45,21 +45,21 @@ class CustomerForm
                         ->default(true)
                         ->required(),
                 ])->columns(2),
-                Section::make('Password Infos')->schema([
+                Section::make(__('customer.sections.password_info'))->schema([
                     TextInput::make('password')
-                    ->password()
-                    ->dehydrated(fn ($state) => filled($state))
-                    ->dehydrateStateUsing(fn($state) =>filled($state) ? Hash::make($state) : null)
-                    ->required(fn (string $operation) => $operation === 'create')
-                    ->revealable()
-                    ->required(),
-                    TextInput::make('password confirmation')
-                    ->password()
-                    ->same('password')
-                    ->dehydrated(false)
-                    ->revealable()
-                    ->required(fn (string $operation) => $operation === 'create'),
-                ])
+                        ->password()
+                        ->dehydrated(fn ($state) => filled($state))
+                        ->dehydrateStateUsing(fn ($state) => filled($state) ? Hash::make($state) : null)
+                        ->required(fn (string $operation) => $operation === 'create')
+                        ->revealable()
+                        ->required(),
+                    TextInput::make('password_confirmation')
+                        ->password()
+                        ->same('password')
+                        ->dehydrated(false)
+                        ->revealable()
+                        ->required(fn (string $operation) => $operation === 'create'),
+                ]),
             ]);
     }
 }

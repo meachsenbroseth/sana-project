@@ -17,7 +17,6 @@ use UnitEnum;
 
 class BrandResource extends Resource
 {
-    protected static string | UnitEnum | null $navigationGroup = 'Catalog';
     protected static ?string $model = Brand::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::ComputerDesktop;
@@ -48,5 +47,15 @@ class BrandResource extends Resource
             'create' => CreateBrand::route('/create'),
             'edit' => EditBrand::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return __('nav.catalog');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('nav.brand');
     }
 }

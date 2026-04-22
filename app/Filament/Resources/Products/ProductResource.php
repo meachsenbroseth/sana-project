@@ -21,8 +21,6 @@ class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
-    protected static string | UnitEnum | null $navigationGroup = 'Catalog';
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::ShoppingBag;
 
     protected static ?string $recordTitleAttribute = 'name';
@@ -51,6 +49,26 @@ class ProductResource extends Resource
             'create' => CreateProduct::route('/create'),
             'edit' => EditProduct::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return __('nav.catalog');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('nav.product');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('product.title');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('nav.product');
     }
 
     public static function getRecordRouteBindingEloquentQuery(): Builder
