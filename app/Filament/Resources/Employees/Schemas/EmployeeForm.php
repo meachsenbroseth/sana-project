@@ -53,6 +53,7 @@ class EmployeeForm
                 Section::make(__('employee.sections.role_assignment'))
                     ->schema([
                         Select::make('roles')
+                            ->label(__('employee.roles'))
                             ->relationship(
                                 name: 'roles',
                                 titleAttribute: 'name',

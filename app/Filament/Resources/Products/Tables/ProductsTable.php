@@ -23,30 +23,38 @@ class ProductsTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label(__('table.name'))
                     ->searchable(),
                 TextColumn::make('sku')
+                    ->label(__('table.sku'))
                     ->searchable(),
                 TextColumn::make('category.name')
+                    ->label(__('table.category'))
                     ->sortable()
                     ->searchable()
                     ->badge()
                     ->size('sm')
                     ->color('info'),
                 TextColumn::make('brand.name')
+                    ->label(__('table.brand'))
                     ->sortable()
                     ->searchable()
                     ->toggleable()
                     ->badge(),
                 TextColumn::make('price')
+                    ->label(__('table.price'))
                     ->money('USD')
                     ->sortable(),
                 TextColumn::make('stock_quantity')
+                    ->label(__('table.stock_quantity'))
                     ->numeric()
                     ->badge()
                     ->sortable(),
                 TextColumn::make('stock_status')
+                    ->label(__('table.stock_status'))
                     ->badge(),
                 TextColumn::make('status')
+                    ->label(__('table.status'))
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'new' => 'success',
@@ -54,18 +62,22 @@ class ProductsTable
                         default => 'gray',
                     }),
                 TextColumn::make('views_count')
+                    ->label(__('table.views'))
                     ->numeric()
                     ->badge()
                     ->sortable(),
                 TextColumn::make('created_at')
+                    ->label(__('table.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label(__('table.updated_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('deleted_at')
+                    ->label(__('table.deleted_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

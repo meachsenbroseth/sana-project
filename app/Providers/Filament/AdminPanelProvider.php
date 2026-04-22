@@ -39,11 +39,11 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Blue,
             ])
             ->navigationGroups([
-                'Catalog',
-                'Sales',
-                'Customers management',
-                'System Management',
-                'Settings',
+                __('nav.catalog'),
+                __('nav.sales'),
+                __('nav.customer_management'),
+                __('nav.system_management'),
+                __('nav.settings'),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
@@ -76,7 +76,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugin(
                 FilamentShieldPlugin::make()
-                    ->navigationGroup('System Management')
+                    ->navigationGroup(__('nav.system_management'))
             )
             ->darkMode(false)
             ->brandLogo(asset('images/logo.png'))

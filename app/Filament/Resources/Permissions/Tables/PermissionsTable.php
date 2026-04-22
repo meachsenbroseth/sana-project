@@ -16,9 +16,11 @@ class PermissionsTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label(__('table.name'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('guard_name')
+                    ->label(__('table.guard_name'))
                     ->badge()
                     ->sortable(),
                 TextColumn::make('roles_count')
@@ -26,6 +28,7 @@ class PermissionsTable
                     ->label(__('permission.roles'))
                     ->badge(),
                 TextColumn::make('created_at')
+                    ->label(__('table.created_at'))
                     ->dateTime()
                     ->sortable(),
             ])

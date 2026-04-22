@@ -25,11 +25,7 @@ class SiteSettings extends Page implements HasForms
     use InteractsWithForms;
     use WithFileUploads;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Settings';
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Photo;
-
-    protected static ?string $navigationLabel = 'Site Settings';
 
     protected static ?int $navigationSort = 1;
 
@@ -58,15 +54,15 @@ class SiteSettings extends Page implements HasForms
     {
         return $schema
             ->components([
-                Section::make('Homepage Banner')
-                    ->description('Manage homepage banners with title, link, status, and display order.')
+                Section::make(__('site_settings.homepage_banner'))
+                    ->description(__('site_settings.homepage_banner_description'))
                     ->schema([
                         Repeater::make('banners')
-                            ->label('Banners')
-                            ->addActionLabel('Add Banner')
+                            ->label(__('site_settings.banners'))
+                            ->addActionLabel(__('site_settings.add_banner'))
                             ->schema([
                                 FileUpload::make('image')
-                                    ->label('Image')
+                                    ->label(__('site_settings.image'))
                                     ->disk('public')
                                     ->visibility('public')
                                     ->directory('banners')
@@ -79,20 +75,20 @@ class SiteSettings extends Page implements HasForms
                                     ->columnSpanFull(),
                                 TextInput::make('title')
                                     ->maxLength(255)
-                                    ->placeholder('Optional title')
+                                    ->placeholder(__('site_settings.optional_title'))
                                     ->columnSpan(6),
                                 TextInput::make('link')
                                     ->url()
                                     ->maxLength(2048)
-                                    ->placeholder('Optional link, e.g. https://example.com/deal')
+                                    ->placeholder(__('site_settings.optional_link'))
                                     ->columnSpan(6),
                                 ToggleButtons::make('status')
                                     ->required()
                                     ->inline()
                                     ->default('active')
                                     ->options([
-                                        'active' => 'Active',
-                                        'inactive' => 'Inactive',
+                                        'active' => __('shipping_method.status.active'),
+                                        'inactive' => __('shipping_method.status.inactive'),
                                     ])
                                     ->columnSpan(6),
                                 TextInput::make('sort_order')
@@ -112,9 +108,9 @@ class SiteSettings extends Page implements HasForms
                                     return $title;
                                 }
 
-                                return 'Banner';
+                                return __('site_settings.banner');
                             })
-                            ->helperText('Only active banners appear on the homepage slider. Lower sort order appears first.'),
+                            ->helperText(__('site_settings.banners_helper')),
                     ]),
             ])
             ->statePath('data');
@@ -169,9 +165,19 @@ class SiteSettings extends Page implements HasForms
         }
 
         Notification::make()
-            ->title('Site settings saved')
+            ->title(__('site_settings.saved'))
             ->success()
             ->send();
+    }
+
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return __('nav.settings');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('site_settings.title');
     }
 
     public function getShippingMethodsUrl(): string

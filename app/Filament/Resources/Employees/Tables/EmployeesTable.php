@@ -19,6 +19,7 @@ class EmployeesTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label(__('table.name'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('email')
@@ -35,11 +36,13 @@ class EmployeesTable
                     ->boolean()
                     ->sortable(),
                 TextColumn::make('created_at')
+                    ->label(__('table.created_at'))
                     ->dateTime()
                     ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('role')
+                    ->label(__('employee.roles'))
                     ->relationship('roles', 'name')
                     ->searchable()
                     ->preload(),

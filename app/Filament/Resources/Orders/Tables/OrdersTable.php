@@ -24,28 +24,33 @@ class OrdersTable
         return $table
             ->columns([
                 TextColumn::make('order_number')
+                    ->label(__('table.order_number'))
                     ->sortable()
                     ->weight('bold')
                     ->copyable()
                     ->searchable(),
 
                 TextColumn::make('customer.name')
+                    ->label(__('table.customer'))
                     ->searchable()
                     ->sortable()
                     ->color('primary')
                     ->url(fn ($record) => $record->customer ? CustomerResource::getUrl('edit', ['record' => $record->customer]) : null),
 
                 TextColumn::make('discount_amount')
+                    ->label(__('table.discount'))
                     ->money('USD') // UPGRADE: Formatted as money to match the total column
                     ->sortable(),
 
                 TextColumn::make('total')
+                    ->label(__('table.total'))
                     ->money('USD')
                     ->color('success')
                     ->weight('bold')
                     ->sortable(),
 
                 TextColumn::make('payment_status')
+                    ->label(__('table.payment_status'))
                     ->badge()
                     // UPGRADE: Added colors so you can identify payment status at a glance
                     ->color(fn (string $state): string => match ($state) {
@@ -64,6 +69,7 @@ class OrdersTable
                     ->searchable(),
 
                 TextColumn::make('status')
+                    ->label(__('table.status'))
                     ->badge()
                     // UPGRADE: Added colors for the fulfillment status
                     ->color(fn (string $state): string => match ($state) {
@@ -82,21 +88,25 @@ class OrdersTable
                     ->badge(),
 
                 TextColumn::make('tracking_number')
+                    ->label(__('table.tracking_number'))
                     ->toggleable()
                     ->copyable()
                     ->searchable(),
 
                 TextColumn::make('created_at')
+                    ->label(__('table.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('updated_at')
+                    ->label(__('table.updated_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('deleted_at')
+                    ->label(__('table.deleted_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
