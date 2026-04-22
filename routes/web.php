@@ -3,7 +3,12 @@
 use App\Http\Controllers\Auth\FacebookAuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\LocaleController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/language/{locale}', LocaleController::class)
+    ->whereIn('locale', ['en', 'km'])
+    ->name('locale.switch');
 
 Route::livewire('/', 'pages::homepage')->name('home');
 Route::livewire('/about', 'pages::about-page')->name('about');
