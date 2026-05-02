@@ -10,6 +10,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -39,11 +40,11 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Blue,
             ])
             ->navigationGroups([
-                __('nav.catalog'),
-                __('nav.sales'),
-                __('nav.customer_management'),
-                __('nav.system_management'),
-                __('nav.settings'),
+                NavigationGroup::make(fn (): string => __('nav.catalog')),
+                NavigationGroup::make(fn (): string => __('nav.sales')),
+                NavigationGroup::make(fn (): string => __('nav.customer_management')),
+                NavigationGroup::make(fn (): string => __('nav.system_management')),
+                NavigationGroup::make(fn (): string => __('nav.settings')),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
@@ -76,7 +77,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugin(
                 FilamentShieldPlugin::make()
-                    ->navigationGroup(__('nav.system_management'))
+                    ->navigationGroup(fn (): string => __('nav.system_management'))
             )
             ->darkMode(false)
             ->brandLogo(asset('images/logo.png'))
