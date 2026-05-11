@@ -57,10 +57,34 @@ class OrderObserver
             'https://api.telegram.org/bot' . config('services.telegram.bot_token') . '/sendMessage',
             [
                 'chat_id' => config('services.telegram.chat_id'),
-                'text' => "🛒 New Order Received!\n\n" .
-                    "Order: #{$order->order_number}\n" .
-                    "Customer: " . ($order->customer?->name ?? 'Guest') . "\n" .
-                    "Total: $" . number_format($order->total, 2),
+                'parse_mode' => 'HTML',
+                'text' => implode("\n", [
+                    '<b>NEW ORDER</b>  #' . $order->order_number,
+                    '─────────────────────────',
+                    '',
+                    '<b>CUSTOMER</b>',
+                    '  Name     ' . ($order->customer?->name ?? 'Guest'),
+                    '  Email    ' . ($order->customer?->email ?? 'N/A'),
+                    '  Phone    ' . ($order->shipping_phone ?? 'N/A'),
+                    '',
+                    '<b>ORDER</b>',
+                    '  Status   ' . $order->status,
+                    '  Payment  ' . $order->payment_method,
+                    '  Total    $' . number_format($order->total, 2),
+                    '  Shipping ' . ($order->shipping_method ?? 'Standard'),
+                    '',
+                    '<b>ADDRESS</b>',
+                    '  ' . $order->shipping_address_line_1,
+                    ($order->shipping_address_line_2 ? '  ' . $order->shipping_address_line_2 : null),
+                    '  ' . implode(', ', array_filter([$order->shipping_city, $order->shipping_state])),
+                    '  ' . $order->shipping_country,
+                    '',
+                    '<b>NOTE</b>',
+                    '  ' . ($order->customer_notes ?? 'No notes'),
+                    '',
+                    '─────────────────────────',
+                    $order->created_at->format('d M Y  h:i A'),
+                ]),
             ]
         );
     }
