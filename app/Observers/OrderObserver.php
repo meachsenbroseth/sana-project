@@ -11,6 +11,7 @@ use App\Models\User;
 use Filament\Notifications\Actions\NotificationAction;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -37,7 +38,7 @@ class OrderObserver
 
         Notification::make()
             ->title('New Order Received! 🚀')
-            ->body("Order #{$order->order_number} has been placed for $".number_format($order->total, 2).'.')
+            ->body("Order #{$order->order_number} has been placed for $" . number_format($order->total, 2) . '.')
             ->icon('heroicon-o-shopping-bag')
             ->success()
             // ->actions([
@@ -50,6 +51,18 @@ class OrderObserver
             //         )),
             // ])
             ->sendToDatabase($admins);
+
+        //send to telegram
+        Http::withoutVerifying()->post(
+            'https://api.telegram.org/bot' . config('services.telegram.bot_token') . '/sendMessage',
+            [
+                'chat_id' => config('services.telegram.chat_id'),
+                'text' => "🛒 New Order Received!\n\n" .
+                    "Order: #{$order->order_number}\n" .
+                    "Customer: " . ($order->customer?->name ?? 'Guest') . "\n" .
+                    "Total: $" . number_format($order->total, 2),
+            ]
+        );
     }
 
     /**
