@@ -3,13 +3,13 @@
 namespace App\Models;
 
 use App\Observers\OrderObserver;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 #[ObservedBy(OrderObserver::class)]
@@ -39,7 +39,15 @@ class Order extends Model
         'tracking_number',
         'customer_notes',
         'admin_notes',
+        'stock_deducted_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'stock_deducted_at' => 'datetime',
+        ];
+    }
 
     // ==========================================
     // SCOPES (Must be prefixed with 'scope')
@@ -137,7 +145,7 @@ class Order extends Model
         // FIX: Must be `creating` (before save), not `created` (after save)
         static::creating(function (Order $order) {
             if (empty($order->order_number)) {
-                $order->order_number = 'ORD-' . strtoupper(Str::random(10));
+                $order->order_number = 'ORD-'.strtoupper(Str::random(10));
             }
         });
     }

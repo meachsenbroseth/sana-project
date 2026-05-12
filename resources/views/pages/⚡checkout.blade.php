@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ShippingMethod;
 use App\Models\OrderItem;
+use App\Services\OrderStockService;
 use Illuminate\Support\Facades\DB;
 
 use KHQR\BakongKHQR;
@@ -311,21 +312,6 @@ new class extends Component {
             $quantity = (int) $item['quantity'];
             $totalAmount = $unitAmount * $quantity;
 
-            if ($paymentStatus === 'paid') {
-                $currentStock = (int) $product->stock_quantity;
-
-                if ($currentStock < $quantity) {
-                    DB::rollBack();
-                    throw new \RuntimeException('Insufficient stock for ' . $product->name . '.');
-                }
-
-                $newStock = $currentStock - $quantity;
-                $product->update([
-                    'stock_quantity' => $newStock,
-                    'stock_status' => $newStock > 0 ? 'in_stock' : 'out_of_stock',
-                ]);
-            }
-
             OrderItem::create([
                 'order_id' => $order->id,
                 'product_id' => $product->id,
@@ -335,6 +321,10 @@ new class extends Component {
                 'unit_amount' => $unitAmount,
                 'total_amount' => $totalAmount,
             ]);
+        }
+
+        if ($paymentStatus === 'paid') {
+            app(OrderStockService::class)->deductForPaidOrder($order);
         }
 
         DB::commit();
