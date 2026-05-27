@@ -339,7 +339,7 @@ new class extends Component {
 
     protected function processKhqrPayment()
     {
-$expirationTimestamp = (time() + 120) * 1000;
+        $expirationTimestamp = (time() + 120) * 1000;
         try {
 $merchant = new IndividualInfo(
     bakongAccountID: env('BAKONG_MERCHANT_ID'),
@@ -375,53 +375,77 @@ $merchant = new IndividualInfo(
         }
     }
 
-    public function checkKhqrStatus()
-    {
-        if (!$this->khqrMd5 || !$this->paymentStartedAtTs) {
-            return;
-        }
-
-        if ($this->orderProcessing) {
-            return;
-        }
-
-        $elapsed = now()->timestamp - $this->paymentStartedAtTs;
-        $this->timeLeft = max(0, $this->paymentTimeout - $elapsed);
-
-        if ($this->timeLeft <= 0) {
-            $this->cancelPayment('Payment timed out.');
-            return;
-        }
-
-        try {
-            $token = env('BAKONG_TOKEN');
-            $bakong = new BakongKHQR($token);
-            $result = $bakong->checkTransactionByMD5($this->khqrMd5);
-
-            // If payment is SUCCESSFUL
-            if (isset($result['responseCode']) && $result['responseCode'] === 0) {
-                $this->orderProcessing = true;
-
-                $existingOrder = Order::query()->where('transaction_id', $this->khqrMd5)->first();
-
-                if ($existingOrder) {
-                    $this->showKhqrModal = false;
-
-                    return redirect()->route('checkout.success', $existingOrder->id);
-                }
-
-                // ONLY NOW do we insert the order into the database!
-                $order = $this->finalizeOrderInDatabase('paid', 'processing', $this->khqrMd5);
-                $this->showKhqrModal = false;
-
-                // REDIRECT UPDATED HERE FOR KHQR
-                return redirect()->route('checkout.success', $order->id)->with('success', 'Payment successful!');
-            }
-        } catch (\Exception $e) {
-            $this->orderProcessing = false;
-            // Log error silently while polling
-        }
+public function checkKhqrStatus()
+{
+    if (!$this->khqrMd5 || !$this->paymentStartedAtTs) {
+        return;
     }
+
+    if ($this->orderProcessing) {
+        return;
+    }
+
+    $elapsed = now()->timestamp - $this->paymentStartedAtTs;
+    $this->timeLeft = max(0, $this->paymentTimeout - $elapsed);
+
+    if ($this->timeLeft <= 0) {
+        $this->cancelPayment('Payment timed out.');
+        return;
+    }
+
+    try {
+        $token = env('BAKONG_TOKEN');
+
+        if (!$token) {
+            session()->flash('error', 'BAKONG_TOKEN is missing.');
+            return;
+        }
+
+        $bakong = new BakongKHQR($token);
+
+        // new package often returns more detail with true
+        $result = $bakong->checkTransactionByMD5($this->khqrMd5, true);
+
+        logger()->info('KHQR check result', [
+            'md5' => $this->khqrMd5,
+            'result' => $result,
+        ]);
+
+        $responseCode = is_array($result)
+            ? ($result['responseCode'] ?? null)
+            : ($result->responseCode ?? null);
+
+        if ((int) $responseCode === 0) {
+            $this->orderProcessing = true;
+
+            $existingOrder = Order::query()
+                ->where('transaction_id', $this->khqrMd5)
+                ->first();
+
+            if ($existingOrder) {
+                $this->showKhqrModal = false;
+                return redirect()->route('checkout.success', $existingOrder->id);
+            }
+
+            $order = $this->finalizeOrderInDatabase('paid', 'processing', $this->khqrMd5);
+
+            $this->showKhqrModal = false;
+
+            return redirect()
+                ->route('checkout.success', $order->id)
+                ->with('success', 'Payment successful!');
+        }
+
+    } catch (\Throwable $e) {
+        logger()->error('KHQR verify error', [
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        session()->flash('error', 'KHQR verify error: ' . $e->getMessage());
+    }
+}
+
 
     public function cancelPayment($reason = 'Payment cancelled by user.')
     {
