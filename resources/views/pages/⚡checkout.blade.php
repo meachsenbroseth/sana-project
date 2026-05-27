@@ -14,6 +14,8 @@ use KHQR\BakongKHQR;
 use KHQR\Helpers\KHQRData;
 use KHQR\Models\IndividualInfo;
 
+
+
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
@@ -337,14 +339,16 @@ new class extends Component {
 
     protected function processKhqrPayment()
     {
+$expirationTimestamp = (time() + 120) * 1000;
         try {
-            $merchant = new IndividualInfo(
-                bakongAccountID: env('BAKONG_MERCHANT_ID'),
-                merchantName: env('BAKONG_MERCHANT_NAME'),
-                merchantCity: env('BAKONG_MERCHANT_CITY'),
-                currency: KHQRData::CURRENCY_KHR,
-                amount: $this->total, // Generate using computed total
-            );
+$merchant = new IndividualInfo(
+    bakongAccountID: env('BAKONG_MERCHANT_ID'),
+    merchantName: env('BAKONG_MERCHANT_NAME'),
+    merchantCity: env('BAKONG_MERCHANT_CITY'),
+    currency: KHQRData::CURRENCY_USD,
+    amount: (float) $this->total,
+    expirationTimestamp:$expirationTimestamp,
+);
 
             $qrResponse = BakongKHQR::generateIndividual($merchant);
 
@@ -428,6 +432,7 @@ new class extends Component {
     }
 
     protected function getSubtotal()
+
     {
         return array_sum(
             array_map(function ($item) {
