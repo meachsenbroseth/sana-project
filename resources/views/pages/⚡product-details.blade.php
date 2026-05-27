@@ -252,7 +252,7 @@ new class extends Component {
                                         d="M20 12H4" />
                                 </svg>
                             </button>
-                            <input type="number" wire:model="quantity" min="1"
+                            <input type="number" wire:model="quantity" min="1" readonly
                                 class="w-20 text-center border border-gray-300 rounded-lg py-2">
                             <button wire:click="incrementQuantity"
                                 class="w-10 h-10 rounded-lg border border-gray-300 hover:bg-gray-100 flex items-center justify-center">
