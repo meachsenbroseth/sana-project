@@ -1,499 +1,556 @@
 <?php
+    use Livewire\Component;
+    use Livewire\Attributes\Computed;
+    use Illuminate\Support\Facades\DB;
 
-use Livewire\Component;
-use Livewire\Attributes\Computed;
-use App\Models\Address;
-use App\Models\Order;
-use App\Models\Product;
-use App\Models\ShippingMethod;
-use App\Models\OrderItem;
-use App\Services\OrderStockService;
-use Illuminate\Support\Facades\DB;
+    use App\Models\Address;
+    use App\Models\Order;
+    use App\Models\OrderItem;
+    use App\Models\Product;
+    use App\Models\ShippingMethod;
+    use App\Services\OrderStockService;
 
-use KHQR\BakongKHQR;
-use KHQR\Helpers\KHQRData;
-use KHQR\Models\IndividualInfo;
+    use KHQR\BakongKHQR;
+    use KHQR\Helpers\KHQRData;
+    use KHQR\Models\IndividualInfo;
 
+    use BaconQrCode\Renderer\ImageRenderer;
+    use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+    use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+    use BaconQrCode\Writer;
 
-
-use BaconQrCode\Renderer\ImageRenderer;
-use BaconQrCode\Renderer\Image\SvgImageBackEnd;
-use BaconQrCode\Renderer\RendererStyle\RendererStyle;
-use BaconQrCode\Writer;
-
-new class extends Component {
-    public $cart = [];
-    public $step = 1; // 1: Address, 2: Review, 3: Payment
-
-    // Address fields
-    public $useExistingAddress = true;
-    public $saveAddress = false;
-    public $selectedAddressId = null;
-    public $full_name = '';
-    public $phone = '';
-    public $address_line_1 = '';
-    public $address_line_2 = '';
-    public $city = '';
-    public $state = '';
-    public $country = 'KH'; // Cambodia country code
-
-    // Order details
-    public $paymentMethod = 'KHQR';
-    public $customerNotes = '';
-    public $selectedShippingMethodId = null;
-
-    public $showKhqrModal = false;
-    public $khqrString = '';
-    public $khqrMd5 = null;
-    public $khqrStringRaw = null;
-    public $orderProcessing = false;
-
-    public $paymentTimeout = 120; // 5 minutes in seconds
-    public $paymentStartedAtTs = null;
-    public $timeLeft = 120;
-
-    public function mount()
+    new class extends Component
     {
-        $this->cart = session()->get('cart', []);
+        // -------------------------------------------------------------------------
+        // Constants
+        // -------------------------------------------------------------------------
 
-        if (empty($this->cart)) {
-            return redirect()->route('cart.index');
+        const PAYMENT_TIMEOUT_SECONDS = 120;
+        const QR_SIZE_PX              = 250;
+        const STEP_SHIPPING           = 1;
+        const STEP_REVIEW             = 2;
+        const STEP_PAYMENT            = 3;
+
+        // -------------------------------------------------------------------------
+        // Step state
+        // -------------------------------------------------------------------------
+
+        public int $step = self::STEP_SHIPPING;
+
+        // -------------------------------------------------------------------------
+        // Address fields
+        // -------------------------------------------------------------------------
+
+        public bool   $useExistingAddress = true;
+        public bool   $saveAddress        = false;
+        public ?int   $selectedAddressId  = null;
+        public string $full_name          = '';
+        public string $phone              = '';
+        public string $address_line_1     = '';
+        public string $address_line_2     = '';
+        public string $city               = '';
+        public string $state              = '';
+        public string $country            = 'KH';
+
+        // -------------------------------------------------------------------------
+        // Order / payment fields
+        // -------------------------------------------------------------------------
+
+        public array  $cart                    = [];
+        public string $paymentMethod           = 'KHQR';
+        public string $customerNotes           = '';
+        public ?int   $selectedShippingMethodId = null;
+        public string $merchantName            = '';
+
+        // -------------------------------------------------------------------------
+        // KHQR modal state
+        // -------------------------------------------------------------------------
+
+        public bool    $showKhqrModal     = false;
+        public bool    $orderProcessing   = false;
+        public string  $khqrString        = '';   // rendered SVG
+        public ?string $khqrStringRaw     = null; // raw QR string
+        public ?string $khqrMd5           = null;
+        public ?int    $paymentStartedAtTs = null;
+        public int     $paymentTimeout    = self::PAYMENT_TIMEOUT_SECONDS;
+        public int     $timeLeft          = self::PAYMENT_TIMEOUT_SECONDS;
+
+        // -------------------------------------------------------------------------
+        // Lifecycle
+        // -------------------------------------------------------------------------
+
+        public function mount(): void
+        {
+            $this->cart = session()->get('cart', []);
+
+            if (empty($this->cart)) {
+                redirect()->route('cart.index');
+                return;
+            }
+
+            $this->merchantName = env('BAKONG_MERCHANT_NAME');
+
+            $this->bootAddressDefaults();
+
+            $this->selectedShippingMethodId = $this->shippingMethods->first()?->id;
         }
 
-        $customer = auth('customer')->user();
-        $this->full_name = $customer->name;
-        $this->phone = $customer->phone ?? '';
+        private function bootAddressDefaults(): void
+        {
+            $customer = auth('customer')->user();
 
-        // Set default address if available
-        $defaultAddress = $customer->address()->where('is_default', true)->first();
-        if ($defaultAddress) {
-            $this->selectedAddressId = $defaultAddress->id;
-        } else {
-            // If no default address, select the first one if exists
-            $firstAddress = $customer->address()->first();
-            if ($firstAddress) {
-                $this->selectedAddressId = $firstAddress->id;
+            $this->full_name = $customer->name;
+            $this->phone     = $customer->phone ?? '';
+
+            $defaultAddress = $customer->address()->where('is_default', true)->first()
+                ?? $customer->address()->first();
+
+            if ($defaultAddress) {
+                $this->selectedAddressId = $defaultAddress->id;
             } else {
-                // If no addresses at all, switch to new address form
                 $this->useExistingAddress = false;
             }
         }
 
-        $this->selectedShippingMethodId = $this->shippingMethods->first()?->id;
-    }
+        // -------------------------------------------------------------------------
+        // Computed properties
+        // -------------------------------------------------------------------------
 
-    #[Computed]
-    public function addresses()
-    {
-        return auth('customer')->user()->address ?? collect();
-    }
+        #[Computed]
+        public function addresses()
+        {
+            return auth('customer')->user()->address ?? collect();
+        }
 
-    #[Computed]
-    public function subtotal()
-    {
-        return $this->getSubtotal();
-    }
+        #[Computed]
+        public function shippingMethods()
+        {
+            return ShippingMethod::query()->active()->orderBy('name')->get();
+        }
 
-    #[Computed]
-    public function shippingCost()
-    {
-        return $this->getShippingCost();
-    }
+        #[Computed]
+        public function subtotal(): float
+        {
+            return $this->getSubtotal();
+        }
 
-    #[Computed]
-    public function total()
-    {
-        return $this->subtotal + $this->shippingCost;
-    }
+        #[Computed]
+        public function shippingCost(): float
+        {
+            return $this->getShippingCost();
+        }
 
-    #[Computed]
-    public function shippingMethods()
-    {
-        return ShippingMethod::query()->active()->orderBy('name')->get();
-    }
+        #[Computed]
+        public function total(): float
+        {
+            return $this->subtotal + $this->shippingCost;
+        }
 
-    public function selectAddress($addressId)
-    {
-        $this->selectedAddressId = $addressId;
-    }
+        // -------------------------------------------------------------------------
+        // Step navigation
+        // -------------------------------------------------------------------------
 
-    public function nextStep()
-    {
-        if ($this->step === 1) {
-            if ($this->validateAddress() && $this->validateShippingMethod()) {
-                $this->step = 2;
+        public function nextStep(): void
+        {
+            if ($this->step === self::STEP_SHIPPING) {
+                if ($this->validateAddress() && $this->validateShippingMethod()) {
+                    $this->step = self::STEP_REVIEW;
+                }
+                return;
             }
-        } elseif ($this->step === 2) {
-            $this->step = 3;
+
+            if ($this->step === self::STEP_REVIEW) {
+                $this->step = self::STEP_PAYMENT;
+            }
         }
-    }
 
-    public function previousStep()
-    {
-        if ($this->step > 1) {
-            $this->step--;
+        public function previousStep(): void
+        {
+            if ($this->step > self::STEP_SHIPPING) {
+                $this->step--;
+            }
         }
-    }
 
-    protected function validateAddress()
-    {
-        if (!$this->useExistingAddress) {
-            // Validate new address form
-            $this->validate([
-                'full_name' => 'required|string|max:255',
-                'phone' => 'required|string|max:20',
-                'address_line_1' => 'required|string|max:255',
-                'city' => 'required|string|max:100',
-                'country' => 'required|string|max:2',
-            ]);
+        // -------------------------------------------------------------------------
+        // Validation
+        // -------------------------------------------------------------------------
 
-            return true;
-        } else {
-            // Validate existing address selection
-            if (!$this->selectedAddressId) {
-                // Check if there are any addresses available
-                $addressCount = auth('customer')->user()->address()->count();
+        protected function validateAddress(): bool
+        {
+            if (! $this->useExistingAddress) {
+                $this->validate([
+                    'full_name'      => 'required|string|max:255',
+                    'phone'          => 'required|string|max:20',
+                    'address_line_1' => 'required|string|max:255',
+                    'city'           => 'required|string|max:100',
+                    'country'        => 'required|string|max:2',
+                ]);
 
-                if ($addressCount === 0) {
-                    // No addresses available, switch to new address form
+                return true;
+            }
+
+            if (! $this->selectedAddressId) {
+                $hasAny = auth('customer')->user()->address()->exists();
+
+                if (! $hasAny) {
                     $this->useExistingAddress = false;
                     session()->flash('error', 'No saved addresses found. Please add a new address.');
-                    return false;
                 } else {
-                    // Addresses exist but none selected
                     session()->flash('error', 'Please select a shipping address.');
-                    return false;
                 }
+
+                return false;
             }
 
-            // Verify the selected address exists and belongs to the customer
-            $address = Address::where('id', $this->selectedAddressId)
+            $valid = Address::where('id', $this->selectedAddressId)
                 ->where('customer_id', auth('customer')->id())
-                ->first();
+                ->exists();
 
-            if (!$address) {
+            if (! $valid) {
                 session()->flash('error', 'Invalid address selected.');
                 return false;
             }
 
             return true;
         }
-    }
 
-    protected function validateShippingMethod()
-    {
-        if ($this->shippingMethods->isEmpty()) {
-            session()->flash('error', 'No active shipping methods are available right now.');
-            return false;
+        protected function validateShippingMethod(): bool
+        {
+            if ($this->shippingMethods->isEmpty()) {
+                session()->flash('error', 'No active shipping methods are available right now.');
+                return false;
+            }
+
+            $exists = ShippingMethod::query()
+                ->active()
+                ->whereKey($this->selectedShippingMethodId)
+                ->exists();
+
+            if (! $exists) {
+                session()->flash('error', 'Please select an active shipping method.');
+                return false;
+            }
+
+            return true;
         }
 
-        $shippingMethod = ShippingMethod::query()->active()->whereKey($this->selectedShippingMethodId)->first();
+        // -------------------------------------------------------------------------
+        // Order placement
+        // -------------------------------------------------------------------------
 
-        if (!$shippingMethod) {
-            session()->flash('error', 'Please select an active shipping method.');
-            return false;
-        }
+        public function placeOrder(): mixed
+        {
+            if (! $this->validateAddress() || ! $this->validateShippingMethod()) {
+                $this->step = self::STEP_SHIPPING;
+                return null;
+            }
 
-        return true;
-    }
+            if ($this->paymentMethod === 'KHQR') {
+                $this->processKhqrPayment();
+                return null;
+            }
 
-    public function placeOrder()
-    {
-        // Validate address again before placing order
-        if (!$this->validateAddress() || !$this->validateShippingMethod()) {
-            $this->step = 1; // Go back to address step
-            return;
-        }
-
-        if ($this->paymentMethod === 'KHQR') {
-            // Wait to save! Just generate the QR code first.
-            $this->processKhqrPayment();
-        } else {
-            // Cash on Delivery - Save order immediately
+            // Cash on Delivery
             try {
                 $order = $this->finalizeOrderInDatabase('pending', 'pending');
-
-                // REDIRECT UPDATED HERE FOR COD
-                return redirect()->route('checkout.success', $order->id)->with('success', 'Order placed successfully!');
+                return redirect()->route('checkout.success', $order->id)
+                    ->with('success', 'Order placed successfully!');
             } catch (\Exception $e) {
                 session()->flash('error', 'Error placing order: ' . $e->getMessage());
-            }
-        }
-    }
-
-    // Extracted database logic so it can be called exactly when needed
-    private function finalizeOrderInDatabase($paymentStatus, $orderStatus, $transactionId = null)
-    {
-        DB::beginTransaction();
-
-        $customer = auth('customer')->user();
-
-        // Get shipping address data
-        if ($this->useExistingAddress && $this->selectedAddressId) {
-            $address = Address::find($this->selectedAddressId);
-            $shippingData = [
-                'shipping_full_name' => $address->full_name,
-                'shipping_phone' => $address->phone,
-                'shipping_address_line_1' => $address->address_line_1,
-                'shipping_address_line_2' => $address->address_line_2,
-                'shipping_city' => $address->city,
-                'shipping_state' => $address->state,
-                'shipping_postal_code' => $address->postal_code ?? '',
-                'shipping_country' => $address->country,
-            ];
-        } else {
-            $shippingData = [
-                'shipping_full_name' => $this->full_name,
-                'shipping_phone' => $this->phone,
-                'shipping_address_line_1' => $this->address_line_1,
-                'shipping_address_line_2' => $this->address_line_2,
-                'shipping_city' => $this->city,
-                'shipping_state' => $this->state,
-                'shipping_postal_code' => '',
-                'shipping_country' => $this->country,
-            ];
-            if ($this->saveAddress) {
-                $customer->address()->create([
-                    'full_name' => $this->full_name,
-                    'phone' => $this->phone,
-                    'address_line_1' => $this->address_line_1,
-                    'address_line_2' => $this->address_line_2,
-                    'city' => $this->city,
-                    'state' => $this->state,
-                    'country' => $this->country,
-                    // If this is their first ever address, automatically make it the default!
-                    'is_default' => $customer->address()->count() === 0,
-                ]);
+                return null;
             }
         }
 
-        $selectedShippingMethod = ShippingMethod::query()->active()->whereKey($this->selectedShippingMethodId)->first();
+        // -------------------------------------------------------------------------
+        // KHQR payment flow
+        // -------------------------------------------------------------------------
 
-        if (!$selectedShippingMethod) {
-            DB::rollBack();
-            throw new \RuntimeException('Selected shipping method is not available.');
-        }
+        protected function processKhqrPayment(): void
+        {
+            try {
+                $merchant = new IndividualInfo(
+                    bakongAccountID:      env('BAKONG_MERCHANT_ID'),
+                    merchantName:         env('BAKONG_MERCHANT_NAME'),
+                    merchantCity:         env('BAKONG_MERCHANT_CITY'),
+                    currency:             KHQRData::CURRENCY_USD,
+                    amount:               $this->total,
+                    expirationTimestamp:  (time() + self::PAYMENT_TIMEOUT_SECONDS) * 1000,
+                );
 
-        // Calculate totals
-        $subtotal = $this->getSubtotal();
-        $shippingCost = $this->getShippingCost();
-        $taxAmount = 0;
-        $total = $subtotal + $shippingCost + $taxAmount;
+                $qrResponse = BakongKHQR::generateIndividual($merchant);
 
-        $orderNumber = 'ORD-' . strtoupper(uniqid());
+                if (! isset($qrResponse->data['qr'], $qrResponse->data['md5'])) {
+                    session()->flash('error', 'Failed to generate KHQR code.');
+                    return;
+                }
 
-        // Create order
-        $order = Order::create(
-            [
-                'order_number' => $orderNumber,
-                'customer_id' => $customer->id,
-                'subtotal' => $subtotal,
-                'discount_amount' => 0,
-                'shipping_cost' => $shippingCost,
-                'tax_amount' => $taxAmount,
-                'total' => $total,
-                'shipping_method' => $selectedShippingMethod->name,
-                'payment_method' => $this->paymentMethod,
-                'payment_status' => $paymentStatus,
-                'status' => $orderStatus,
-                'transaction_id' => $transactionId, // Save Bakong MD5 if paid
-                'customer_notes' => $this->customerNotes,
-            ] + $shippingData,
-        );
-
-        // Create order items
-        foreach ($this->cart as $item) {
-            $product = Product::query()->lockForUpdate()->find($item['product_id']);
-
-            if (!$product) {
-                DB::rollBack();
-                throw new \RuntimeException('Product not found.');
-            }
-
-            $unitAmount = $item['price'];
-            $quantity = (int) $item['quantity'];
-            $totalAmount = $unitAmount * $quantity;
-
-            OrderItem::create([
-                'order_id' => $order->id,
-                'product_id' => $product->id,
-                'product_name' => $item['name'],
-                'product_sku' => $product->sku,
-                'quantity' => $quantity,
-                'unit_amount' => $unitAmount,
-                'total_amount' => $totalAmount,
-            ]);
-        }
-
-        if ($paymentStatus === 'paid') {
-            app(OrderStockService::class)->deductForPaidOrder($order);
-        }
-
-        DB::commit();
-
-        // Clear cart
-        session()->forget('cart');
-
-        return $order;
-    }
-
-    protected function processKhqrPayment()
-    {
-        $expirationTimestamp = (time() + 120) * 1000;
-        try {
-$merchant = new IndividualInfo(
-    bakongAccountID: env('BAKONG_MERCHANT_ID'),
-    merchantName: env('BAKONG_MERCHANT_NAME'),
-    merchantCity: env('BAKONG_MERCHANT_CITY'),
-    currency: KHQRData::CURRENCY_USD,
-    amount: (float) $this->total,
-    expirationTimestamp:$expirationTimestamp,
-);
-
-            $qrResponse = BakongKHQR::generateIndividual($merchant);
-
-            if (isset($qrResponse->data['qr']) && isset($qrResponse->data['md5'])) {
-                $this->khqrStringRaw = $qrResponse->data['qr'];
-                $this->khqrMd5 = $qrResponse->data['md5'];
-                $this->orderProcessing = false;
-
+                $this->khqrStringRaw      = $qrResponse->data['qr'];
+                $this->khqrMd5            = $qrResponse->data['md5'];
+                $this->orderProcessing    = false;
                 $this->paymentStartedAtTs = now()->timestamp;
-                $this->timeLeft = $this->paymentTimeout;
+                $this->timeLeft           = $this->paymentTimeout;
+                $this->khqrString         = $this->renderQrSvg($this->khqrStringRaw);
+                $this->showKhqrModal      = true;
 
-                $renderer = new ImageRenderer(new RendererStyle(250), new SvgImageBackEnd());
-                $writer = new Writer($renderer);
-
-                $fullSvg = $writer->writeString($this->khqrStringRaw);
-                $this->khqrString = trim(substr($fullSvg, strpos($fullSvg, '<svg')));
-
-                $this->showKhqrModal = true;
-            } else {
-                session()->flash('error', 'Failed to generate KHQR code.');
+            } catch (\Exception $e) {
+                session()->flash('error', 'Error generating payment: ' . $e->getMessage());
             }
-        } catch (\Exception $e) {
-            session()->flash('error', 'Error generating payment: ' . $e->getMessage());
-        }
-    }
-
-public function checkKhqrStatus()
-{
-    if (!$this->khqrMd5 || !$this->paymentStartedAtTs) {
-        return;
-    }
-
-    if ($this->orderProcessing) {
-        return;
-    }
-
-    $elapsed = now()->timestamp - $this->paymentStartedAtTs;
-    $this->timeLeft = max(0, $this->paymentTimeout - $elapsed);
-
-    if ($this->timeLeft <= 0) {
-        $this->cancelPayment('Payment timed out.');
-        return;
-    }
-
-    try {
-        $token = env('BAKONG_TOKEN');
-
-        if (!$token) {
-            session()->flash('error', 'BAKONG_TOKEN is missing.');
-            return;
         }
 
-        $bakong = new BakongKHQR($token);
+        private function renderQrSvg(string $raw): string
+        {
+            $renderer = new ImageRenderer(
+                new RendererStyle(self::QR_SIZE_PX),
+                new SvgImageBackEnd(),
+            );
 
-        // new package often returns more detail with true
-        $result = $bakong->checkTransactionByMD5($this->khqrMd5, true);
+            $fullSvg = (new Writer($renderer))->writeString($raw);
 
-        logger()->info('KHQR check result', [
-            'md5' => $this->khqrMd5,
-            'result' => $result,
-        ]);
+            return trim(substr($fullSvg, strpos($fullSvg, '<svg')));
+        }
 
-        $responseCode = is_array($result)
-            ? ($result['responseCode'] ?? null)
-            : ($result->responseCode ?? null);
+        public function checkKhqrStatus(): mixed
+        {
+            if (! $this->khqrMd5 || ! $this->paymentStartedAtTs || $this->orderProcessing) {
+                return null;
+            }
 
-        if ((int) $responseCode === 0) {
+            $this->timeLeft = max(0, $this->paymentTimeout - (now()->timestamp - $this->paymentStartedAtTs));
+
+            if ($this->timeLeft <= 0) {
+                $this->cancelPayment('Payment timed out.');
+                return null;
+            }
+
+            try {
+                $this->verifyKhqrTransaction();
+            } catch (\Throwable $e) {
+                logger()->error('KHQR verify error', [
+                    'message' => $e->getMessage(),
+                    'trace'   => $e->getTraceAsString(),
+                ]);
+                session()->flash('error', 'KHQR verify error: ' . $e->getMessage());
+            }
+
+            return null;
+        }
+
+        private function verifyKhqrTransaction(): mixed
+        {
+            $token = env('BAKONG_TOKEN');
+
+            if (! $token) {
+                session()->flash('error', 'BAKONG_TOKEN is missing.');
+                return null;
+            }
+
+            $result = (new BakongKHQR($token))->checkTransactionByMD5($this->khqrMd5);
+
+            $responseCode = data_get($result, 'responseCode')
+                ?? data_get($result, 'data.responseCode')
+                ?? data_get($result, 'response.responseCode');
+
+            logger()->info('KHQR status', [
+                'raw'          => json_encode($result),
+                'responseCode' => $responseCode,
+                'status'       => data_get($result, 'data.status') ?? data_get($result, 'status'),
+            ]);
+
+            if ((int) $responseCode !== 0) {
+                return null;
+            }
+
+            return $this->handleSuccessfulPayment();
+        }
+
+        private function handleSuccessfulPayment(): mixed
+        {
             $this->orderProcessing = true;
 
-            $existingOrder = Order::query()
-                ->where('transaction_id', $this->khqrMd5)
-                ->first();
+            // Guard against double-processing
+            $existing = Order::where('transaction_id', $this->khqrMd5)->first();
 
-            if ($existingOrder) {
+            if ($existing) {
                 $this->showKhqrModal = false;
-                return redirect()->route('checkout.success', $existingOrder->id);
+                return redirect()->route('checkout.success', $existing->id);
             }
 
             $order = $this->finalizeOrderInDatabase('paid', 'processing', $this->khqrMd5);
 
             $this->showKhqrModal = false;
 
-            return redirect()
-                ->route('checkout.success', $order->id)
-                ->with('success', 'Payment successful!');
+            return redirect()->route('checkout.success', $order->id);
         }
 
-    } catch (\Throwable $e) {
-        logger()->error('KHQR verify error', [
-            'message' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ]);
-
-        session()->flash('error', 'KHQR verify error: ' . $e->getMessage());
-    }
-}
-
-
-    public function cancelPayment($reason = 'Payment cancelled by user.')
-    {
-        // Close modal and clear QR variables WITHOUT saving to database
-        $this->showKhqrModal = false;
-        $this->reset(['khqrString', 'khqrMd5', 'timeLeft', 'paymentStartedAtTs', 'orderProcessing']);
-        session()->flash('error', $reason);
-    }
-
-    protected function getSubtotal()
-
-    {
-        return array_sum(
-            array_map(function ($item) {
-                return $item['price'] * $item['quantity'];
-            }, $this->cart),
-        );
-    }
-
-    protected function getShippingCost()
-    {
-        $shippingMethod = ShippingMethod::query()->active()->whereKey($this->selectedShippingMethodId)->first();
-
-        if (!$shippingMethod) {
-            return 0;
+        public function cancelPayment(string $reason = 'Payment cancelled by user.'): void
+        {
+            $this->showKhqrModal = false;
+            $this->reset(['khqrString', 'khqrMd5', 'khqrStringRaw', 'timeLeft', 'paymentStartedAtTs', 'orderProcessing']);
+            session()->flash('error', $reason);
         }
 
-        return (float) $shippingMethod->cost;
-    }
-};
+        // -------------------------------------------------------------------------
+        // Database
+        // -------------------------------------------------------------------------
+
+        private function finalizeOrderInDatabase(
+            string  $paymentStatus,
+            string  $orderStatus,
+            ?string $transactionId = null,
+        ): Order {
+            return DB::transaction(function () use ($paymentStatus, $orderStatus, $transactionId) {
+                $customer             = auth('customer')->user();
+                $shippingData         = $this->resolveShippingData($customer);
+                $selectedShipping     = $this->resolveShippingMethod();
+                $subtotal             = $this->getSubtotal();
+                $shippingCost         = $this->getShippingCost();
+
+                $order = Order::create([
+                    'order_number'    => 'ORD-' . strtoupper(uniqid()),
+                    'customer_id'     => $customer->id,
+                    'subtotal'        => $subtotal,
+                    'discount_amount' => 0,
+                    'shipping_cost'   => $shippingCost,
+                    'tax_amount'      => 0,
+                    'total'           => $subtotal + $shippingCost,
+                    'shipping_method' => $selectedShipping->name,
+                    'payment_method'  => $this->paymentMethod,
+                    'payment_status'  => $paymentStatus,
+                    'status'          => $orderStatus,
+                    'transaction_id'  => $transactionId,
+                    'customer_notes'  => $this->customerNotes,
+                    ...$shippingData,
+                ]);
+
+                $this->createOrderItems($order);
+
+                if ($paymentStatus === 'paid') {
+                    app(OrderStockService::class)->deductForPaidOrder($order);
+                }
+
+                session()->forget('cart');
+
+                return $order;
+            });
+        }
+
+        private function resolveShippingData(mixed $customer): array
+        {
+            if ($this->useExistingAddress && $this->selectedAddressId) {
+                $address = Address::findOrFail($this->selectedAddressId);
+
+                return [
+                    'shipping_full_name'      => $address->full_name,
+                    'shipping_phone'          => $address->phone,
+                    'shipping_address_line_1' => $address->address_line_1,
+                    'shipping_address_line_2' => $address->address_line_2,
+                    'shipping_city'           => $address->city,
+                    'shipping_state'          => $address->state,
+                    'shipping_postal_code'    => $address->postal_code ?? '',
+                    'shipping_country'        => $address->country,
+                ];
+            }
+
+            if ($this->saveAddress) {
+                $customer->address()->create([
+                    'full_name'      => $this->full_name,
+                    'phone'          => $this->phone,
+                    'address_line_1' => $this->address_line_1,
+                    'address_line_2' => $this->address_line_2,
+                    'city'           => $this->city,
+                    'state'          => $this->state,
+                    'country'        => $this->country,
+                    'is_default'     => ! $customer->address()->exists(),
+                ]);
+            }
+
+            return [
+                'shipping_full_name'      => $this->full_name,
+                'shipping_phone'          => $this->phone,
+                'shipping_address_line_1' => $this->address_line_1,
+                'shipping_address_line_2' => $this->address_line_2,
+                'shipping_city'           => $this->city,
+                'shipping_state'          => $this->state,
+                'shipping_postal_code'    => '',
+                'shipping_country'        => $this->country,
+            ];
+        }
+
+        private function resolveShippingMethod(): ShippingMethod
+        {
+            $method = ShippingMethod::query()
+                ->active()
+                ->whereKey($this->selectedShippingMethodId)
+                ->first();
+
+            if (! $method) {
+                throw new \RuntimeException('Selected shipping method is not available.');
+            }
+
+            return $method;
+        }
+
+        private function createOrderItems(Order $order): void
+        {
+            foreach ($this->cart as $item) {
+                $product = Product::query()->lockForUpdate()->find($item['product_id']);
+
+                if (! $product) {
+                    throw new \RuntimeException('Product not found.');
+                }
+
+                $quantity = (int) $item['quantity'];
+
+                OrderItem::create([
+                    'order_id'     => $order->id,
+                    'product_id'   => $product->id,
+                    'product_name' => $item['name'],
+                    'product_sku'  => $product->sku,
+                    'quantity'     => $quantity,
+                    'unit_amount'  => $item['price'],
+                    'total_amount' => $item['price'] * $quantity,
+                ]);
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // Helpers
+        // -------------------------------------------------------------------------
+
+        protected function getSubtotal(): float
+        {
+            return (float) array_sum(
+                array_map(fn ($item) => $item['price'] * $item['quantity'], $this->cart)
+            );
+        }
+
+        protected function getShippingCost(): float
+        {
+            $method = ShippingMethod::query()
+                ->active()
+                ->whereKey($this->selectedShippingMethodId)
+                ->first();
+
+            return $method ? (float) $method->cost : 0.0;
+        }
+    };
 ?>
 
 <div class="py-8">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
+
+        {{-- Header --}}
         <h1 class="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
 
-        <!-- Progress Steps -->
+        {{-- Progress Steps --}}
         <div class="mb-8 px-2 sm:px-0">
             <div class="flex items-center justify-between w-full max-w-3xl mx-auto">
 
                 <div class="flex flex-col sm:flex-row items-center {{ $step >= 1 ? 'text-blue-600' : 'text-gray-400' }}">
-                    <div
-                        class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 {{ $step >= 1 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white' }}">
+                    <div class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 {{ $step >= 1 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white' }}">
                         @if ($step > 1)
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 13l4 4L19 7" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
                         @else
                             1
@@ -504,14 +561,11 @@ public function checkKhqrStatus()
 
                 <div class="flex-1 h-1 mx-2 sm:mx-4 rounded {{ $step >= 2 ? 'bg-blue-600' : 'bg-gray-300' }}"></div>
 
-                <div
-                    class="flex flex-col sm:flex-row items-center {{ $step >= 2 ? 'text-blue-600' : 'text-gray-400' }}">
-                    <div
-                        class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 {{ $step >= 2 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white' }}">
+                <div class="flex flex-col sm:flex-row items-center {{ $step >= 2 ? 'text-blue-600' : 'text-gray-400' }}">
+                    <div class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 {{ $step >= 2 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white' }}">
                         @if ($step > 2)
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 13l4 4L19 7" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
                         @else
                             2
@@ -522,10 +576,8 @@ public function checkKhqrStatus()
 
                 <div class="flex-1 h-1 mx-2 sm:mx-4 rounded {{ $step >= 3 ? 'bg-blue-600' : 'bg-gray-300' }}"></div>
 
-                <div
-                    class="flex flex-col sm:flex-row items-center {{ $step >= 3 ? 'text-blue-600' : 'text-gray-400' }}">
-                    <div
-                        class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 {{ $step >= 3 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white' }}">
+                <div class="flex flex-col sm:flex-row items-center {{ $step >= 3 ? 'text-blue-600' : 'text-gray-400' }}">
+                    <div class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 {{ $step >= 3 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white' }}">
                         3
                     </div>
                     <span class="mt-2 sm:mt-0 sm:ml-2 text-xs sm:text-sm font-medium text-center">Payment</span>
@@ -535,8 +587,10 @@ public function checkKhqrStatus()
         </div>
 
         <div class="lg:grid lg:grid-cols-3 lg:gap-8">
-            <!-- Main Content -->
+
+            {{-- ── Main Content ── --}}
             <div class="lg:col-span-2">
+
                 @if (session()->has('error'))
                     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
                         {{ session('error') }}
@@ -549,17 +603,15 @@ public function checkKhqrStatus()
                     </div>
                 @endif
 
-                <!-- Step 1: Shipping Address -->
+                {{-- ── Step 1: Shipping Address ── --}}
                 @if ($step === 1)
-                    <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
                         <h2 class="text-xl font-bold text-gray-900 mb-6">Shipping Address</h2>
 
-                        <!-- Use Existing Address -->
                         @if ($this->addresses->count() > 0)
                             <div class="mb-6">
                                 <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" wire:model.live="useExistingAddress"
-                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <input type="checkbox" wire:model.live="useExistingAddress" class="w-4 h-4 text-blue-600 rounded">
                                     <span class="font-medium">Use saved address</span>
                                 </label>
                             </div>
@@ -568,26 +620,14 @@ public function checkKhqrStatus()
                                 <div class="grid gap-4 mb-6">
                                     @foreach ($this->addresses as $address)
                                         <label class="relative cursor-pointer">
-                                            <input type="radio" wire:model="selectedAddressId"
-                                                value="{{ $address->id }}" class="peer sr-only">
-                                            <div
-                                                class="border-2 rounded-lg p-4 peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
-                                                <div class="flex items-start justify-between">
-                                                    <div>
-                                                        <p class="font-semibold text-gray-900">
-                                                            {{ $address->full_name }}</p>
-                                                        <p class="text-gray-600">{{ $address->phone }}</p>
-                                                        <p class="text-gray-600 mt-2">
-                                                            {{ $address->full_address }}
-                                                        </p>
-                                                        @if ($address->is_default)
-                                                            <span
-                                                                class="inline-block mt-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                                                                Default
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                </div>
+                                            <input type="radio" wire:model="selectedAddressId" value="{{ $address->id }}" class="peer sr-only">
+                                            <div class="border-2 rounded-xl p-4 peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
+                                                <p class="font-semibold text-gray-900">{{ $address->full_name }}</p>
+                                                <p class="text-gray-600 text-sm">{{ $address->phone }}</p>
+                                                <p class="text-gray-600 text-sm mt-1">{{ $address->full_address }}</p>
+                                                @if ($address->is_default)
+                                                    <span class="inline-block mt-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Default</span>
+                                                @endif
                                             </div>
                                         </label>
                                     @endforeach
@@ -595,66 +635,41 @@ public function checkKhqrStatus()
                             @endif
                         @endif
 
-                        <!-- New Address Form -->
                         @if (!$useExistingAddress || $this->addresses->count() === 0)
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
-                                    <input type="text" wire:model="full_name"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                    @error('full_name')
-                                        <span class="text-red-600 text-sm">{{ $message }}</span>
-                                    @enderror
+                                    <input type="text" wire:model="full_name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    @error('full_name') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                                 </div>
-
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
-                                    <input type="tel" wire:model="phone"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                    @error('phone')
-                                        <span class="text-red-600 text-sm">{{ $message }}</span>
-                                    @enderror
+                                    <input type="tel" wire:model="phone" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    @error('phone') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                                 </div>
-
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Address Line 1
-                                        *</label>
-                                    <input type="text" wire:model="address_line_1"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                    @error('address_line_1')
-                                        <span class="text-red-600 text-sm">{{ $message }}</span>
-                                    @enderror
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Address Line 1 *</label>
+                                    <input type="text" wire:model="address_line_1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    @error('address_line_1') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                                 </div>
-
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Address Line
-                                        2</label>
-                                    <input type="text" wire:model="address_line_2"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Address Line 2</label>
+                                    <input type="text" wire:model="address_line_2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                 </div>
-
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">City/Province
-                                            *</label>
-                                        <input type="text" wire:model="city"
-                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                        @error('city')
-                                            <span class="text-red-600 text-sm">{{ $message }}</span>
-                                        @enderror
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">City/Province *</label>
+                                        <input type="text" wire:model="city" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                        @error('city') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                                     </div>
                                     <div>
-                                        <label
-                                            class="block text-sm font-medium text-gray-700 mb-2">District/Khan</label>
-                                        <input type="text" wire:model="state"
-                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">District/Khan</label>
+                                        <input type="text" wire:model="state" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                     </div>
                                 </div>
-
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Country *</label>
-                                    <select wire:model="country"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <select wire:model="country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                         <option value="KH">Cambodia</option>
                                         <option value="US">United States</option>
                                         <option value="CA">Canada</option>
@@ -662,10 +677,8 @@ public function checkKhqrStatus()
                                     </select>
                                     <div class="mt-4 pt-4 border-t">
                                         <label class="flex items-center gap-2 cursor-pointer">
-                                            <input type="checkbox" wire:model="saveAddress"
-                                                class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                                            <span class="font-medium text-gray-700">Save this address to my profile for
-                                                future orders</span>
+                                            <input type="checkbox" wire:model="saveAddress" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                            <span class="font-medium text-gray-700">Save this address for future orders</span>
                                         </label>
                                     </div>
                                 </div>
@@ -674,22 +687,15 @@ public function checkKhqrStatus()
 
                         <div class="mt-6 pt-6 border-t">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">Shipping Method</h3>
-
                             @if ($this->shippingMethods->isNotEmpty())
                                 <div class="grid gap-3">
                                     @foreach ($this->shippingMethods as $shippingMethod)
-                                        <label class="relative cursor-pointer"
-                                            wire:key="shipping-method-{{ $shippingMethod->id }}">
-                                            <input type="radio" wire:model.live="selectedShippingMethodId"
-                                                value="{{ $shippingMethod->id }}" class="peer sr-only">
-                                            <div
-                                                class="border-2 rounded-lg p-4 peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
+                                        <label class="relative cursor-pointer" wire:key="shipping-method-{{ $shippingMethod->id }}">
+                                            <input type="radio" wire:model.live="selectedShippingMethodId" value="{{ $shippingMethod->id }}" class="peer sr-only">
+                                            <div class="border-2 rounded-xl p-4 peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
                                                 <div class="flex items-center justify-between">
-                                                    <p class="font-semibold text-gray-900">{{ $shippingMethod->name }}
-                                                    </p>
-                                                    <p class="font-semibold text-blue-700">
-                                                        ${{ number_format($shippingMethod->cost, 2) }}
-                                                    </p>
+                                                    <p class="font-semibold text-gray-900">{{ $shippingMethod->name }}</p>
+                                                    <p class="font-semibold text-blue-700">${{ number_format($shippingMethod->cost, 2) }}</p>
                                                 </div>
                                             </div>
                                         </label>
@@ -700,137 +706,135 @@ public function checkKhqrStatus()
                             @endif
                         </div>
 
-                        <div
-                            class="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t w-full">
-                            <a wire:navigate href="{{ route('cart.index') }}"
-                                class="w-full sm:w-auto text-center text-gray-600 hover:text-gray-900 font-medium py-2">
+                        <div class="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t w-full">
+                            <a wire:navigate href="{{ route('cart.index') }}" class="w-full sm:w-auto text-center text-gray-600 hover:text-gray-900 font-medium py-2">
                                 ← Back to Cart
                             </a>
-                            <button wire:click="nextStep"
-                                class="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                            <button wire:click="nextStep" class="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
                                 Continue to Review
                             </button>
                         </div>
                     </div>
                 @endif
 
-                <!-- Step 2: Review Order -->
+                {{-- ── Step 2: Review Order ── --}}
                 @if ($step === 2)
-                    <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
                         <h2 class="text-xl font-bold text-gray-900 mb-6">Review Your Order</h2>
 
-                        <!-- Order Items -->
                         <div class="space-y-4 mb-6">
                             @foreach ($cart as $item)
                                 <div class="flex gap-4 pb-4 border-b">
                                     <div class="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                                         @if (!empty($item['image']))
-                                            <img src="{{ asset('storage/' . $item['image']) }}"
-                                                alt="{{ $item['name'] }}" class="w-full h-full object-cover">
+                                            <img src="{{ asset('storage/' . $item['image']) }}" alt="{{ $item['name'] }}" class="w-full h-full object-cover">
                                         @endif
                                     </div>
                                     <div class="flex-1">
                                         <h3 class="font-semibold text-gray-900">{{ $item['name'] }}</h3>
-
                                         <p class="text-sm text-gray-600">Quantity: {{ $item['quantity'] }}</p>
-                                        <p class="text-sm text-gray-600">Price:
-                                            ${{ number_format($item['price'], 2) }} each</p>
+                                        <p class="text-sm text-gray-600">Price: ${{ number_format($item['price'], 2) }} each</p>
                                     </div>
                                     <div class="text-right">
-                                        <p class="font-bold text-gray-900">
-                                            ${{ number_format($item['price'] * $item['quantity'], 2) }}</p>
+                                        <p class="font-bold text-gray-900">${{ number_format($item['price'] * $item['quantity'], 2) }}</p>
                                     </div>
                                 </div>
                             @endforeach
                         </div>
 
-                        <!-- Customer Notes -->
                         <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Order Notes
-                                (Optional)</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Order Notes (Optional)</label>
                             <textarea wire:model="customerNotes" rows="3" placeholder="Special instructions for your order..."
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
                         </div>
 
-                        <div
-                            class="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t w-full">
-                            <button wire:click="previousStep"
-                                class="w-full sm:w-auto text-center text-gray-600 hover:text-gray-900 font-medium py-2">
+                        <div class="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t w-full">
+                            <button wire:click="previousStep" class="w-full sm:w-auto text-center text-gray-600 hover:text-gray-900 font-medium py-2">
                                 ← Back to Shipping
                             </button>
-                            <button wire:click="nextStep"
-                                class="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                            <button wire:click="nextStep" class="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
                                 Continue to Payment
                             </button>
                         </div>
                     </div>
                 @endif
 
-                <!-- Step 3: Payment -->
+                {{-- ── Step 3: Payment ── --}}
                 @if ($step === 3)
-                    <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
                         <h2 class="text-xl font-bold text-gray-900 mb-6">Payment Method</h2>
 
                         <div class="space-y-4 mb-6">
+
+                            {{-- Cash on Delivery --}}
                             <label class="relative cursor-pointer">
-                                <input type="radio" wire:model="paymentMethod" value="cash_on_delivery"
-                                    class="peer sr-only">
-                                <div
-                                    class="border-2 rounded-lg p-4 peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                <input type="radio" wire:model="paymentMethod" value="cash_on_delivery" class="peer sr-only">
+                                <div class="border-2 rounded-xl p-4 peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
+                                    <div class="flex items-center gap-4">
+                                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                                             </svg>
-                                            <div>
-                                                <p class="font-semibold text-gray-900">Cash on Delivery</p>
-                                                <p class="text-sm text-gray-600">Pay when you receive your order
-                                                </p>
-                                            </div>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-gray-900">Cash on Delivery</p>
+                                            <p class="text-sm text-gray-500">Pay when you receive your order</p>
                                         </div>
                                     </div>
                                 </div>
                             </label>
+
+                            {{-- KHQR --}}
                             <label class="relative cursor-pointer">
-                                <input type="radio" wire:model="paymentMethod" value="KHQR"
-                                    class="peer sr-only">
-                                <div
-                                    class="border-2 rounded-lg p-4 peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <input type="radio" wire:model="paymentMethod" value="KHQR" class="peer sr-only">
+                                <div class="border-2 rounded-xl p-4 peer-checked:border-red-500 peer-checked:bg-red-50 hover:border-red-300 transition">
+                                    <div class="flex items-center gap-4">
+                                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <rect x="1" y="1" width="9" height="9" rx="1.5" fill="#E1232E"/>
+                                                <rect x="2.5" y="2.5" width="6" height="6" rx="0.75" fill="#fff"/>
+                                                <rect x="4" y="4" width="3" height="3" rx="0.5" fill="#E1232E"/>
+                                                <rect x="12" y="1" width="9" height="9" rx="1.5" fill="#E1232E"/>
+                                                <rect x="13.5" y="2.5" width="6" height="6" rx="0.75" fill="#fff"/>
+                                                <rect x="15" y="4" width="3" height="3" rx="0.5" fill="#E1232E"/>
+                                                <rect x="1" y="12" width="9" height="9" rx="1.5" fill="#E1232E"/>
+                                                <rect x="2.5" y="13.5" width="6" height="6" rx="0.75" fill="#fff"/>
+                                                <rect x="4" y="15" width="3" height="3" rx="0.5" fill="#E1232E"/>
+                                                <rect x="12" y="12" width="3" height="3" rx="0.5" fill="#E1232E"/>
+                                                <rect x="16" y="12" width="5" height="2" rx="0.5" fill="#E1232E"/>
+                                                <rect x="12" y="16" width="2" height="5" rx="0.5" fill="#E1232E"/>
+                                                <rect x="15" y="15" width="3" height="3" rx="0.5" fill="#E1232E"/>
+                                                <rect x="19" y="15" width="2" height="6" rx="0.5" fill="#E1232E"/>
                                             </svg>
-                                            <div>
-                                                <p class="font-semibold text-gray-900">KHQR Payment</p>
-                                                <p class="text-sm text-gray-600">Pay using KHQR scanning</p>
-                                            </div>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-gray-900">KHQR Payment</p>
+                                            <p class="text-sm text-gray-500">Scan with any Cambodian banking app</p>
                                         </div>
                                     </div>
                                 </div>
                             </label>
+
                         </div>
-                        <div
-                            class="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t w-full">
-                            <button wire:click="previousStep"
-                                class="w-full sm:w-auto text-center text-gray-600 hover:text-gray-900 font-medium py-2">
+
+                        <div class="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t w-full">
+                            <button wire:click="previousStep" class="w-full sm:w-auto text-center text-gray-600 hover:text-gray-900 font-medium py-2">
                                 ← Back to Review
                             </button>
                             <button wire:click="placeOrder"
-                                class="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-sm">
-                                Place Order
+                                class="w-full sm:w-auto px-8 py-3 rounded-lg font-semibold shadow-sm transition
+                                       {{ $paymentMethod === 'KHQR' ? 'bg-[#E1232E] hover:bg-red-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white' }}">
+                                {{ $paymentMethod === 'KHQR' ? 'Scan & Pay with KHQR' : 'Place Order' }}
                             </button>
                         </div>
+                    </div>
                 @endif
+
             </div>
 
-            <!-- Order Summary -->
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-lg shadow-sm p-6 sticky top-24">
+            {{-- ── Order Summary sidebar ── --}}
+            <div class="lg:col-span-1 mt-6 lg:mt-0">
+                <div class="bg-white rounded-xl shadow-sm p-6 sticky top-24">
                     <h2 class="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
 
                     <div class="space-y-3 mb-6">
@@ -861,13 +865,10 @@ public function checkKhqrStatus()
                     <div class="border-t pt-4">
                         <div class="flex justify-between items-center">
                             <span class="text-lg font-semibold">Total</span>
-                            <span class="text-2xl font-bold text-blue-600">
-                                ${{ number_format($this->total, 2) }}
-                            </span>
+                            <span class="text-2xl font-bold text-blue-600">${{ number_format($this->total, 2) }}</span>
                         </div>
                     </div>
 
-                    <!-- Shipping Address Summary (shown on step 2 & 3) -->
                     @if ($step >= 2)
                         <div class="mt-6 pt-6 border-t">
                             <h3 class="font-semibold text-gray-900 mb-2">Shipping To:</h3>
@@ -883,91 +884,112 @@ public function checkKhqrStatus()
                                 <p class="text-sm text-gray-600">{{ $phone }}</p>
                                 <p class="text-sm text-gray-600">
                                     {{ $address_line_1 }}<br>
-                                    @if ($address_line_2)
-                                        {{ $address_line_2 }}<br>
-                                    @endif
-                                    {{ $city }}@if ($state)
-                                        , {{ $state }}
-                                    @endif
-                                    <br>
+                                    @if ($address_line_2) {{ $address_line_2 }}<br> @endif
+                                    {{ $city }}@if ($state), {{ $state }}@endif<br>
                                     {{ $country }}
                                 </p>
                             @endif
                         </div>
                     @endif
 
-                    @if ($showKhqrModal)
-                        <div class="fixed inset-0 z-50 overflow-y-auto">
-                            <div
-                                class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-                                    wire:click="cancelPayment('Payment cancelled')"></div>
+                </div>
+            </div>
 
-                                <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        </div>{{-- end grid --}}
+    </div>{{-- end max-w-7xl --}}
 
-                                <div
-                                    class="relative z-10 inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full sm:p-6">
-                                    <div wire:poll.1s="checkKhqrStatus">
-                                        <div class="text-center">
-                                            <h3 class="text-lg font-bold text-gray-900">Scan to Pay (KHQR)</h3>
+    {{-- ── KHQR Modal — at root level so it overlays everything ── --}}
+    @if ($showKhqrModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center khqr-overlay"
+             style="background: rgba(0,0,0,0.6);">
 
-                                            <!-- Timer Display -->
-                                            <div class="mt-2">
-                                                <span
-                                                    class="text-2xl font-mono font-bold {{ $timeLeft < 60 ? 'text-red-600' : 'text-blue-600' }}">
-                                                    {{ sprintf('%02d:%02d', floor($timeLeft / 60), $timeLeft % 60) }}
-                                                </span>
-                                                <p class="text-xs text-gray-500">Time remaining</p>
-                                            </div>
+            {{-- Backdrop --}}
+            <div class="absolute inset-0" wire:click="cancelPayment('Payment cancelled')"></div>
 
-                                            <!-- Progress Bar -->
-                                            <div class="w-full bg-gray-200 h-1.5 mt-2 rounded-full overflow-hidden">
-                                                <div class="bg-blue-600 h-full transition-all duration-1000"
-                                                    style="width: {{ ($timeLeft / $paymentTimeout) * 100 }}%">
-                                                </div>
-                                            </div>
+            {{-- Card --}}
+            <div class="relative z-10 khqr-card"
+                 style="width: 300px; background: #fff; border-radius: 20px;
+                        box-shadow: 0 8px 40px 0 rgba(0,0,0,0.22);">
 
-                                            <!-- QR Code -->
-                                            <div class="mt-4 flex justify-center p-2 bg-white border rounded-xl">
-                                                @if ($khqrString)
-                                                    {!! $khqrString !!}
-                                                @endif
-                                            </div>
+                <div wire:poll.1s="checkKhqrStatus">
 
-                                            <!-- Amount -->
-                                            <div class="mt-2">
-                                                <p class="text-lg font-bold">Total:
-                                                    ${{ number_format($this->total, 2) }}</p>
-                                            </div>
+                    {{-- Red header --}}
+                    <div class="relative flex items-center justify-center overflow-hidden"
+                         style="background: #E1232E; border-radius: 20px 20px 0 0; padding: 18px 0; min-height: 62px;">
+                        <svg width="96" height="30" viewBox="0 0 96 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <text x="0" y="24" font-family="Arial Black,Arial" font-weight="900" font-size="24" fill="white">KH</text>
+                            <rect x="51" y="2" width="22" height="22" rx="4" fill="white"/>
+                            <rect x="54" y="5" width="7" height="7" rx="1.2" fill="#E1232E"/>
+                            <rect x="63" y="5" width="5" height="5" rx="0.9" fill="#E1232E"/>
+                            <rect x="54" y="14" width="5" height="5" rx="0.9" fill="#E1232E"/>
+                            <rect x="63" y="14" width="5" height="5" rx="0.9" fill="#E1232E"/>
+                            <text x="75" y="24" font-family="Arial Black,Arial" font-weight="900" font-size="24" fill="white">R</text>
+                        </svg>
+                        {{-- Notched corner --}}
+                        <div class="absolute top-0 right-0"
+                             style="width:0;height:0;border-style:solid;border-width:0 42px 42px 0;border-color:transparent #fff transparent transparent;"></div>
+                    </div>
 
-                                            <!-- Status -->
-                                            <div class="mt-4">
-                                                <div class="flex justify-center items-center space-x-2">
-                                                    <div
-                                                        class="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600">
-                                                    </div>
-                                                    <span class="text-sm text-gray-600">Waiting for
-                                                        payment...</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Cancel Button -->
-                                    <div class="mt-6">
-                                        <button type="button"
-                                            wire:click="cancelPayment('Payment cancelled by customer')"
-                                            class="w-full inline-flex justify-center rounded-md border border-red-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-red-700 hover:bg-red-50 focus:outline-none sm:text-sm">
-                                            Cancel Order
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                    {{-- Merchant + Amount --}}
+                    <div style="padding: 18px 24px 14px;">
+                        <p style="margin:0;font-size:12px;color:#9ca3af;font-family:sans-serif;">{{ $merchantName }}</p>
+                        <div class="flex items-baseline" style="gap:8px;margin-top:4px;">
+                            <span style="font-size:28px;font-weight:800;color:#111;font-family:sans-serif;letter-spacing:-0.5px;">
+                                ${{ number_format($this->total, 2) }}
+                            </span>
+                            <span style="font-size:12px;font-weight:700;color:#d1d5db;font-family:sans-serif;letter-spacing:0.5px;">USD</span>
                         </div>
-                    @endif
+                    </div>
+
+                    {{-- Dashed divider --}}
+                    <div style="height:1px;background-image:repeating-linear-gradient(90deg,#d1d5db 0,#d1d5db 8px,transparent 8px,transparent 16px);"></div>
+
+                    {{-- QR Code --}}
+                    <div style="padding:20px 24px 10px;display:flex;justify-content:center;">
+                        @if ($khqrString)
+                            {!! $khqrString !!}
+                        @endif
+                    </div>
+
+                    {{-- Waiting + Timer --}}
+                    <div style="padding:4px 24px 8px;text-align:center;">
+                        <div class="flex items-center justify-center" style="gap:6px;margin-bottom:8px;">
+                            <div class="animate-pulse rounded-full" style="width:7px;height:7px;background:#E1232E;flex-shrink:0;"></div>
+                            <span style="font-size:11px;color:#9ca3af;font-family:sans-serif;">Waiting for payment...</span>
+                        </div>
+                        <span class="font-mono" style="font-size:26px;font-weight:800;letter-spacing:2px;color:{{ $timeLeft < 60 ? '#E1232E' : '#2563eb' }};">
+                            {{ sprintf('%02d:%02d', floor($timeLeft / 60), $timeLeft % 60) }}
+                        </span>
+                        <div style="margin-top:6px;background:#f3f4f6;border-radius:99px;height:3px;overflow:hidden;">
+                            <div style="background:#E1232E;height:3px;border-radius:99px;transition:width 1s linear;width:{{ ($timeLeft / $paymentTimeout) * 100 }}%;"></div>
+                        </div>
+                        <p style="margin:4px 0 0;font-size:10px;color:#d1d5db;font-family:sans-serif;">Time remaining</p>
+                    </div>
+
+                    {{-- Cancel --}}
+                    <div style="padding:12px 24px 20px;">
+                        <button type="button"
+                            wire:click="cancelPayment('Payment cancelled by customer')"
+                            class="w-full hover:bg-red-50 transition-colors"
+                            style="padding:11px;border:1.5px solid #E1232E;border-radius:10px;background:#fff;color:#E1232E;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif;">
+                            Cancel Order
+                        </button>
+                    </div>
 
                 </div>
             </div>
         </div>
-    </div>
+
+        <style>
+            @keyframes khqrFadeIn { from { opacity:0; } to { opacity:1; } }
+            @keyframes khqrPopIn {
+                0%   { opacity:0; transform:scale(0.80) translateY(28px); }
+                65%  { transform:scale(1.04) translateY(-5px); }
+                100% { opacity:1; transform:scale(1) translateY(0); }
+            }
+            .khqr-overlay { animation: khqrFadeIn 0.2s ease both; }
+            .khqr-card    { animation: khqrPopIn 0.45s cubic-bezier(.22,.68,0,1.3) both; }
+        </style>
+    @endif
+
 </div>
