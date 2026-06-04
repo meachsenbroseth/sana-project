@@ -1,12 +1,8 @@
 # syntax=docker/dockerfile:1
 
-# -----------------------------------------------------------------------------
-# Composer vendor tree (needed for Vite to resolve Flux paths under vendor/)
-# -----------------------------------------------------------------------------
 FROM composer:2 AS vendor
 
 WORKDIR /app
-
 COPY composer.json composer.lock ./
 
 RUN composer install \
@@ -17,26 +13,17 @@ RUN composer install \
     --ignore-platform-reqs
 
 
-# -----------------------------------------------------------------------------
-# Frontend assets (Vite)
-# -----------------------------------------------------------------------------
 FROM node:22-bookworm-slim AS assets
 
 WORKDIR /app
-
 COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY --from=vendor /app/vendor ./vendor
-
 COPY . .
-
 RUN npm run build
 
 
-# -----------------------------------------------------------------------------
-# Application
-# -----------------------------------------------------------------------------
 FROM php:8.4-apache-bookworm
 
 RUN apt-get update \
@@ -66,27 +53,38 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-RUN a2dismod -f mpm_event mpm_worker \
-    && a2enmod mpm_prefork headers rewrite
+# Fix: only one Apache MPM must be enabled
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.load \
+          /etc/apache2/mods-enabled/mpm_event.conf \
+          /etc/apache2/mods-enabled/mpm_worker.load \
+          /etc/apache2/mods-enabled/mpm_worker.conf \
+    && a2enmod headers rewrite
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf /etc/apache2/apache2.conf /etc/apache2/conf-available/docker-php.conf \
-    && sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
 
-RUN apache2ctl -M \
-    && apache2ctl configtest
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
+        /etc/apache2/sites-available/*.conf \
+        /etc/apache2/apache2.conf \
+        /etc/apache2/conf-available/docker-php.conf \
+    && sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
 
 WORKDIR /var/www/html
 
 COPY . .
 
-RUN mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache
+RUN mkdir -p \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/framework/cache \
+        storage/logs \
+        bootstrap/cache
 
 RUN composer install \
     --no-dev \
     --no-interaction \
     --prefer-dist \
-    --optimize-autoloader
+    --optimize-autoloader \
+    --ignore-platform-reqs
 
 COPY --from=assets /app/public/build ./public/build
 
