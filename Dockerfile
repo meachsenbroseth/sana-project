@@ -48,6 +48,7 @@ RUN apt-get update \
         libpng-dev \
         libjpeg62-turbo-dev \
         libfreetype6-dev \
+        libpq-dev \
         libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -59,16 +60,21 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         opcache \
         pcntl \
         pdo_mysql \
+        pdo_pgsql \
         pdo_sqlite \
         zip
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-RUN a2enmod headers rewrite
+RUN a2dismod -f mpm_event mpm_worker \
+    && a2enmod mpm_prefork headers rewrite
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf /etc/apache2/apache2.conf /etc/apache2/conf-available/docker-php.conf \
     && sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
+
+RUN apache2ctl -M \
+    && apache2ctl configtest
 
 WORKDIR /var/www/html
 
