@@ -6,57 +6,83 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 
-test('it deducts stock and updates stock status when order becomes processing', function () {
+test('stock decreases when payment status becomes paid', function () {
     Mail::fake();
+    Http::fake();
 
     $product = createProductWithStock(10);
     $order = createOrderWithItem($product, 3);
 
-    $order->update(['status' => 'processing']);
+    $order->update(['payment_status' => 'paid']);
 
     expect($product->fresh()->stock_quantity)->toBe(7)
-        ->and($product->fresh()->stock_status)->toBe('in_stock');
+        ->and($product->fresh()->stock_status)->toBe('in_stock')
+        ->and($order->fresh()->stock_deducted_at)->not->toBeNull();
 });
 
-test('it never allows stock to go negative when order becomes processing', function () {
+test('stock does not decrease twice', function () {
     Mail::fake();
+    Http::fake();
+
+    $product = createProductWithStock(10);
+    $order = createOrderWithItem($product, 4);
+
+    $order->update(['payment_status' => 'paid']);
+    $firstDeductedAt = $order->fresh()->stock_deducted_at;
+
+    $order->update(['status' => 'processing']);
+    $order->update(['admin_notes' => 'Saved again']);
+
+    expect($product->fresh()->stock_quantity)->toBe(6)
+        ->and($product->fresh()->stock_status)->toBe('in_stock')
+        ->and($order->fresh()->stock_deducted_at->equalTo($firstDeductedAt))->toBeTrue();
+});
+
+test('unmanaged stock product is ignored', function () {
+    Mail::fake();
+    Http::fake();
+
+    $product = createProductWithStock(10, false);
+    $order = createOrderWithItem($product, 4);
+
+    $order->update(['payment_status' => 'paid']);
+
+    expect($product->fresh()->stock_quantity)->toBe(10)
+        ->and($product->fresh()->stock_status)->toBe('in_stock')
+        ->and($order->fresh()->stock_deducted_at)->not->toBeNull();
+});
+
+test('product becomes out of stock when quantity reaches zero', function () {
+    Mail::fake();
+    Http::fake();
+
+    $product = createProductWithStock(4);
+    $order = createOrderWithItem($product, 4);
+
+    $order->update(['payment_status' => 'paid']);
+
+    expect($product->fresh()->stock_quantity)->toBe(0)
+        ->and($product->fresh()->stock_status)->toBe('out_of_stock')
+        ->and($order->fresh()->stock_deducted_at)->not->toBeNull();
+});
+
+test('insufficient stock does not corrupt data', function () {
+    Mail::fake();
+    Http::fake();
 
     $product = createProductWithStock(2);
     $order = createOrderWithItem($product, 5);
 
-    $order->update(['status' => 'processing']);
+    expect(fn () => $order->update(['payment_status' => 'paid']))
+        ->toThrow(ValidationException::class);
 
-    expect($product->fresh()->stock_quantity)->toBe(0)
-        ->and($product->fresh()->stock_status)->toBe('out_of_stock');
-});
-
-test('it does not deduct stock again when status changes from processing to completed', function () {
-    Mail::fake();
-
-    $product = createProductWithStock(10);
-    $order = createOrderWithItem($product, 4);
-
-    $order->update(['status' => 'processing']);
-    $order->update(['status' => 'completed']);
-
-    expect($product->fresh()->stock_quantity)->toBe(6)
-        ->and($product->fresh()->stock_status)->toBe('in_stock');
-});
-
-test('it only deducts stock once even if order returns to processing again', function () {
-    Mail::fake();
-
-    $product = createProductWithStock(10);
-    $order = createOrderWithItem($product, 4);
-
-    $order->update(['status' => 'processing']);
-    $order->update(['status' => 'pending']);
-    $order->update(['status' => 'processing']);
-
-    expect($product->fresh()->stock_quantity)->toBe(6)
-        ->and($product->fresh()->stock_status)->toBe('in_stock');
+    expect($product->fresh()->stock_quantity)->toBe(2)
+        ->and($product->fresh()->stock_status)->toBe('in_stock')
+        ->and($order->fresh()->stock_deducted_at)->toBeNull();
 });
 
 function createOrderWithItem(Product $product, int $quantity): Order
@@ -97,7 +123,7 @@ function createOrderWithItem(Product $product, int $quantity): Order
     return $order;
 }
 
-function createProductWithStock(int $stockQuantity): Product
+function createProductWithStock(int $stockQuantity, bool $manageStock = true): Product
 {
     $category = Category::query()->create([
         'name' => fake()->unique()->words(2, true),
@@ -118,7 +144,7 @@ function createProductWithStock(int $stockQuantity): Product
         'price' => 100,
         'stock_quantity' => $stockQuantity,
         'low_stock_threshold' => 3,
-        'manage_stock' => true,
+        'manage_stock' => $manageStock,
         'stock_status' => $stockQuantity > 0 ? 'in_stock' : 'out_of_stock',
         'is_active' => true,
         'is_featured' => false,

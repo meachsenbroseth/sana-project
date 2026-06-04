@@ -18,31 +18,40 @@ class CustomersTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label(__('table.name'))
                     ->searchable(),
                 TextColumn::make('email')
-                    ->label('Email address')
+                    ->label(__('table.email'))
                     ->searchable(),
                 TextColumn::make('email_verified_at')
+                    ->label(__('table.email_verified_at'))
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('phone')
+                    ->label(__('table.phone'))
                     ->searchable(),
                 TextColumn::make('date_of_birth')
+                    ->label(__('table.date_of_birth'))
                     ->date()
                     ->sortable(),
                 TextColumn::make('gender')
+                    ->label(__('table.gender'))
                     ->searchable(),
                 IconColumn::make('is_active')
+                    ->label(__('table.status'))
                     ->boolean(),
                 TextColumn::make('created_at')
+                    ->label(__('table.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label(__('table.updated_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('deleted_at')
+                    ->label(__('table.deleted_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -52,14 +61,14 @@ class CustomersTable
             ])
             ->recordActions([
                 ViewAction::make()
-                ->button()
-                ->color('info'),
+                    ->button()
+                    ->color('info'),
                 DeleteAction::make()
-                ->button()
-                ->color('danger'),
+                    ->button()
+                    ->color('danger'),
                 EditAction::make()
-                ->button()
-                ->color('warning'),
+                    ->button()
+                    ->color('warning'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

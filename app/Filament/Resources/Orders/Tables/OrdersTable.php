@@ -10,12 +10,11 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
-use Filament\Tables\Table;
-use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 class OrdersTable
@@ -25,38 +24,43 @@ class OrdersTable
         return $table
             ->columns([
                 TextColumn::make('order_number')
+                    ->label(__('table.order_number'))
                     ->sortable()
                     ->weight('bold')
                     ->copyable()
                     ->searchable(),
 
                 TextColumn::make('customer.name')
+                    ->label(__('table.customer'))
                     ->searchable()
                     ->sortable()
                     ->color('primary')
-                    ->url(fn($record) => $record->customer ? CustomerResource::getUrl('edit', ['record' => $record->customer]) : null),
+                    ->url(fn ($record) => $record->customer ? CustomerResource::getUrl('edit', ['record' => $record->customer]) : null),
 
                 TextColumn::make('discount_amount')
+                    ->label(__('table.discount'))
                     ->money('USD') // UPGRADE: Formatted as money to match the total column
                     ->sortable(),
 
                 TextColumn::make('total')
+                    ->label(__('table.total'))
                     ->money('USD')
                     ->color('success')
                     ->weight('bold')
                     ->sortable(),
 
                 TextColumn::make('payment_status')
+                    ->label(__('table.payment_status'))
                     ->badge()
                     // UPGRADE: Added colors so you can identify payment status at a glance
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'paid' => 'success',
                         'pending' => 'warning',
                         'failed' => 'danger',
                         default => 'gray',
                     })
                     // UPGRADE: Added icons for extra visual polish
-                    ->icon(fn(string $state): string => match ($state) {
+                    ->icon(fn (string $state): string => match ($state) {
                         'paid' => 'heroicon-m-check-circle',
                         'pending' => 'heroicon-m-clock',
                         'failed' => 'heroicon-m-x-circle',
@@ -65,9 +69,10 @@ class OrdersTable
                     ->searchable(),
 
                 TextColumn::make('status')
+                    ->label(__('table.status'))
                     ->badge()
                     // UPGRADE: Added colors for the fulfillment status
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'pending' => 'warning',
                         'processing' => 'info',
                         'shipped' => 'primary',
@@ -78,26 +83,30 @@ class OrdersTable
 
                 TextColumn::make('items_count')
                     ->counts('items')
-                    ->label('Items') // Slightly cleaner header name
+                    ->label(__('order.items'))
                     ->color('info')
                     ->badge(),
 
                 TextColumn::make('tracking_number')
+                    ->label(__('table.tracking_number'))
                     ->toggleable()
                     ->copyable()
                     ->searchable(),
 
                 TextColumn::make('created_at')
+                    ->label(__('table.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('updated_at')
+                    ->label(__('table.updated_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('deleted_at')
+                    ->label(__('table.deleted_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -105,43 +114,43 @@ class OrdersTable
             ->defaultSort('created_at', 'desc')
             ->filters([
                 SelectFilter::make('status')
-                    ->label('Order Status')
+                    ->label(__('order.status_label'))
                     ->options([
-                        'pending' => 'Pending',
-                        'processing' => 'Processing',
-                        'shipped' => 'Shipped',
-                        'delivered' => 'Delivered',
-                        'cancelled' => 'Cancelled',
+                        'pending' => __('order.status.pending'),
+                        'processing' => __('order.status.processing'),
+                        'shipped' => __('order.status.shipped'),
+                        'delivered' => __('order.status.delivered'),
+                        'cancelled' => __('order.status.cancelled'),
                     ])
-                    ->native(false) // Keeps the modern search box style
-                    ->indicator('Status'), // Shows "Status: Pending" tag
+                    ->native(false), // Keeps the modern search box style
+                    // ->indicator(__('order.status')),
 
                 // 2. Payment Status Filter (Updated)
                 SelectFilter::make('payment_status')
-                    ->label('Payment Status')
+                    ->label(__('order.payment_status_label'))
                     ->options([
-                        'pending' => 'Pending',
-                        'paid' => 'Paid',
-                        'failed' => 'Failed',
+                        'pending' => __('order.payment_status.pending'),
+                        'paid' => __('order.payment_status.paid'),
+                        'failed' => __('order.payment_status.failed'),
                     ])
                     ->native(false)
-                    ->indicator('Payment'),
+                    ->indicator(__('order.payment')),
 
                 // 3. (Optional Bonus) Filter by Date
                 Filter::make('created_at')
                     ->form([
-                        DatePicker::make('created_from')->label('Order Date From'),
-                        DatePicker::make('created_until')->label('Order Date To'),
+                        DatePicker::make('created_from')->label(__('order.order_date_from')),
+                        DatePicker::make('created_until')->label(__('order.order_date_to')),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
                                 $data['created_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
                                 $data['created_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     }),
 

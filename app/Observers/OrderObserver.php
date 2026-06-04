@@ -5,12 +5,11 @@ namespace App\Observers;
 use App\Filament\Resources\Orders\OrderResource;
 use App\Mail\OrderConfirmation;
 use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Product;
 use App\Models\User;
+use App\Services\OrderStockService;
 use Filament\Notifications\Actions\NotificationAction;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -50,6 +49,42 @@ class OrderObserver
             //         )),
             // ])
             ->sendToDatabase($admins);
+
+        // send to telegram
+        Http::withoutVerifying()->post(
+            'https://api.telegram.org/bot'.config('services.telegram.bot_token').'/sendMessage',
+            [
+                'chat_id' => config('services.telegram.chat_id'),
+                'parse_mode' => 'HTML',
+                'text' => implode("\n", [
+                    '<b>NEW ORDER</b>  #'.$order->order_number,
+                    '─────────────────────────',
+                    '',
+                    '<b>CUSTOMER</b>',
+                    '  Name     '.($order->customer?->name ?? 'Guest'),
+                    '  Email    '.($order->customer?->email ?? 'N/A'),
+                    '  Phone    '.($order->shipping_phone ?? 'N/A'),
+                    '',
+                    '<b>ORDER</b>',
+                    '  Status   '.$order->status,
+                    '  Payment  '.$order->payment_method,
+                    '  Total    $'.number_format($order->total, 2),
+                    '  Shipping '.($order->shipping_method ?? 'Standard'),
+                    '',
+                    '<b>ADDRESS</b>',
+                    '  '.$order->shipping_address_line_1,
+                    ($order->shipping_address_line_2 ? '  '.$order->shipping_address_line_2 : null),
+                    '  '.implode(', ', array_filter([$order->shipping_city, $order->shipping_state])),
+                    '  '.$order->shipping_country,
+                    '',
+                    '<b>NOTE</b>',
+                    '  '.($order->customer_notes ?? 'No notes'),
+                    '',
+                    '─────────────────────────',
+                    $order->created_at->format('d M Y  h:i A'),
+                ]),
+            ]
+        );
     }
 
     /**
@@ -57,86 +92,35 @@ class OrderObserver
      */
     public function updated(Order $order): void
     {
-        if (! $order->wasChanged('status')) {
+        if ($order->wasChanged('status')) {
+            $originalStatus = (string) $order->getOriginal('status');
+            $newStatus = (string) $order->status;
+
+            $order->statusHistories()->create([
+                'status' => $newStatus,
+                'notes' => "Status changed from {$originalStatus} to {$newStatus}.",
+            ]);
+        }
+
+        if (! $order->wasChanged('payment_status')) {
             return;
         }
 
-        $originalStatus = (string) $order->getOriginal('status');
-        $newStatus = (string) $order->status;
-        $alreadyProcessed = $order->statusHistories()
-            ->where('status', 'processing')
-            ->exists();
+        $originalPaymentStatus = (string) $order->getOriginal('payment_status');
+        $newPaymentStatus = (string) $order->payment_status;
 
-        $order->statusHistories()->create([
-            'status' => $newStatus,
-            'notes' => "Status changed from {$originalStatus} to {$newStatus}.",
-        ]);
-
-        if ($newStatus !== 'processing') {
-            return;
-        }
-
-        if ($originalStatus === 'processing') {
-            return;
-        }
-
-        if ($alreadyProcessed) {
-            Log::warning('Skipped stock deduction for order that was already processed before.', [
+        if ($originalPaymentStatus === 'paid' || $newPaymentStatus !== 'paid') {
+            Log::info('Skipped stock deduction because payment status did not become paid.', [
                 'order_id' => $order->id,
                 'order_number' => $order->order_number,
+                'original_payment_status' => $originalPaymentStatus,
+                'new_payment_status' => $newPaymentStatus,
             ]);
 
             return;
         }
 
-        DB::transaction(function () use ($order): void {
-            $items = OrderItem::query()
-                ->where('order_id', $order->id)
-                ->lockForUpdate()
-                ->get();
-
-            foreach ($items as $item) {
-                $product = Product::query()
-                    ->whereKey($item->product_id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if (! $product) {
-                    Log::warning('Skipped stock update because order item product no longer exists.', [
-                        'order_id' => $order->id,
-                        'order_item_id' => $item->id,
-                        'product_id' => $item->product_id,
-                    ]);
-
-                    continue;
-                }
-
-                $previousStock = (int) $product->stock_quantity;
-                $requestedQuantity = max((int) $item->quantity, 0);
-                $newStock = $previousStock > 0
-                    ? max($previousStock - $requestedQuantity, 0)
-                    : 0;
-                $newStockStatus = $newStock > 0 ? 'in_stock' : 'out_of_stock';
-                $isLowStock = $newStock <= (int) $product->low_stock_threshold;
-
-                $product->update([
-                    'stock_quantity' => $newStock,
-                    'stock_status' => $newStockStatus,
-                ]);
-
-                Log::info('Product stock updated after order moved to processing.', [
-                    'order_id' => $order->id,
-                    'order_number' => $order->order_number,
-                    'order_item_id' => $item->id,
-                    'product_id' => $product->id,
-                    'previous_stock_quantity' => $previousStock,
-                    'deducted_quantity' => $requestedQuantity,
-                    'new_stock_quantity' => $newStock,
-                    'new_stock_status' => $newStockStatus,
-                    'is_low_stock' => $isLowStock,
-                ]);
-            }
-        });
+        app(OrderStockService::class)->deductForPaidOrder($order);
     }
 
     /**

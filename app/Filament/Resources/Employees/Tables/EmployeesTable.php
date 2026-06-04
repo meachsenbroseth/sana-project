@@ -19,34 +19,37 @@ class EmployeesTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label(__('table.name'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('email')
-                    ->label('Email address')
+                    ->label(__('employee.email'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('roles.name')
-                    ->label('Roles')
+                    ->label(__('employee.roles'))
                     ->badge()
                     ->separator(', ')
                     ->searchable(),
                 IconColumn::make('is_active')
-                    ->label('Status')
+                    ->label(__('employee.status'))
                     ->boolean()
                     ->sortable(),
                 TextColumn::make('created_at')
+                    ->label(__('table.created_at'))
                     ->dateTime()
                     ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('role')
+                    ->label(__('employee.roles'))
                     ->relationship('roles', 'name')
                     ->searchable()
                     ->preload(),
                 TernaryFilter::make('is_active')
-                    ->label('Status')
-                    ->trueLabel('Active')
-                    ->falseLabel('Inactive')
+                    ->label(__('employee.status'))
+                    ->trueLabel(__('employee.active'))
+                    ->falseLabel(__('employee.inactive'))
                     ->native(false),
             ])
             ->recordActions([

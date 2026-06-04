@@ -17,8 +17,6 @@ use UnitEnum;
 
 class ReviewResource extends Resource
 {
-    protected static string | UnitEnum | null $navigationGroup = 'Customers management';
-
     protected static ?string $model = Review::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Star;
@@ -47,5 +45,15 @@ class ReviewResource extends Resource
             'create' => CreateReview::route('/create'),
             'edit' => EditReview::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return __('nav.customer_management');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('nav.review');
     }
 }

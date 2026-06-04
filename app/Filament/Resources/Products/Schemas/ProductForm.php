@@ -15,8 +15,8 @@ use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage; // Added for image deletion
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str; // Added for image deletion
 
 class ProductForm
 {
@@ -24,15 +24,15 @@ class ProductForm
     {
         return $schema
             ->components([
-                Tabs::make('Product Details')
+                Tabs::make(__('product.tabs.product_details'))
                     ->columnSpanFull()
                     ->tabs([
 
                         // --- BASIC INFORMATION ---
-                        Tab::make('Basic Information')
+                        Tab::make(__('product.tabs.basic_information'))
                             ->icon(Heroicon::InformationCircle)
                             ->schema([
-                                Section::make('Product Details')->schema([
+                                Section::make(__('product.sections.product_details'))->schema([
                                     TextInput::make('name')
                                         ->required(),
                                     TextInput::make('slug')
@@ -52,68 +52,68 @@ class ProductForm
                                         ->searchable()
                                         ->required(),
                                 ])->columns(2),
-                                Section::make('Product Description')->schema([
+                                Section::make(__('product.sections.product_description'))->schema([
                                     RichEditor::make('description')
                                         ->columnSpanFull(),
                                 ]),
                             ]),
 
                         // --- PRICING & INVENTORY ---
-                        Tab::make('Pricing & Inventory')
+                        Tab::make(__('product.tabs.pricing_inventory'))
                             ->icon(Heroicon::CurrencyDollar)
                             ->schema([
-                                Section::make('Pricing')->schema([
+                                Section::make(__('product.sections.pricing'))->schema([
                                     TextInput::make('sku')
-                                        ->label('SKU')
+                                        ->label(__('product.sku'))
                                         ->disabled()
                                         ->dehydrated() // FIX: Ensures the disabled SKU is sent to the DB
                                         ->unique(ignoreRecord: true)
                                         ->default(fn () => 'SKU-'.strtoupper(Str::random(8)))
-                                        ->helperText('Stock Keeping Unit - unique identifier')
+                                        ->helperText(__('product.help.sku'))
                                         ->required(),
                                     TextInput::make('price')
                                         ->required()
                                         ->numeric()
-                                        ->helperText('Selling price')
+                                        ->helperText(__('product.help.price'))
                                         ->minValue(0)
                                         ->step(0.01)
                                         ->prefix('$'),
                                     TextInput::make('compare_price')
                                         ->numeric()
-                                        ->helperText('Original price before discount') // Typo fixed
+                                        ->helperText(__('product.help.compare_price'))
                                         ->minValue(0)
                                         ->step(0.01)
                                         ->prefix('$'),
                                     TextInput::make('cost_price')
                                         ->numeric()
-                                        ->helperText('Cost from supplier (for profit calculation)')
+                                        ->helperText(__('product.help.cost_price'))
                                         ->minValue(0)
                                         ->step(0.01)
                                         ->prefix('$'),
                                 ])->columns(2),
-                                Section::make('Inventory')->schema([
+                                Section::make(__('product.sections.inventory'))->schema([
                                     Toggle::make('manage_stock')
-                                        ->label('Manage Stock')
+                                        ->label(__('product.manage_stock'))
                                         ->default(true)
-                                        ->helperText('Enable stock management for this product')
+                                        ->helperText(__('product.help.manage_stock'))
                                         ->live(),
                                     TextInput::make('stock_quantity')
-                                        ->label('Stock Quantity')
+                                        ->label(__('product.stock'))
                                         ->required(fn (callable $get) => $get('manage_stock'))
                                         ->disabled(fn (callable $get) => ! $get('manage_stock'))
                                         ->numeric()
                                         ->default(0),
                                     TextInput::make('low_stock_threshold')
-                                        ->label('Low stock Alert Threshold')
+                                        ->label(__('product.low_stock_threshold'))
                                         ->numeric()
                                         ->default(0)
                                         ->minValue(0)
-                                        ->helperText('Get notified when stock falls below this number'),
+                                        ->helperText(__('product.help.low_stock_threshold')),
                                     ToggleButtons::make('stock_status')
                                         ->options([
-                                            'in_stock' => 'In Stock',
-                                            'out_of_stock' => 'Out of Stock',
-                                            'pre_order' => 'Pre Order',
+                                            'in_stock' => __('product.stock_status.in_stock'),
+                                            'out_of_stock' => __('product.stock_status.out_of_stock'),
+                                            'pre_order' => __('product.stock_status.pre_order'),
                                         ])
                                         ->grouped()
                                         ->default('in_stock')
@@ -122,14 +122,14 @@ class ProductForm
                             ]),
 
                         // --- IMAGES ---
-                        Tab::make('Images')
+                        Tab::make(__('product.tabs.images'))
                             ->icon(Heroicon::Photo)
                             ->schema([
-                                Section::make('Product Images')
-                                    ->description('Upload multiple images. The first image will be the primary image.') // Typos fixed
+                                Section::make(__('product.sections.images'))
+                                    ->description(__('product.help.images'))
                                     ->schema([
                                         FileUpload::make('images')
-                                            ->label('Product Images')
+                                            ->label(__('product.images'))
                                             ->multiple()
                                             ->image()
                                             ->directory('products')
@@ -138,7 +138,7 @@ class ProductForm
                                             ->disk('public')
                                             ->reorderable()
                                             ->columnSpanFull()
-                                            ->helperText('You can drag and drop to reorder images')
+                                            ->helperText(__('product.help.reorder_images'))
                                             ->saveRelationshipsUsing(function ($component, $state, $record) {
 
                                                 // FIX: Delete physical files from disk before wiping DB records
@@ -166,14 +166,14 @@ class ProductForm
                             ]),
 
                         // --- SETTINGS ---
-                        Tab::make('Setting')
+                        Tab::make(__('product.tabs.setting'))
                             ->icon(Heroicon::Cog6Tooth)
                             ->schema([
-                                Section::make('Product status')->schema([
+                                Section::make(__('product.sections.status'))->schema([
                                     ToggleButtons::make('status')
                                         ->options([
-                                            'new' => 'New',
-                                            'used' => 'Used',
+                                            'new' => __('product.status.new'),
+                                            'used' => __('product.status.used'),
                                         ])
                                         ->grouped()
                                         ->default('new')
@@ -184,20 +184,20 @@ class ProductForm
                                     Toggle::make('is_featured')
                                         ->required(),
                                 ])->columns(2),
-                                Section::make('Statistics')->schema([
+                                Section::make(__('product.sections.statistics'))->schema([
                                     Placeholder::make('view_count')
                                         ->content(fn ($record) => $record?->view_count ?? 0),
                                     Placeholder::make('created_at')
-                                        ->label('Created')
+                                        ->label(__('product.created'))
                                         ->content(fn ($record) => $record?->created_at?->diffForHumans() ?? '-'),
                                 ]),
                             ]),
 
                         // --- SEO ---
-                        Tab::make('SEO')
+                        Tab::make(__('product.tabs.seo'))
                             ->icon(Heroicon::MagnifyingGlass)
                             ->schema([
-                                Section::make('Search Engine Optimization')->schema([
+                                Section::make(__('product.sections.seo'))->schema([
                                     TextInput::make('meta_title'),
                                     Textarea::make('meta_description')
                                         ->columnSpanFull(),

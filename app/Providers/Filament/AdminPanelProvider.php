@@ -2,17 +2,21 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\EditProfile;
+use App\Filament\Pages\Dashboard;
+use App\Http\Middleware\SetLocale;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
+use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
+use Filament\View\PanelsRenderHook;
+// use Filament\Widgets\AccountWidget;
+// use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -30,15 +34,17 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->login()
+            ->profile(EditProfile::class)
+            ->passwordReset()
             ->colors([
                 'primary' => Color::Blue,
             ])
             ->navigationGroups([
-                'Catalog',
-                'Sales',
-                'Customers management',
-                'System Management',
-                'Settings',
+                NavigationGroup::make(fn (): string => __('nav.catalog')),
+                NavigationGroup::make(fn (): string => __('nav.sales')),
+                NavigationGroup::make(fn (): string => __('nav.customer_management')),
+                NavigationGroup::make(fn (): string => __('nav.system_management')),
+                NavigationGroup::make(fn (): string => __('nav.settings')),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
@@ -54,6 +60,7 @@ class AdminPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                SetLocale::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
@@ -61,12 +68,16 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
+                fn () => view('filament.components.language-switcher'),
+            )
             ->authMiddleware([
                 Authenticate::class,
             ])
             ->plugin(
                 FilamentShieldPlugin::make()
-                    ->navigationGroup('System Management')
+                    ->navigationGroup(fn (): string => __('nav.system_management'))
             )
             ->darkMode(false)
             ->brandLogo(asset('images/logo.png'))

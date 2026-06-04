@@ -18,27 +18,27 @@ class EmployeeForm
     {
         return $schema
             ->components([
-                Section::make('Basic Info')
+                Section::make(__('employee.sections.basic_info'))
                     ->schema([
                         TextInput::make('name')
                             ->required()
                             ->maxLength(255),
                         TextInput::make('email')
-                            ->label('Email address')
+                            ->label(__('employee.email'))
                             ->email()
                             ->required()
                             ->maxLength(255)
                             ->unique(ignoreRecord: true),
                         Toggle::make('is_active')
-                            ->label('Status')
+                            ->label(__('employee.status'))
                             ->default(true)
                             ->required(),
                     ])
                     ->columns(2),
-                Section::make('Password')
+                Section::make(__('employee.sections.password'))
                     ->schema([
                         Toggle::make('change_password')
-                            ->label('Change password')
+                            ->label(__('employee.change_password'))
                             ->live()
                             ->default(false)
                             ->hidden(fn (string $operation): bool => $operation === 'create'),
@@ -50,9 +50,10 @@ class EmployeeForm
                             ->hidden(fn (Get $get, string $operation): bool => $operation === 'edit' && ! $get('change_password')),
                     ])
                     ->columns(2),
-                Section::make('Role Assignment')
+                Section::make(__('employee.sections.role_assignment'))
                     ->schema([
                         Select::make('roles')
+                            ->label(__('employee.roles'))
                             ->relationship(
                                 name: 'roles',
                                 titleAttribute: 'name',

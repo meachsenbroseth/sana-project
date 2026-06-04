@@ -17,8 +17,6 @@ use UnitEnum;
 
 class CustomerResource extends Resource
 {
-    protected static string | UnitEnum | null $navigationGroup = 'Customers management';
-
     protected static ?string $model = Customer::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::UserGroup;
@@ -49,5 +47,15 @@ class CustomerResource extends Resource
             'create' => CreateCustomer::route('/create'),
             'edit' => EditCustomer::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return __('nav.customer_management');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('nav.customer');
     }
 }

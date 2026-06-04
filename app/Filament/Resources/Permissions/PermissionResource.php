@@ -17,10 +17,6 @@ use UnitEnum;
 
 class PermissionResource extends Resource
 {
-    protected static string|UnitEnum|null $navigationGroup = 'System Management';
-
-    protected static ?string $navigationLabel = 'Permissions';
-
     protected static ?string $model = Permission::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;
@@ -51,5 +47,15 @@ class PermissionResource extends Resource
             'create' => CreatePermission::route('/create'),
             'edit' => EditPermission::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return __('nav.system_management');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('nav.permission');
     }
 }

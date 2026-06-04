@@ -18,20 +18,25 @@ class ShippingMethodsTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label(__('table.name'))
                     ->searchable(),
                 TextColumn::make('cost')
+                    ->label(__('table.cost'))
                     ->money('USD')
                     ->sortable(),
                 SelectColumn::make('status')
+                    ->label(__('table.status'))
                     ->options([
-                        'active' => 'Active',
-                        'inactive' => 'Inactive',
+                        'active' => __('shipping_method.status.active'),
+                        'inactive' => __('shipping_method.status.inactive'),
                     ]),
                 TextColumn::make('created_at')
+                    ->label(__('table.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label(__('table.updated_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -39,8 +44,8 @@ class ShippingMethodsTable
             ->filters([
                 SelectFilter::make('status')
                     ->options([
-                        'active' => 'Active',
-                        'inactive' => 'Inactive',
+                        'active' => __('shipping_method.status.active'),
+                        'inactive' => __('shipping_method.status.inactive'),
                     ]),
             ])
             ->recordActions([
