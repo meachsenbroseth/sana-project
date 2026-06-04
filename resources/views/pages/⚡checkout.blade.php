@@ -767,49 +767,126 @@
                         <div class="space-y-4 mb-6">
 
                             {{-- Cash on Delivery --}}
-                            <label class="relative cursor-pointer">
-                                <input type="radio" wire:model="paymentMethod" value="cash_on_delivery" class="peer sr-only">
-                                <div class="border-2 rounded-xl p-4 peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
+                            <label class="relative cursor-pointer block">
+                                <input type="radio"
+                                    wire:model="paymentMethod"
+                                    value="cash_on_delivery"
+                                    class="peer sr-only">
+
+                                <div class="relative overflow-hidden rounded-2xl border-2 border-gray-200 bg-white p-4
+                                            transition-all duration-200
+                                            hover:border-blue-300 hover:shadow-md
+                                            peer-checked:border-[#2563EB]
+                                            peer-checked:bg-gradient-to-br peer-checked:from-blue-50 peer-checked:to-white
+                                            peer-checked:shadow-lg">
+
+                                    {{-- Active Indicator --}}
+                                    <div class="absolute top-3 right-3 hidden peer-checked:flex items-center justify-center
+                                                w-6 h-6 rounded-full bg-[#2563EB] text-white shadow">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="w-4 h-4"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            stroke-width="3">
+                                            <path stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </div>
+
                                     <div class="flex items-center gap-4">
-                                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                            </svg>
+
+                                        {{-- Icon --}}
+                                        <div class="flex-shrink-0">
+                                            <div class="w-14 h-14 rounded-2xl bg-blue-100 border border-blue-200
+                                                        shadow-sm flex items-center justify-center">
+
+                                                <svg class="w-7 h-7 text-[#2563EB]"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                                </svg>
+
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p class="font-semibold text-gray-900">Cash on Delivery</p>
-                                            <p class="text-sm text-gray-500">Pay when you receive your order</p>
+
+                                        {{-- Content --}}
+                                        <div class="flex-1">
+
+                                            <div class="flex items-center gap-2">
+
+                                                <p class="text-base font-bold text-gray-900">
+                                                    Cash on Delivery
+                                                </p>
+                                            </div>
+
+                                            <p class="mt-1 text-sm text-gray-500 leading-relaxed">
+                                                Pay safely when your order arrives at your doorstep.
+                                            </p>
+
                                         </div>
                                     </div>
                                 </div>
                             </label>
 
                             {{-- KHQR --}}
-                            <label class="relative cursor-pointer">
-                                <input type="radio" wire:model="paymentMethod" value="KHQR" class="peer sr-only">
-                                <div class="border-2 rounded-xl p-4 peer-checked:border-red-500 peer-checked:bg-red-50 hover:border-red-300 transition">
+                            <label class="relative cursor-pointer block">
+                                <input type="radio"
+                                    wire:model="paymentMethod"
+                                    value="KHQR"
+                                    class="peer sr-only">
+
+                                <div class="relative overflow-hidden rounded-2xl border-2 border-gray-200 bg-white p-4
+                                            transition-all duration-200
+                                            hover:border-red-300 hover:shadow-md
+                                            peer-checked:border-[#ED1C24]
+                                            peer-checked:bg-gradient-to-br peer-checked:from-red-50 peer-checked:to-white
+                                            peer-checked:shadow-lg">
+
+                                    {{-- Active Indicator --}}
+                                    <div class="absolute top-3 right-3 hidden peer-checked:flex items-center justify-center
+                                                w-6 h-6 rounded-full bg-[#ED1C24] text-white shadow">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="w-4 h-4"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            stroke-width="3">
+                                            <path stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </div>
+
                                     <div class="flex items-center gap-4">
-                                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <rect x="1" y="1" width="9" height="9" rx="1.5" fill="#E1232E"/>
-                                                <rect x="2.5" y="2.5" width="6" height="6" rx="0.75" fill="#fff"/>
-                                                <rect x="4" y="4" width="3" height="3" rx="0.5" fill="#E1232E"/>
-                                                <rect x="12" y="1" width="9" height="9" rx="1.5" fill="#E1232E"/>
-                                                <rect x="13.5" y="2.5" width="6" height="6" rx="0.75" fill="#fff"/>
-                                                <rect x="15" y="4" width="3" height="3" rx="0.5" fill="#E1232E"/>
-                                                <rect x="1" y="12" width="9" height="9" rx="1.5" fill="#E1232E"/>
-                                                <rect x="2.5" y="13.5" width="6" height="6" rx="0.75" fill="#fff"/>
-                                                <rect x="4" y="15" width="3" height="3" rx="0.5" fill="#E1232E"/>
-                                                <rect x="12" y="12" width="3" height="3" rx="0.5" fill="#E1232E"/>
-                                                <rect x="16" y="12" width="5" height="2" rx="0.5" fill="#E1232E"/>
-                                                <rect x="12" y="16" width="2" height="5" rx="0.5" fill="#E1232E"/>
-                                                <rect x="15" y="15" width="3" height="3" rx="0.5" fill="#E1232E"/>
-                                                <rect x="19" y="15" width="2" height="6" rx="0.5" fill="#E1232E"/>
-                                            </svg>
+
+                                        {{-- KHQR Logo --}}
+                                        <div class="flex-shrink-0">
+                                            <div class="w-14 h-14 rounded-2xl bg-white border border-red-100 shadow-sm flex items-center justify-center p-2">
+                                                <img src="https://upload.wikimedia.org/wikipedia/commons/b/bb/KHQR_Logo.png"
+                                                    alt="KHQR"
+                                                    class="w-full h-full object-contain">
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p class="font-semibold text-gray-900">KHQR Payment</p>
-                                            <p class="text-sm text-gray-500">Scan with any Cambodian banking app</p>
+
+                                        {{-- Content --}}
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-2">
+
+                                                <p class="text-base font-bold text-gray-900">
+                                                    KHQR Payment
+                                                </p>
+                                            </div>
+
+                                            <p class="mt-1 text-sm text-gray-500 leading-relaxed">
+                                                Scan securely using ABA, ACLEDA, Wing, Bakong,
+                                                or any Cambodian banking app.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -822,9 +899,42 @@
                                 ← Back to Review
                             </button>
                             <button wire:click="placeOrder"
-                                class="w-full sm:w-auto px-8 py-3 rounded-lg font-semibold shadow-sm transition
-                                       {{ $paymentMethod === 'KHQR' ? 'bg-[#E1232E] hover:bg-red-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white' }}">
-                                {{ $paymentMethod === 'KHQR' ? 'Scan & Pay with KHQR' : 'Place Order' }}
+                                class="w-full sm:w-auto px-8 py-3 rounded-xl font-bold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]
+                                {{ $paymentMethod === 'KHQR'
+                                    ? 'bg-[#ED1C24] hover:bg-[#d91920] text-white'
+                                    : 'bg-[#2563EB] hover:bg-[#1d4ed8] text-white' }}">
+
+                                <div class="flex items-center justify-center gap-2">
+
+                                    @if($paymentMethod === 'KHQR')
+                                        {{-- QR Icon --}}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="w-5 h-5"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M4 4h5v5H4V4zm11 0h5v5h-5V4zM4 15h5v5H4v-5zm8-8h1m3 3h1m-5 5h1m3 0h1m-4 4h5"/>
+                                        </svg>
+
+                                        <span>Scan & Pay with KHQR</span>
+                                    @else
+                                        {{-- Cart Icon --}}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="w-5 h-5"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M3 3h2l.4 2M7 13h10l4-8H5.4m1.6 8L5.4 5M7 13l-1 5h12m-9 0a1 1 0 102 0m6 0a1 1 0 102 0"/>
+                                        </svg>
+
+                                        <span>Place Order</span>
+                                    @endif
+
+                                </div>
                             </button>
                         </div>
                     </div>
@@ -900,78 +1010,68 @@
 
     {{-- ── KHQR Modal — at root level so it overlays everything ── --}}
     @if ($showKhqrModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center khqr-overlay"
-             style="background: rgba(0,0,0,0.6);">
+        <div class="fixed inset-0 z-50 flex items-center justify-center"
+            style="background: rgba(0,0,0,0.45);">
 
-            {{-- Backdrop --}}
             <div class="absolute inset-0" wire:click="cancelPayment('Payment cancelled')"></div>
 
-            {{-- Card --}}
-            <div class="relative z-10 khqr-card"
-                 style="width: 300px; background: #fff; border-radius: 20px;
-                        box-shadow: 0 8px 40px 0 rgba(0,0,0,0.22);">
+            <div class="relative z-10 overflow-hidden"
+                style="width:305px;background:#fff;border-radius:16px;box-shadow:0 10px 35px rgba(0,0,0,.15);">
 
                 <div wire:poll.1s="checkKhqrStatus">
 
-                    {{-- Red header --}}
-                    <div class="relative flex items-center justify-center overflow-hidden"
-                         style="background: #E1232E; border-radius: 20px 20px 0 0; padding: 18px 0; min-height: 62px;">
-                        <svg width="96" height="30" viewBox="0 0 96 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <text x="0" y="24" font-family="Arial Black,Arial" font-weight="900" font-size="24" fill="white">KH</text>
-                            <rect x="51" y="2" width="22" height="22" rx="4" fill="white"/>
-                            <rect x="54" y="5" width="7" height="7" rx="1.2" fill="#E1232E"/>
-                            <rect x="63" y="5" width="5" height="5" rx="0.9" fill="#E1232E"/>
-                            <rect x="54" y="14" width="5" height="5" rx="0.9" fill="#E1232E"/>
-                            <rect x="63" y="14" width="5" height="5" rx="0.9" fill="#E1232E"/>
-                            <text x="75" y="24" font-family="Arial Black,Arial" font-weight="900" font-size="24" fill="white">R</text>
-                        </svg>
-                        {{-- Notched corner --}}
-                        <div class="absolute top-0 right-0"
-                             style="width:0;height:0;border-style:solid;border-width:0 42px 42px 0;border-color:transparent #fff transparent transparent;"></div>
+                    {{-- Header --}}
+                    <div class="flex items-center justify-center"
+                        style="height:54px;background:#ed1c24;">
+                        <div style="font-size:22px;font-weight:900;color:white;letter-spacing:1px;font-family:Arial,sans-serif;">
+                            KHQR
+                        </div>
                     </div>
 
                     {{-- Merchant + Amount --}}
-                    <div style="padding: 18px 24px 14px;">
-                        <p style="margin:0;font-size:12px;color:#9ca3af;font-family:sans-serif;">{{ $merchantName }}</p>
-                        <div class="flex items-baseline" style="gap:8px;margin-top:4px;">
-                            <span style="font-size:28px;font-weight:800;color:#111;font-family:sans-serif;letter-spacing:-0.5px;">
-                                ${{ number_format($this->total, 2) }}
+                    <div style="padding:24px 42px 22px;">
+                        <p style="margin:0;font-size:13px;color:#222;font-family:Arial,sans-serif;">
+                            {{ $merchantName }}
+                        </p>
+
+                        <div style="display:flex;align-items:flex-end;gap:8px;margin-top:3px;">
+                            <span style="font-size:30px;font-weight:900;color:#000;line-height:1;font-family:Arial,sans-serif;">
+                                {{ number_format($this->total, 0) }}
                             </span>
-                            <span style="font-size:12px;font-weight:700;color:#d1d5db;font-family:sans-serif;letter-spacing:0.5px;">USD</span>
+                            <span style="font-size:13px;color:#222;font-family:Arial,sans-serif;">
+                                KHR
+                            </span>
                         </div>
                     </div>
 
                     {{-- Dashed divider --}}
-                    <div style="height:1px;background-image:repeating-linear-gradient(90deg,#d1d5db 0,#d1d5db 8px,transparent 8px,transparent 16px);"></div>
+                    <div style="border-top:1.5px dashed #cfcfcf;"></div>
 
-                    {{-- QR Code --}}
-                    <div style="padding:20px 24px 10px;display:flex;justify-content:center;">
+                    {{-- QR --}}
+                    <div style="padding:36px 42px 28px;display:flex;justify-content:center;align-items:center;">
                         @if ($khqrString)
-                            {!! $khqrString !!}
+                            <div style="width:215px;height:215px;display:flex;align-items:center;justify-content:center;">
+                                {!! $khqrString !!}
+                            </div>
                         @endif
                     </div>
 
                     {{-- Waiting + Timer --}}
-                    <div style="padding:4px 24px 8px;text-align:center;">
-                        <div class="flex items-center justify-center" style="gap:6px;margin-bottom:8px;">
-                            <div class="animate-pulse rounded-full" style="width:7px;height:7px;background:#E1232E;flex-shrink:0;"></div>
-                            <span style="font-size:11px;color:#9ca3af;font-family:sans-serif;">Waiting for payment...</span>
-                        </div>
-                        <span class="font-mono" style="font-size:26px;font-weight:800;letter-spacing:2px;color:{{ $timeLeft < 60 ? '#E1232E' : '#2563eb' }};">
+                    <div style="padding:0 24px 16px;text-align:center;">
+                        <p style="margin:0 0 6px;font-size:12px;color:#888;font-family:Arial,sans-serif;">
+                            Waiting for payment...
+                        </p>
+
+                        <div style="font-size:22px;font-weight:800;color:{{ $timeLeft < 60 ? '#ed1c24' : '#2563eb' }};font-family:monospace;">
                             {{ sprintf('%02d:%02d', floor($timeLeft / 60), $timeLeft % 60) }}
-                        </span>
-                        <div style="margin-top:6px;background:#f3f4f6;border-radius:99px;height:3px;overflow:hidden;">
-                            <div style="background:#E1232E;height:3px;border-radius:99px;transition:width 1s linear;width:{{ ($timeLeft / $paymentTimeout) * 100 }}%;"></div>
                         </div>
-                        <p style="margin:4px 0 0;font-size:10px;color:#d1d5db;font-family:sans-serif;">Time remaining</p>
                     </div>
 
                     {{-- Cancel --}}
-                    <div style="padding:12px 24px 20px;">
+                    <div style="padding:0 24px 22px;">
                         <button type="button"
-                            wire:click="cancelPayment('Payment cancelled by customer')"
-                            class="w-full hover:bg-red-50 transition-colors"
-                            style="padding:11px;border:1.5px solid #E1232E;border-radius:10px;background:#fff;color:#E1232E;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif;">
+                                wire:click="cancelPayment('Payment cancelled by customer')"
+                                style="width:100%;padding:11px;border:1.5px solid #ed1c24;border-radius:10px;background:white;color:#ed1c24;font-size:13px;font-weight:700;cursor:pointer;">
                             Cancel Order
                         </button>
                     </div>
@@ -979,17 +1079,6 @@
                 </div>
             </div>
         </div>
-
-        <style>
-            @keyframes khqrFadeIn { from { opacity:0; } to { opacity:1; } }
-            @keyframes khqrPopIn {
-                0%   { opacity:0; transform:scale(0.80) translateY(28px); }
-                65%  { transform:scale(1.04) translateY(-5px); }
-                100% { opacity:1; transform:scale(1) translateY(0); }
-            }
-            .khqr-overlay { animation: khqrFadeIn 0.2s ease both; }
-            .khqr-card    { animation: khqrPopIn 0.45s cubic-bezier(.22,.68,0,1.3) both; }
-        </style>
     @endif
 
 </div>
