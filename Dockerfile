@@ -24,10 +24,12 @@ COPY . .
 RUN npm run build
 
 
-FROM php:8.4-apache-bookworm
+FROM php:8.4-fpm-bookworm
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+        nginx \
+        supervisor \
         git \
         unzip \
         libicu-dev \
@@ -53,31 +55,9 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Fix: only one Apache MPM must be enabled
-RUN rm -f /etc/apache2/mods-enabled/mpm_event.load \
-          /etc/apache2/mods-enabled/mpm_event.conf \
-          /etc/apache2/mods-enabled/mpm_worker.load \
-          /etc/apache2/mods-enabled/mpm_worker.conf \
-    && a2enmod headers rewrite
-
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
-        /etc/apache2/sites-available/*.conf \
-        /etc/apache2/apache2.conf \
-        /etc/apache2/conf-available/docker-php.conf \
-    && sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
-
 WORKDIR /var/www/html
 
 COPY . .
-
-RUN mkdir -p \
-        storage/framework/sessions \
-        storage/framework/views \
-        storage/framework/cache \
-        storage/logs \
-        bootstrap/cache
 
 RUN composer install \
     --no-dev \
@@ -88,7 +68,58 @@ RUN composer install \
 
 COPY --from=assets /app/public/build ./public/build
 
-RUN chown -R www-data:www-data storage bootstrap/cache \
+RUN mkdir -p \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/framework/cache \
+        storage/logs \
+        bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R ug+rwx storage bootstrap/cache
 
+RUN cat > /etc/nginx/sites-available/default <<'EOF'
+server {
+    listen 80;
+    server_name _;
+    root /var/www/html/public;
+
+    index index.php index.html;
+
+    client_max_body_size 50M;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+}
+EOF
+
+RUN cat > /etc/supervisor/conf.d/supervisord.conf <<'EOF'
+[supervisord]
+nodaemon=true
+
+[program:php-fpm]
+command=php-fpm
+autostart=true
+autorestart=true
+
+[program:nginx]
+command=nginx -g "daemon off;"
+autostart=true
+autorestart=true
+EOF
+
 EXPOSE 80
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
