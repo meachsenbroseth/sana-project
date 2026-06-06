@@ -157,19 +157,45 @@ new class extends Component
                 <h1 class="text-2xl font-bold text-gray-900">Order information</h1>
             </div>
             
-            <button wire:click="downloadInvoice" type="button" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-blue-800 focus:ring-4 focus:ring-gray-200 transition-all">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                </svg>
-                Download Invoice
-            </button>
+            <div class="flex flex-col gap-3 sm:flex-row">
+                @if ($order->status === 'shipped')
+                    <form method="POST" action="{{ route('customer.orders.confirm-delivery', $order) }}">
+                        @csrf
+                        <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#1e874b] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#176a3b] focus:ring-4 focus:ring-green-100 sm:w-auto">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path>
+                            </svg>
+                            Confirm Delivery
+                        </button>
+                    </form>
+                @endif
+
+                <button wire:click="downloadInvoice" type="button" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-blue-800 focus:ring-4 focus:ring-gray-200 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Download Invoice
+                </button>
+            </div>
         </div>
+
+        @if (session()->has('delivery_confirmed'))
+            <div class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                {{ session('delivery_confirmed') }}
+            </div>
+        @endif
 
         @if (session()->has('review_success'))
             <div class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
                 {{ session('review_success') }}
             </div>
         @endif
+
+        @error('order')
+            <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {{ $message }}
+            </div>
+        @enderror
         
         <div class="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 p-8">
 

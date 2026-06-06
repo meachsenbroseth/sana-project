@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Observers\ProductObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +15,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Laravel\Scout\Searchable;
 
+#[ObservedBy(ProductObserver::class)]
 class Product extends Model
 {
     use Searchable, SoftDeletes;
@@ -160,6 +163,20 @@ class Product extends Model
     public function shouldBeSearchable(): bool
     {
         return $this->is_active;
+    }
+
+    public function isAvailableForPurchase(): bool
+    {
+        return $this->is_active
+            && $this->stock_status === 'in_stock'
+            && (int) $this->stock_quantity > 0;
+    }
+
+    public function syncStockStatusFromQuantity(): void
+    {
+        $this->stock_status = (int) $this->stock_quantity > 0
+            ? 'in_stock'
+            : 'out_of_stock';
     }
 
     public function makeAllSearchableUsing(Builder $query): Builder

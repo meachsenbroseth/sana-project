@@ -102,6 +102,7 @@ class ProductForm
                                         ->required(fn (callable $get) => $get('manage_stock'))
                                         ->disabled(fn (callable $get) => ! $get('manage_stock'))
                                         ->numeric()
+                                        ->minValue(0)
                                         ->default(0),
                                     TextInput::make('low_stock_threshold')
                                         ->label(__('product.low_stock_threshold'))
@@ -110,6 +111,7 @@ class ProductForm
                                         ->minValue(0)
                                         ->helperText(__('product.help.low_stock_threshold')),
                                     ToggleButtons::make('stock_status')
+                                        ->label(__('product.stock_availability'))
                                         ->options([
                                             'in_stock' => __('product.stock_status.in_stock'),
                                             'out_of_stock' => __('product.stock_status.out_of_stock'),
@@ -117,6 +119,9 @@ class ProductForm
                                         ])
                                         ->grouped()
                                         ->default('in_stock')
+                                        ->disabled()
+                                        ->dehydrated(false)
+                                        ->helperText('Stock status is updated automatically from the stock quantity.')
                                         ->required(),
                                 ])->columns(2),
                             ]),
