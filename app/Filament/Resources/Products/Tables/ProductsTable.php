@@ -93,6 +93,18 @@ class ProductsTable
                         true: fn (Builder $query) => $query->where('stock_quantity', '>', 0),
                         false: fn (Builder $query) => $query->where('stock_quantity', '<=', 0),
                     ),
+
+                // Add this
+                TernaryFilter::make('low_stock')
+                    ->label('Low Stock')
+                    ->placeholder('All Products')
+                    ->trueLabel('Low Stock Only (≤ 10)')
+                    ->falseLabel('Healthy Stock (> 10)')
+                    ->queries(
+                        true: fn (Builder $query) => $query->where('stock_quantity', '<=', 10)
+                                                        ->where('stock_quantity', '>', 0),
+                        false: fn (Builder $query) => $query->where('stock_quantity', '>', 10),
+                    ),
             ])
             ->recordActions([
                 ViewAction::make()
