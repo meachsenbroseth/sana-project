@@ -2,6 +2,7 @@
     use Livewire\Component;
     use Livewire\Attributes\Computed;
     use Illuminate\Support\Facades\DB;
+    use Illuminate\Validation\ValidationException;
 
     use App\Models\Address;
     use App\Models\Order;
@@ -88,6 +89,11 @@
                 return;
             }
 
+            if (! $this->validateCartAvailability()) {
+                redirect()->route('cart.index');
+                return;
+            }
+
             $this->merchantName = env('BAKONG_MERCHANT_NAME');
 
             $this->bootAddressDefaults();
@@ -160,6 +166,10 @@
             }
 
             if ($this->step === self::STEP_REVIEW) {
+                if (! $this->validateCartAvailability()) {
+                    return;
+                }
+
                 $this->step = self::STEP_PAYMENT;
             }
         }
@@ -240,6 +250,11 @@
 
         public function placeOrder(): mixed
         {
+            if (! $this->validateCartAvailability()) {
+                $this->step = self::STEP_REVIEW;
+                return null;
+            }
+
             if (! $this->validateAddress() || ! $this->validateShippingMethod()) {
                 $this->step = self::STEP_SHIPPING;
                 return null;
@@ -325,10 +340,6 @@
             try {
                 $this->verifyKhqrTransaction();
             } catch (\Throwable $e) {
-                logger()->error('KHQR verify error', [
-                    'message' => $e->getMessage(),
-                    'trace'   => $e->getTraceAsString(),
-                ]);
                 session()->flash('error', 'KHQR verify error: ' . $e->getMessage());
             }
 
@@ -349,12 +360,6 @@
             $responseCode = data_get($result, 'responseCode')
                 ?? data_get($result, 'data.responseCode')
                 ?? data_get($result, 'response.responseCode');
-
-            logger()->info('KHQR status', [
-                'raw'          => json_encode($result),
-                'responseCode' => $responseCode,
-                'status'       => data_get($result, 'data.status') ?? data_get($result, 'status'),
-            ]);
 
             if ((int) $responseCode !== 0) {
                 return null;
@@ -501,6 +506,18 @@
 
                 $quantity = (int) $item['quantity'];
 
+                if (! $product->isAvailableForPurchase()) {
+                    throw ValidationException::withMessages([
+                        'cart' => "{$product->name} is out of stock.",
+                    ]);
+                }
+
+                if ($quantity < 1 || $quantity > (int) $product->stock_quantity) {
+                    throw ValidationException::withMessages([
+                        'cart' => "Only {$product->stock_quantity} {$product->name} items are available.",
+                    ]);
+                }
+
                 OrderItem::create([
                     'order_id'     => $order->id,
                     'product_id'   => $product->id,
@@ -511,6 +528,27 @@
                     'total_amount' => $item['price'] * $quantity,
                 ]);
             }
+        }
+
+        private function validateCartAvailability(): bool
+        {
+            foreach ($this->cart as $item) {
+                $product = Product::query()->find($item['product_id']);
+
+                if (! $product || ! $product->isAvailableForPurchase()) {
+                    session()->flash('error', ($item['name'] ?? 'A product').' is currently out of stock.');
+
+                    return false;
+                }
+
+                if ((int) $item['quantity'] < 1 || (int) $item['quantity'] > (int) $product->stock_quantity) {
+                    session()->flash('error', 'Only '.$product->stock_quantity.' '.$product->name.' items are available.');
+
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         // -------------------------------------------------------------------------
@@ -1081,4 +1119,4 @@
         </div>
     @endif
 
-</div>
+ </div>

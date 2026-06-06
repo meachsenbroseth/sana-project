@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Product;
 use Livewire\Component;
 use Livewire\Attributes\Computed;
 
@@ -25,6 +26,20 @@ new class extends Component {
         $cart = session()->get('cart', []);
 
         if (isset($cart[$cartKey])) {
+            $product = Product::query()->find($cart[$cartKey]['product_id']);
+
+            if (! $product || ! $product->isAvailableForPurchase()) {
+                session()->flash('error', 'This product is currently out of stock.');
+
+                return;
+            }
+
+            if ($quantity > (int) $product->stock_quantity) {
+                session()->flash('error', 'Only '.$product->stock_quantity.' items are available.');
+
+                return;
+            }
+
             $cart[$cartKey]['quantity'] = $quantity;
 
             session()->put('cart', $cart);
@@ -67,6 +82,18 @@ new class extends Component {
     {
         return collect($this->cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
     }
+
+    #[Computed]
+    public function hasUnavailableItems(): bool
+    {
+        return collect($this->cart)->contains(function (array $item): bool {
+            $product = Product::query()->find($item['product_id']);
+
+            return ! $product
+                || ! $product->isAvailableForPurchase()
+                || (int) $item['quantity'] > (int) $product->stock_quantity;
+        });
+    }
 };
 ?>
 
@@ -95,7 +122,19 @@ new class extends Component {
                         </div>
                     @endif
 
+                    @if (session()->has('error'))
+                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
                     @foreach ($cart as $cartKey => $item)
+                        @php
+                            $product = \App\Models\Product::query()->find($item['product_id']);
+                            $isUnavailable = ! $product
+                                || ! $product->isAvailableForPurchase()
+                                || (int) $item['quantity'] > (int) $product->stock_quantity;
+                        @endphp
                         <div class="bg-white rounded-lg shadow-sm p-6">
                             <div class="flex gap-4">
                                 <!-- Product Image -->
@@ -119,6 +158,11 @@ new class extends Component {
                                     <h3 class="font-semibold text-gray-900 mb-1">{{ $item['name'] }}</h3>
                                     <p class="text-lg font-bold text-blue-600">${{ number_format($item['price'], 2) }}
                                     </p>
+                                    @if ($isUnavailable)
+                                        <p class="mt-2 inline-flex rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-700">
+                                            Out of Stock
+                                        </p>
+                                    @endif
                                 </div>
 
                                 <!-- Quantity & Actions -->
@@ -200,10 +244,17 @@ new class extends Component {
                         </div>
 
                         @auth('customer')
-                            <a wire:navigate href="/checkout"
-                                class="block w-full bg-blue-600 text-white text-center py-3 px-6 rounded-lg hover:bg-blue-700 transition font-semibold">
-                                Proceed to Checkout
-                            </a>
+                            @if ($this->hasUnavailableItems)
+                                <button disabled
+                                    class="block w-full cursor-not-allowed rounded-lg bg-gray-300 px-6 py-3 text-center font-semibold text-gray-500">
+                                    Remove unavailable items to checkout
+                                </button>
+                            @else
+                                <a wire:navigate href="/checkout"
+                                    class="block w-full bg-blue-600 text-white text-center py-3 px-6 rounded-lg hover:bg-blue-700 transition font-semibold">
+                                    Proceed to Checkout
+                                </a>
+                            @endif
                         @else
                             <a wire:navigate href="{{ route('login') }}"
                                 class="block w-full bg-blue-600 text-white text-center py-3 px-6 rounded-lg hover:bg-blue-700 transition font-semibold">

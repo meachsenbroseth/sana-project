@@ -7,10 +7,14 @@ new class extends Component {
     public Product $product;
     public function addToCart()
     {
-        if ($this->product->stock_status !== 'in_stock') {
-            session()->flash('error','This product is current;y out of stock');
+        $this->product->refresh();
+
+        if (! $this->product->isAvailableForPurchase()) {
+            session()->flash('error', 'This product is currently out of stock.');
+
             return;
         }
+
          // Get current cart from session
          $cart = session()->get('cart', []);
 
@@ -18,6 +22,12 @@ new class extends Component {
 
          // If product already in cart, increment quantity
          if (isset($cart[$cartKey])) {
+             if ((int) $cart[$cartKey]['quantity'] >= (int) $this->product->stock_quantity) {
+                 session()->flash('error', 'Only '.$this->product->stock_quantity.' items are available.');
+
+                 return;
+             }
+
              $cart[$cartKey]['quantity']++;
          } else {
              // Add new product to cart
@@ -37,7 +47,7 @@ new class extends Component {
          // Dispatch event to update cart icon
          $this->dispatch('cart-updated');
 
-         session()->flash('success',$this->product->name . ' has been added to your cart.');
+         session()->flash('success', $this->product->name.' has been added to your cart.');
     }
     // Helper method to format price
     private function formatPrice($price): string
@@ -127,7 +137,7 @@ new class extends Component {
         <!-- Actions -->
 
         <div class="mt-4 flex gap-2">
-            @if ($product->stock_status === 'in_stock')
+            @if ($product->isAvailableForPurchase())
                 <button wire:click="addToCart" wire:loading.attr="disabled"
                     wire:loading.class="opacity-75 cursor-not-allowed"
                     class="flex-1 cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -142,16 +152,6 @@ new class extends Component {
                     </svg>
                     <span wire:loading.remove>Add to Cart</span>
                     <span wire:loading>Adding...</span>
-                </button>
-            @elseif ($product->stock_status === 'pre_order')
-                <button wire:click="addToCart" wire:loading.attr="disabled"
-                    wire:loading.class="opacity-75 cursor-not-allowed"
-                    class="flex-1 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Pre-order Now
                 </button>
             @else
                 <!-- Out of Stock -->

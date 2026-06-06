@@ -67,6 +67,24 @@ class OrderStockService
                 }
 
                 $requestedQuantity = max((int) $item->quantity, 0);
+
+                if ($requestedQuantity < 1) {
+                    $this->failStockDeduction($lockedOrder, "Invalid quantity for {$product->name}.", [
+                        'order_item_id' => $item->id,
+                        'product_id' => $product->id,
+                        'requested_quantity' => $item->quantity,
+                    ]);
+                }
+
+                if (! $product->isAvailableForPurchase()) {
+                    $this->failStockDeduction($lockedOrder, "{$product->name} is out of stock.", [
+                        'order_item_id' => $item->id,
+                        'product_id' => $product->id,
+                        'stock_status' => $product->stock_status,
+                        'stock_quantity' => $product->stock_quantity,
+                    ]);
+                }
+
                 $previousStock = (int) $product->stock_quantity;
 
                 if ($previousStock < $requestedQuantity) {
@@ -82,7 +100,6 @@ class OrderStockService
 
                 $product->forceFill([
                     'stock_quantity' => $newStock,
-                    'stock_status' => $newStock > 0 ? 'in_stock' : 'out_of_stock',
                 ])->save();
 
                 Log::info('Product stock deducted for paid order.', [
