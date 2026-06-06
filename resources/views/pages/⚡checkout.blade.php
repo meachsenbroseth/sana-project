@@ -325,10 +325,6 @@
             try {
                 $this->verifyKhqrTransaction();
             } catch (\Throwable $e) {
-                logger()->error('KHQR verify error', [
-                    'message' => $e->getMessage(),
-                    'trace'   => $e->getTraceAsString(),
-                ]);
                 session()->flash('error', 'KHQR verify error: ' . $e->getMessage());
             }
 
@@ -349,12 +345,6 @@
             $responseCode = data_get($result, 'responseCode')
                 ?? data_get($result, 'data.responseCode')
                 ?? data_get($result, 'response.responseCode');
-
-            logger()->info('KHQR status', [
-                'raw'          => json_encode($result),
-                'responseCode' => $responseCode,
-                'status'       => data_get($result, 'data.status') ?? data_get($result, 'status'),
-            ]);
 
             if ((int) $responseCode !== 0) {
                 return null;
@@ -1081,4 +1071,4 @@
         </div>
     @endif
 
-</div>
+ </div>
