@@ -18,6 +18,7 @@ it('evaluates admin navigation group labels using the current locale', function 
     expect($groups)->each->toBeInstanceOf(NavigationGroup::class);
 
     $expectedEnglishLabels = [
+        __('nav.analytics'),
         __('nav.catalog'),
         __('nav.sales'),
         __('nav.customer_management'),
@@ -31,6 +32,7 @@ it('evaluates admin navigation group labels using the current locale', function 
     app()->setLocale('km');
 
     $expectedKhmerLabels = [
+        __('nav.analytics'),
         __('nav.catalog'),
         __('nav.sales'),
         __('nav.customer_management'),

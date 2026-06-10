@@ -2,6 +2,7 @@
 
 return [
     'dashboard' => 'Dashboard',
+    'analytics' => 'Analytics',
     'catalog' => 'Catalog',
     'sales' => 'Sales',
     'settings' => 'Settings',

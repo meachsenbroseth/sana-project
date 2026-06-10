@@ -40,6 +40,7 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Blue,
             ])
             ->navigationGroups([
+                NavigationGroup::make(fn (): string => __('nav.analytics')),
                 NavigationGroup::make(fn (): string => __('nav.catalog')),
                 NavigationGroup::make(fn (): string => __('nav.sales')),
                 NavigationGroup::make(fn (): string => __('nav.customer_management')),
