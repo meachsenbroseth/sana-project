@@ -35,7 +35,7 @@ class RevenueChart extends ChartWidget
                     'data' => $data->map(fn(TrendValue $value) => $value->aggregate)->toArray(),
                     // Optional: Make the chart line match your theme's primary blue!
                     'borderColor' => '#1d398f',
-                    'backgroundColor' => '#1d398f', 
+                    'backgroundColor' => '#1d398f',
                 ],
             ],
             'labels' => $data->map(fn(TrendValue $value) => $value->date)->toArray(),

@@ -16,10 +16,10 @@ class AiAssistantOverview extends StatsOverviewWidget
         return 4;
     }
 
-    // public static function canView(): bool
-    // {
-    //     return false;
-    // }
+    public static function canView(): bool
+    {
+        return false;
+    }
 
     protected function getStats(): array
     {
