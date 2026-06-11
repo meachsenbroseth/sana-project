@@ -14,6 +14,11 @@ class LowStockWidget extends BaseWidget
 
     protected static ?int $sort = 4;
 
+    public static function canView(): bool
+    {
+        return false;
+    }
+
     protected int|string|array $columnSpan = 'full';
 
     // Centralized threshold (easy to maintain later)
@@ -45,7 +50,7 @@ class LowStockWidget extends BaseWidget
                 ->label('Product')
                 ->searchable()
                 ->limit(30)
-                ->tooltip(fn ($record) => $record->name),
+                ->tooltip(fn($record) => $record->name),
 
             Tables\Columns\TextColumn::make('sku')
                 ->label('SKU')
@@ -55,8 +60,8 @@ class LowStockWidget extends BaseWidget
             Tables\Columns\TextColumn::make('stock_quantity')
                 ->label('Stock')
                 ->badge()
-                ->color(fn (int $state): string => $this->getStockColor($state))
-                ->formatStateUsing(fn (int $state) => $state === 0 ? 'OUT' : $state),
+                ->color(fn(int $state): string => $this->getStockColor($state))
+                ->formatStateUsing(fn(int $state) => $state === 0 ? 'OUT' : $state),
         ];
     }
 
