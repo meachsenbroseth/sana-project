@@ -8,10 +8,10 @@ use Filament\Widgets\ChartWidget;
 class AiProductDemandChart extends ChartWidget
 {
 
-    public static function canView(): bool
-    {
-        return false;
-    }
+    // public static function canView(): bool
+    // {
+    //     return false;
+    // }
 
     protected int|string|array $columnSpan = 'full';
 

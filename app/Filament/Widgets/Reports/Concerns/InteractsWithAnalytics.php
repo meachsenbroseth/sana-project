@@ -10,7 +10,7 @@ trait InteractsWithAnalytics
 {
     use InteractsWithPageFilters;
 
-    protected static bool $isDiscovered = false;
+    // protected static bool $isDiscovered = false;
 
     protected static bool $isLazy = true;
 
