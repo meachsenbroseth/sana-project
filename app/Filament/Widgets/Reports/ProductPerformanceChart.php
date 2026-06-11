@@ -9,6 +9,9 @@ class ProductPerformanceChart extends ChartWidget
 {
     use InteractsWithAnalytics;
 
+    protected static bool $isDiscovered = false;
+
+
     protected static ?int $sort = 6;
 
     protected int|string|array $columnSpan = 1;

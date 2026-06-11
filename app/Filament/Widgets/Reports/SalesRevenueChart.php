@@ -10,6 +10,8 @@ class SalesRevenueChart extends ChartWidget
 {
     use InteractsWithAnalytics;
 
+    protected static bool $isDiscovered = false;
+
     protected static ?int $sort = 3;
 
     protected int|string|array $columnSpan = 1;

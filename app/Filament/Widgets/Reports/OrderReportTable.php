@@ -12,6 +12,9 @@ class OrderReportTable extends TableWidget
 {
     use InteractsWithAnalytics;
 
+    protected static bool $isDiscovered = false;
+
+
     protected static ?int $sort = 9;
 
     protected int|string|array $columnSpan = 'full';

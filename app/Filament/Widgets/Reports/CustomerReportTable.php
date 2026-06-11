@@ -12,6 +12,9 @@ class CustomerReportTable extends TableWidget
 {
     use InteractsWithAnalytics;
 
+    protected static bool $isDiscovered = false;
+
+
     protected static ?int $sort = 8;
 
     protected int|string|array $columnSpan = 'full';

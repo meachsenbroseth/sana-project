@@ -10,6 +10,9 @@ class CustomerGrowthChart extends ChartWidget
 {
     use InteractsWithAnalytics;
 
+    protected static bool $isDiscovered = false;
+
+
     protected static ?int $sort = 5;
 
     protected int|string|array $columnSpan = 1;

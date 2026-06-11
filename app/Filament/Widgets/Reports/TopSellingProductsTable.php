@@ -12,6 +12,9 @@ class TopSellingProductsTable extends TableWidget
 {
     use InteractsWithAnalytics;
 
+    protected static bool $isDiscovered = false;
+
+
     protected static ?int $sort = 7;
 
     protected int|string|array $columnSpan = 'full';

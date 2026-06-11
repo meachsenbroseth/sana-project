@@ -11,6 +11,9 @@ class AnalyticsInsightsWidget extends StatsOverviewWidget
 {
     use InteractsWithAnalytics;
 
+    protected static bool $isDiscovered = false;
+
+
     protected static ?int $sort = 2;
 
     protected int|string|array $columnSpan = 'full';
