@@ -28,9 +28,9 @@ class BusinessIntelligenceContextService
                 'date_preset' => AnalyticsFilters::PRESET_THIS_MONTH,
             ]);
             $lastMonth = AnalyticsFilters::fromPageFilters([
-                'date_preset' => AnalyticsFilters::PRESET_CUSTOM,
-                'start_date' => now()->subMonthNoOverflow()->startOfMonth()->toDateString(),
-                'end_date' => now()->subMonthNoOverflow()->endOfMonth()->toDateString(),
+                'date_preset'  => AnalyticsFilters::PRESET_CUSTOM,
+                'start_date'   => now()->subMonthNoOverflow()->startOfMonth()->toDateString(),
+                'end_date'     => now()->subMonthNoOverflow()->endOfMonth()->toDateString(),
             ]);
             $thisYear = AnalyticsFilters::fromPageFilters([
                 'date_preset' => AnalyticsFilters::PRESET_THIS_YEAR,
@@ -39,46 +39,46 @@ class BusinessIntelligenceContextService
                 'date_preset' => AnalyticsFilters::PRESET_TODAY,
             ]);
 
-            $currentMonthRevenue = (float) $this->analytics->paidOrderQuery($thisMonth)->sum('total');
+            $currentMonthRevenue  = (float) $this->analytics->paidOrderQuery($thisMonth)->sum('total');
             $previousMonthRevenue = (float) $this->analytics->paidOrderQuery($lastMonth)->sum('total');
 
             return [
                 'generated_at' => now()->toDateTimeString(),
                 'sales' => [
-                    'total_revenue' => (float) Order::query()->where('payment_status', 'paid')->sum('total'),
-                    'revenue_today' => (float) $this->analytics->paidOrderQuery($today)->sum('total'),
-                    'revenue_this_month' => $currentMonthRevenue,
-                    'revenue_this_year' => (float) $this->analytics->paidOrderQuery($thisYear)->sum('total'),
-                    'revenue_growth_percent' => $this->growthPercent($currentMonthRevenue, $previousMonthRevenue),
-                    'average_order_value' => $this->averageOrderValue(),
-                    'next_month_revenue_estimate' => $this->nextMonthRevenueEstimate(),
+                    'total_revenue'              => (float) Order::query()->where('payment_status', 'paid')->sum('total'),
+                    'revenue_today'              => (float) $this->analytics->paidOrderQuery($today)->sum('total'),
+                    'revenue_this_month'         => $currentMonthRevenue,
+                    'revenue_this_year'          => (float) $this->analytics->paidOrderQuery($thisYear)->sum('total'),
+                    'revenue_growth_percent'     => $this->growthPercent($currentMonthRevenue, $previousMonthRevenue),
+                    'average_order_value'        => $this->averageOrderValue(),
+                    'next_month_revenue_estimate'=> $this->nextMonthRevenueEstimate(),
                 ],
-                'orders' => $this->orderStatusCounts(),
-                'products' => [
-                    'best_selling' => $this->topSellingProducts(direction: 'desc'),
-                    'worst_performing' => $this->topSellingProducts(direction: 'asc'),
-                    'most_viewed' => $this->mostViewedProducts(),
-                    'out_of_stock' => $this->outOfStockProducts(),
-                    'low_stock' => $this->lowStockProducts(),
-                    'category_performance' => $this->categoryPerformance(),
-                    'fast_moving' => $this->movingProducts(direction: 'desc'),
-                    'slow_moving' => $this->movingProducts(direction: 'asc'),
+                'orders'    => $this->orderStatusCounts(),
+                'products'  => [
+                    'best_selling'        => $this->topSellingProducts(direction: 'desc'),
+                    'worst_performing'    => $this->topSellingProducts(direction: 'asc'),
+                    'most_viewed'         => $this->mostViewedProducts(),
+                    'out_of_stock'        => $this->outOfStockProducts(),
+                    'low_stock'           => $this->lowStockProducts(),
+                    'category_performance'=> $this->categoryPerformance(),
+                    'fast_moving'         => $this->movingProducts(direction: 'desc'),
+                    'slow_moving'         => $this->movingProducts(direction: 'asc'),
                 ],
                 'customers' => [
-                    'total_customers' => (int) Customer::query()->count(),
-                    'new_customers' => (int) Customer::query()->where('created_at', '>=', now()->startOfMonth())->count(),
-                    'returning_customers' => $this->returningCustomerCount(),
-                    'top_spending_customers' => $this->topSpendingCustomers(),
+                    'total_customers'               => (int) Customer::query()->count(),
+                    'new_customers'                 => (int) Customer::query()->where('created_at', '>=', now()->startOfMonth())->count(),
+                    'returning_customers'           => $this->returningCustomerCount(),
+                    'top_spending_customers'        => $this->topSpendingCustomers(),
                     'average_customer_lifetime_value' => $this->averageCustomerLifetimeValue(),
                 ],
                 'inventory' => [
-                    'inventory_value' => $this->inventoryValue(),
-                    'low_stock_alerts' => $this->lowStockProducts(limit: 15),
-                    'overstocked_products' => $this->overstockedProducts(),
-                    'dead_stock' => $this->deadStockProducts(),
-                    'restock_recommendations' => $this->restockRecommendations(),
+                    'inventory_value'        => $this->inventoryValue(),
+                    'low_stock_alerts'       => $this->lowStockProducts(limit: 15),
+                    'overstocked_products'   => $this->overstockedProducts(),
+                    'dead_stock'             => $this->deadStockProducts(),
+                    'restock_recommendations'=> $this->restockRecommendations(),
                 ],
-                'insights' => $this->insights(),
+                'insights'            => $this->insights(),
                 'recommended_actions' => $this->recommendedActions(),
             ];
         });
@@ -89,30 +89,39 @@ class BusinessIntelligenceContextService
         return json_encode($this->snapshot(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Sales
+    // ─────────────────────────────────────────────────────────────────────────
+
     protected function averageOrderValue(): float
     {
         $paidOrders = Order::query()->where('payment_status', 'paid');
-        $count = (int) (clone $paidOrders)->count();
+        $count      = (int) (clone $paidOrders)->count();
 
         return $count > 0 ? round((float) (clone $paidOrders)->sum('total') / $count, 2) : 0.0;
     }
 
     protected function nextMonthRevenueEstimate(): float
     {
+        // monthExpression() now returns the correct expression per driver,
+        // and groupBy uses the same raw expression so pgsql won't try to resolve
+        // "revenue_month" as a table column.
+        $expr = $this->monthExpression();
+
         $monthlyRevenue = Order::query()
             ->where('payment_status', 'paid')
             ->where('created_at', '>=', now()->subMonthsNoOverflow(6)->startOfMonth())
-            ->selectRaw($this->monthExpression().' as revenue_month, SUM(total) as revenue')
-            ->groupBy('revenue_month')
-            ->orderBy('revenue_month')
+            ->selectRaw("{$expr} as revenue_month, SUM(total) as revenue")
+            ->groupByRaw($expr)       // ← raw expression, not alias — safe on all drivers
+            ->orderByRaw($expr)
             ->pluck('revenue');
 
-        if ($monthlyRevenue->isEmpty()) {
-            return 0.0;
-        }
-
-        return round((float) $monthlyRevenue->avg(), 2);
+        return $monthlyRevenue->isNotEmpty() ? round((float) $monthlyRevenue->avg(), 2) : 0.0;
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Orders
+    // ─────────────────────────────────────────────────────────────────────────
 
     /**
      * @return array<string, int>
@@ -125,14 +134,18 @@ class BusinessIntelligenceContextService
             ->pluck('aggregate', 'status');
 
         return [
-            'total_orders' => (int) Order::query()->count(),
-            'pending_orders' => (int) ($counts['pending'] ?? 0),
-            'processing_orders' => (int) ($counts['processing'] ?? 0),
-            'shipped_orders' => (int) ($counts['shipped'] ?? 0),
-            'delivered_orders' => (int) ($counts['delivered'] ?? 0),
-            'cancelled_orders' => (int) ($counts['cancelled'] ?? 0),
+            'total_orders'       => (int) Order::query()->count(),
+            'pending_orders'     => (int) ($counts['pending']    ?? 0),
+            'processing_orders'  => (int) ($counts['processing'] ?? 0),
+            'shipped_orders'     => (int) ($counts['shipped']    ?? 0),
+            'delivered_orders'   => (int) ($counts['delivered']  ?? 0),
+            'cancelled_orders'   => (int) ($counts['cancelled']  ?? 0),
         ];
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Products
+    // ─────────────────────────────────────────────────────────────────────────
 
     /**
      * @return array<int, array<string, mixed>>
@@ -154,11 +167,11 @@ class BusinessIntelligenceContextService
             ? $query->orderByDesc('quantity_sold')
             : $query->orderBy('quantity_sold');
 
-        return $query->limit($limit)->get()->map(fn (object $row): array => [
-            'product_id' => (int) $row->product_id,
-            'name' => (string) $row->product_name,
-            'quantity_sold' => (int) $row->quantity_sold,
-            'revenue' => round((float) $row->revenue, 2),
+        return $query->limit($limit)->get()->map(fn(object $row): array => [
+            'product_id'    => (int)   $row->product_id,
+            'name'          => (string) $row->product_name,
+            'quantity_sold' => (int)   $row->quantity_sold,
+            'revenue'       => round((float) $row->revenue, 2),
         ])->all();
     }
 
@@ -171,10 +184,10 @@ class BusinessIntelligenceContextService
             ->orderByDesc('view_count')
             ->limit($limit)
             ->get(['id', 'name', 'view_count'])
-            ->map(fn (Product $product): array => [
-                'product_id' => $product->id,
-                'name' => $product->name,
-                'views' => (int) $product->view_count,
+            ->map(fn(Product $p): array => [
+                'product_id' => $p->id,
+                'name'       => $p->name,
+                'views'      => (int) $p->view_count,
             ])->all();
     }
 
@@ -184,16 +197,16 @@ class BusinessIntelligenceContextService
     protected function outOfStockProducts(int $limit = 15): array
     {
         return Product::query()
-            ->where(fn (Builder $query) => $query
+            ->where(fn(Builder $q) => $q
                 ->where('stock_status', 'out_of_stock')
                 ->orWhere('stock_quantity', '<=', 0))
             ->orderBy('name')
             ->limit($limit)
             ->get(['id', 'name', 'stock_quantity'])
-            ->map(fn (Product $product): array => [
-                'product_id' => $product->id,
-                'name' => $product->name,
-                'stock_quantity' => (int) $product->stock_quantity,
+            ->map(fn(Product $p): array => [
+                'product_id'     => $p->id,
+                'name'           => $p->name,
+                'stock_quantity' => (int) $p->stock_quantity,
             ])->all();
     }
 
@@ -207,11 +220,11 @@ class BusinessIntelligenceContextService
             ->orderBy('stock_quantity')
             ->limit($limit)
             ->get(['id', 'name', 'stock_quantity', 'low_stock_threshold'])
-            ->map(fn (Product $product): array => [
-                'product_id' => $product->id,
-                'name' => $product->name,
-                'stock_quantity' => (int) $product->stock_quantity,
-                'low_stock_threshold' => (int) $product->low_stock_threshold,
+            ->map(fn(Product $p): array => [
+                'product_id'         => $p->id,
+                'name'               => $p->name,
+                'stock_quantity'     => (int) $p->stock_quantity,
+                'low_stock_threshold'=> (int) $p->low_stock_threshold,
             ])->all();
     }
 
@@ -237,11 +250,11 @@ class BusinessIntelligenceContextService
             ->orderByDesc('revenue')
             ->limit($limit)
             ->get()
-            ->map(fn (object $row): array => [
-                'category_id' => (int) $row->id,
-                'name' => (string) $row->name,
-                'quantity_sold' => (int) $row->quantity_sold,
-                'revenue' => round((float) $row->revenue, 2),
+            ->map(fn(object $row): array => [
+                'category_id'   => (int)   $row->id,
+                'name'          => (string) $row->name,
+                'quantity_sold' => (int)   $row->quantity_sold,
+                'revenue'       => round((float) $row->revenue, 2),
             ])->all();
     }
 
@@ -265,17 +278,21 @@ class BusinessIntelligenceContextService
             ? $query->orderByDesc('quantity_sold')
             : $query->orderBy('quantity_sold');
 
-        return $query->limit($limit)->get()->map(fn (object $row): array => [
-            'product_id' => (int) $row->product_id,
-            'name' => (string) $row->product_name,
-            'quantity_sold_30_days' => (int) $row->quantity_sold,
+        return $query->limit($limit)->get()->map(fn(object $row): array => [
+            'product_id'             => (int)   $row->product_id,
+            'name'                   => (string) $row->product_name,
+            'quantity_sold_30_days'  => (int)   $row->quantity_sold,
         ])->all();
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Customers
+    // ─────────────────────────────────────────────────────────────────────────
 
     protected function returningCustomerCount(): int
     {
         return (int) Customer::query()
-            ->whereHas('orders', fn (Builder $query) => $query->where('payment_status', 'paid'), '>=', 2)
+            ->whereHas('orders', fn(Builder $q) => $q->where('payment_status', 'paid'), '>=', 2)
             ->count();
     }
 
@@ -286,41 +303,49 @@ class BusinessIntelligenceContextService
     {
         return Customer::query()
             ->select('customers.id', 'customers.name')
-            ->selectSub(function ($query): void {
-                $query->from('orders')
+            ->selectSub(function ($q): void {
+                $q->from('orders')
                     ->selectRaw('COALESCE(SUM(total), 0)')
                     ->whereColumn('orders.customer_id', 'customers.id')
                     ->where('orders.payment_status', 'paid');
             }, 'total_spent')
-            ->selectSub(function ($query): void {
-                $query->from('orders')
+            ->selectSub(function ($q): void {
+                $q->from('orders')
                     ->selectRaw('COUNT(*)')
                     ->whereColumn('orders.customer_id', 'customers.id');
             }, 'total_orders')
             ->orderByDesc('total_spent')
             ->limit($limit)
             ->get()
-            ->map(fn (Customer $customer): array => [
-                'customer_id' => $customer->id,
-                'name' => $customer->name,
-                'total_spent' => round((float) $customer->total_spent, 2),
-                'total_orders' => (int) $customer->total_orders,
+            ->map(fn(Customer $c): array => [
+                'customer_id'  => $c->id,
+                'name'         => $c->name,
+                'total_spent'  => round((float) $c->total_spent, 2),
+                'total_orders' => (int) $c->total_orders,
             ])->all();
     }
 
     protected function averageCustomerLifetimeValue(): float
     {
-        $values = Customer::query()
-            ->selectSub(function ($query): void {
-                $query->from('orders')
-                    ->selectRaw('COALESCE(SUM(total), 0)')
-                    ->whereColumn('orders.customer_id', 'customers.id')
-                    ->where('orders.payment_status', 'paid');
-            }, 'lifetime_value')
+        // Wrap in outer subquery so pgsql doesn't try to resolve the alias
+        // "lifetime_value" in the same SELECT scope — same pattern as AnalyticsService.
+        $inner = DB::table('customers')
+            ->selectRaw(
+                '(SELECT COALESCE(SUM(o.total), 0) FROM orders o ' .
+                'WHERE o.customer_id = customers.id ' .
+                "AND o.payment_status = 'paid') AS lifetime_value"
+            );
+
+        $values = DB::table(DB::raw("({$inner->toSql()}) as clv_sub"))
+            ->mergeBindings($inner)
             ->pluck('lifetime_value');
 
         return $values->isNotEmpty() ? round((float) $values->avg(), 2) : 0.0;
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Inventory
+    // ─────────────────────────────────────────────────────────────────────────
 
     protected function inventoryValue(): float
     {
@@ -336,18 +361,18 @@ class BusinessIntelligenceContextService
     protected function overstockedProducts(int $limit = 10): array
     {
         return Product::query()
-            ->where(function (Builder $query): void {
-                $query->whereColumn('stock_quantity', '>', DB::raw('low_stock_threshold * 5'))
+            ->where(function (Builder $q): void {
+                $q->whereColumn('stock_quantity', '>', DB::raw('low_stock_threshold * 5'))
                     ->where('stock_quantity', '>', 20);
             })
             ->orderByDesc('stock_quantity')
             ->limit($limit)
             ->get(['id', 'name', 'stock_quantity', 'low_stock_threshold'])
-            ->map(fn (Product $product): array => [
-                'product_id' => $product->id,
-                'name' => $product->name,
-                'stock_quantity' => (int) $product->stock_quantity,
-                'low_stock_threshold' => (int) $product->low_stock_threshold,
+            ->map(fn(Product $p): array => [
+                'product_id'          => $p->id,
+                'name'                => $p->name,
+                'stock_quantity'      => (int) $p->stock_quantity,
+                'low_stock_threshold' => (int) $p->low_stock_threshold,
             ])->all();
     }
 
@@ -369,10 +394,10 @@ class BusinessIntelligenceContextService
             ->orderByDesc('stock_quantity')
             ->limit($limit)
             ->get(['id', 'name', 'stock_quantity'])
-            ->map(fn (Product $product): array => [
-                'product_id' => $product->id,
-                'name' => $product->name,
-                'stock_quantity' => (int) $product->stock_quantity,
+            ->map(fn(Product $p): array => [
+                'product_id'     => $p->id,
+                'name'           => $p->name,
+                'stock_quantity' => (int) $p->stock_quantity,
             ])->all();
     }
 
@@ -390,32 +415,34 @@ class BusinessIntelligenceContextService
                     ->where('order_items.product_id', $product['product_id'])
                     ->sum('order_items.quantity');
 
-                $dailyDemand = max($monthlyDemand / 30, 0.1);
-                $daysUntilStockout = (int) floor($product['stock_quantity'] / $dailyDemand);
+                $dailyDemand        = max($monthlyDemand / 30, 0.1);
+                $daysUntilStockout  = (int) floor($product['stock_quantity'] / $dailyDemand);
 
                 return $product + [
-                    'estimated_monthly_demand' => $monthlyDemand,
-                    'estimated_days_until_stockout' => $daysUntilStockout,
-                    'recommended_reorder_quantity' => max($monthlyDemand, (int) $product['low_stock_threshold'] * 2),
+                    'estimated_monthly_demand'       => $monthlyDemand,
+                    'estimated_days_until_stockout'  => $daysUntilStockout,
+                    'recommended_reorder_quantity'   => max($monthlyDemand, (int) $product['low_stock_threshold'] * 2),
                 ];
             })
             ->values()
             ->all();
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Insights & actions
+    // ─────────────────────────────────────────────────────────────────────────
+
     /**
      * @return array<int, string>
      */
     protected function insights(): array
     {
-        $snapshot = [
-            count($this->lowStockProducts()).' products are currently low in stock.',
-            count($this->outOfStockProducts()).' products are out of stock.',
-            'Estimated next month revenue is '.$this->formatCurrency($this->nextMonthRevenueEstimate()).'.',
-            'Average customer lifetime value is '.$this->formatCurrency($this->averageCustomerLifetimeValue()).'.',
+        return [
+            count($this->lowStockProducts())  . ' products are currently low in stock.',
+            count($this->outOfStockProducts()) . ' products are out of stock.',
+            'Estimated next month revenue is ' . $this->formatCurrency($this->nextMonthRevenueEstimate()) . '.',
+            'Average customer lifetime value is ' . $this->formatCurrency($this->averageCustomerLifetimeValue()) . '.',
         ];
-
-        return $snapshot;
     }
 
     /**
@@ -431,6 +458,10 @@ class BusinessIntelligenceContextService
         ];
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Utilities
+    // ─────────────────────────────────────────────────────────────────────────
+
     protected function growthPercent(float $current, float $previous): float
     {
         if ($previous <= 0.0) {
@@ -440,15 +471,21 @@ class BusinessIntelligenceContextService
         return round((($current - $previous) / $previous) * 100, 2);
     }
 
+    /**
+     * Returns the SQL expression to format a timestamp as 'YYYY-MM',
+     * compatible with PostgreSQL, MySQL/MariaDB, and SQLite.
+     */
     protected function monthExpression(): string
     {
-        return DB::getDriverName() === 'sqlite'
-            ? "strftime('%Y-%m', created_at)"
-            : 'DATE_FORMAT(created_at, "%Y-%m")';
+        return match (DB::getDriverName()) {
+            'pgsql'  => "to_char(created_at, 'YYYY-MM')",
+            'sqlite' => "strftime('%Y-%m', created_at)",
+            default  => "DATE_FORMAT(created_at, '%Y-%m')",  // MySQL / MariaDB
+        };
     }
 
     protected function formatCurrency(float $amount): string
     {
-        return '$'.number_format($amount, 2);
+        return '$' . number_format($amount, 2);
     }
 }

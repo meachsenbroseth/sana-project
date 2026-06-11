@@ -51,18 +51,18 @@ class AnalyticsService
         }
 
         return Order::query()
-            ->when($filters->startDate, fn (Builder $query) => $query->where('created_at', '>=', $filters->startDate))
-            ->when($filters->endDate, fn (Builder $query) => $query->where('created_at', '<=', $filters->endDate))
-            ->when($filters->customerId, fn (Builder $query) => $query->where('customer_id', $filters->customerId))
-            ->when($filters->orderStatus, fn (Builder $query) => $query->where('status', $filters->orderStatus))
-            ->when($filters->paymentMethod, fn (Builder $query) => $query->where('payment_method', $filters->paymentMethod))
-            ->when($filters->productId, fn (Builder $query) => $query->whereHas(
+            ->when($filters->startDate, fn(Builder $q) => $q->where('created_at', '>=', $filters->startDate))
+            ->when($filters->endDate,   fn(Builder $q) => $q->where('created_at', '<=', $filters->endDate))
+            ->when($filters->customerId, fn(Builder $q) => $q->where('customer_id', $filters->customerId))
+            ->when($filters->orderStatus, fn(Builder $q) => $q->where('status', $filters->orderStatus))
+            ->when($filters->paymentMethod, fn(Builder $q) => $q->where('payment_method', $filters->paymentMethod))
+            ->when($filters->productId, fn(Builder $q) => $q->whereHas(
                 'items',
-                fn (Builder $itemQuery) => $itemQuery->where('product_id', $filters->productId),
+                fn(Builder $iq) => $iq->where('product_id', $filters->productId),
             ))
-            ->when($filters->categoryId && $this->tables->hasProducts(), fn (Builder $query) => $query->whereHas(
+            ->when($filters->categoryId && $this->tables->hasProducts(), fn(Builder $q) => $q->whereHas(
                 'items.product',
-                fn (Builder $productQuery) => $productQuery->where('category_id', $filters->categoryId),
+                fn(Builder $pq) => $pq->where('category_id', $filters->categoryId),
             ));
     }
 
@@ -77,13 +77,13 @@ class AnalyticsService
     public function kpiMetrics(AnalyticsFilters $filters): array
     {
         return $this->remember('kpi_metrics', $filters, function () use ($filters): array {
-            $orderQuery = $this->orderQuery($filters);
+            $orderQuery     = $this->orderQuery($filters);
             $paidOrderQuery = $this->paidOrderQuery($filters);
 
-            $totalRevenue = (float) (clone $paidOrderQuery)->sum('total');
-            $totalOrders = (int) (clone $orderQuery)->count();
+            $totalRevenue   = (float) (clone $paidOrderQuery)->sum('total');
+            $totalOrders    = (int)   (clone $orderQuery)->count();
             $totalCustomers = $this->totalCustomers($filters);
-            $totalProducts = $this->totalProducts($filters);
+            $totalProducts  = $this->totalProducts($filters);
             $averageOrderValue = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0.0;
 
             $todayOrderQuery = $this->applyNonDateFilters(Order::query(), $filters)
@@ -91,14 +91,14 @@ class AnalyticsService
             $todayPaidQuery = (clone $todayOrderQuery)->where('payment_status', 'paid');
 
             return [
-                'total_revenue' => $totalRevenue,
-                'total_orders' => $totalOrders,
-                'total_customers' => $totalCustomers,
-                'total_products' => $totalProducts,
+                'total_revenue'       => $totalRevenue,
+                'total_orders'        => $totalOrders,
+                'total_customers'     => $totalCustomers,
+                'total_products'      => $totalProducts,
                 'average_order_value' => $averageOrderValue,
-                'orders_today' => (int) $todayOrderQuery->count(),
-                'revenue_today' => (float) $todayPaidQuery->sum('total'),
-                'pending_orders' => (int) (clone $orderQuery)->where('status', 'pending')->count(),
+                'orders_today'        => (int)   $todayOrderQuery->count(),
+                'revenue_today'       => (float) $todayPaidQuery->sum('total'),
+                'pending_orders'      => (int)   (clone $orderQuery)->where('status', 'pending')->count(),
             ];
         });
     }
@@ -123,43 +123,18 @@ class AnalyticsService
                 ->orderByDesc('revenue')
                 ->first();
 
-            $highestRevenueMonthQuery = clone $this->paidOrderQuery($filters);
-
-            $highestRevenueMonth = DB::getDriverName() === 'sqlite'
-                ? $highestRevenueMonthQuery
-                    ->selectRaw("strftime('%Y-%m', created_at) as revenue_month, SUM(total) as revenue")
-                    ->groupBy('revenue_month')
-                    ->orderByDesc('revenue')
-                    ->first()
-                : $highestRevenueMonthQuery
-                    ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as revenue_month, SUM(total) as revenue')
-                    ->groupBy('revenue_month')
-                    ->orderByDesc('revenue')
-                    ->first();
-
-            $popularCategory = $this->resolveMostPopularCategory($filters);
-
-            $averageClv = 0.0;
-
-            if ($this->tables->hasCustomers()) {
-                $customerLifetimeValues = Customer::query()
-                    ->withSum(['orders as paid_total' => fn (Builder $query) => $query->where('payment_status', 'paid')], 'total')
-                    ->having('paid_total', '>', 0)
-                    ->pluck('paid_total');
-
-                $averageClv = $customerLifetimeValues->isNotEmpty()
-                    ? (float) $customerLifetimeValues->avg()
-                    : 0.0;
-            }
+            $highestRevenueMonth = $this->resolveHighestRevenueMonth($filters);
+            $popularCategory     = $this->resolveMostPopularCategory($filters);
+            $averageClv          = $this->resolveAverageClv();
 
             return [
-                'best_selling_product' => $topProduct?->product_name,
-                'most_active_customer' => $mostActiveCustomer?->name,
-                'highest_revenue_day' => $highestRevenueDay?->revenue_date,
-                'highest_revenue_day_amount' => (float) ($highestRevenueDay?->revenue ?? 0),
-                'highest_revenue_month' => $highestRevenueMonth?->revenue_month,
-                'highest_revenue_month_amount' => (float) ($highestRevenueMonth?->revenue ?? 0),
-                'most_popular_category' => $popularCategory,
+                'best_selling_product'           => $topProduct?->product_name,
+                'most_active_customer'            => $mostActiveCustomer?->name,
+                'highest_revenue_day'             => $highestRevenueDay?->revenue_date,
+                'highest_revenue_day_amount'      => (float) ($highestRevenueDay?->revenue ?? 0),
+                'highest_revenue_month'           => $highestRevenueMonth?->revenue_month,
+                'highest_revenue_month_amount'    => (float) ($highestRevenueMonth?->revenue ?? 0),
+                'most_popular_category'           => $popularCategory,
                 'average_customer_lifetime_value' => $averageClv,
             ];
         });
@@ -168,10 +143,9 @@ class AnalyticsService
     public function revenueTrend(AnalyticsFilters $filters, string $period): Collection
     {
         return $this->remember("revenue_trend.{$period}", $filters, function () use ($filters, $period) {
-            $query = $this->paidOrderQuery($filters);
             [$start, $end, $per] = $this->resolveTrendPeriod($filters, $period);
 
-            return Trend::query($query)
+            return Trend::query($this->paidOrderQuery($filters))
                 ->between($start, $end)
                 ->{$per}()
                 ->sum('total');
@@ -181,26 +155,24 @@ class AnalyticsService
     public function ordersTrend(AnalyticsFilters $filters, string $grouping): Collection
     {
         return $this->remember("orders_trend.{$grouping}", $filters, function () use ($filters, $grouping) {
-            $query = $this->orderQuery($filters);
-            [$start, $end, $per] = match ($grouping) {
-                'month' => $this->resolveTrendPeriod($filters, 'monthly'),
-                'status' => [null, null, null],
-                default => $this->resolveTrendPeriod($filters, 'daily'),
-            };
-
             if ($grouping === 'status') {
                 return $this->orderQuery($filters)
                     ->select('status', DB::raw('COUNT(*) as aggregate'))
                     ->groupBy('status')
                     ->orderByDesc('aggregate')
                     ->get()
-                    ->map(fn ($row) => new TrendValue(
-                        date: (string) $row->status,
-                        aggregate: (int) $row->aggregate,
+                    ->map(fn($row) => new TrendValue(
+                        date:      (string) $row->status,
+                        aggregate: (int)    $row->aggregate,
                     ));
             }
 
-            return Trend::query($query)
+            [$start, $end, $per] = match ($grouping) {
+                'month' => $this->resolveTrendPeriod($filters, 'monthly'),
+                default => $this->resolveTrendPeriod($filters, 'daily'),
+            };
+
+            return Trend::query($this->orderQuery($filters))
                 ->between($start, $end)
                 ->{$per}()
                 ->count();
@@ -215,10 +187,10 @@ class AnalyticsService
             }
 
             $query = Customer::query()
-                ->when($filters->customerId, fn (Builder $customerQuery) => $customerQuery->where('id', $filters->customerId))
-                ->when($filters->hasOrderScopedFilters(), fn (Builder $customerQuery) => $customerQuery->whereHas(
+                ->when($filters->customerId, fn(Builder $q) => $q->where('id', $filters->customerId))
+                ->when($filters->hasOrderScopedFilters(), fn(Builder $q) => $q->whereHas(
                     'orders',
-                    fn (Builder $orderQuery) => $this->applyNonDateFilters($orderQuery, $filters),
+                    fn(Builder $oq) => $this->applyNonDateFilters($oq, $filters),
                 ));
 
             [$start, $end, $per] = match ($grouping) {
@@ -245,22 +217,25 @@ class AnalyticsService
 
             return match ($metric) {
                 'most_viewed' => Product::query()
-                    ->when($filters->categoryId, fn (Builder $query) => $query->where('category_id', $filters->categoryId))
-                    ->when($filters->productId, fn (Builder $query) => $query->where('id', $filters->productId))
+                    ->when($filters->categoryId, fn(Builder $q) => $q->where('category_id', $filters->categoryId))
+                    ->when($filters->productId,  fn(Builder $q) => $q->where('id', $filters->productId))
                     ->orderByDesc('view_count')
                     ->limit(10)
                     ->get(['name', 'view_count']),
+
                 'highest_revenue' => $this->topSellingProductsQuery($filters)
                     ->orderByDesc('revenue')
                     ->limit(10)
                     ->get(),
+
                 'low_stock' => Product::query()
                     ->lowStock()
-                    ->when($filters->categoryId, fn (Builder $query) => $query->where('category_id', $filters->categoryId))
-                    ->when($filters->productId, fn (Builder $query) => $query->where('id', $filters->productId))
+                    ->when($filters->categoryId, fn(Builder $q) => $q->where('category_id', $filters->categoryId))
+                    ->when($filters->productId,  fn(Builder $q) => $q->where('id', $filters->productId))
                     ->orderBy('stock_quantity')
                     ->limit(10)
                     ->get(['name', 'stock_quantity']),
+
                 default => $this->topSellingProductsQuery($filters)
                     ->limit(10)
                     ->get(),
@@ -274,11 +249,10 @@ class AnalyticsService
             return $this->emptyTopSellingProductsSubquery();
         }
 
-        $productTable = $this->tables->product();
-        $orderTable = $this->tables->order();
+        $productTable   = $this->tables->product();
+        $orderTable     = $this->tables->order();
         $orderItemTable = $this->tables->orderItem();
-
-        $stockColumn = $this->tables->qualifiedProductColumn('stock_quantity');
+        $stockColumn    = $this->tables->qualifiedProductColumn('stock_quantity');
         $categoryColumn = $this->tables->qualifiedProductColumn('category_id');
 
         return DB::table($orderItemTable)
@@ -294,19 +268,18 @@ class AnalyticsService
             ->join($orderTable, "{$orderTable}.id", '=', "{$orderItemTable}.order_id")
             ->leftJoin($productTable, function ($join) use ($productTable, $orderItemTable): void {
                 $join->on("{$productTable}.id", '=', "{$orderItemTable}.product_id");
-
                 if ($this->tables->productUsesSoftDeletes()) {
                     $join->whereNull("{$productTable}.deleted_at");
                 }
             })
             ->where("{$orderTable}.payment_status", 'paid')
-            ->when($filters->startDate, fn ($query) => $query->where("{$orderTable}.created_at", '>=', $filters->startDate))
-            ->when($filters->endDate, fn ($query) => $query->where("{$orderTable}.created_at", '<=', $filters->endDate))
-            ->when($filters->customerId, fn ($query) => $query->where("{$orderTable}.customer_id", $filters->customerId))
-            ->when($filters->orderStatus, fn ($query) => $query->where("{$orderTable}.status", $filters->orderStatus))
-            ->when($filters->paymentMethod, fn ($query) => $query->where("{$orderTable}.payment_method", $filters->paymentMethod))
-            ->when($filters->productId, fn ($query) => $query->where("{$orderItemTable}.product_id", $filters->productId))
-            ->when($filters->categoryId, fn ($query) => $query->where($categoryColumn, $filters->categoryId))
+            ->when($filters->startDate,     fn($q) => $q->where("{$orderTable}.created_at", '>=', $filters->startDate))
+            ->when($filters->endDate,       fn($q) => $q->where("{$orderTable}.created_at", '<=', $filters->endDate))
+            ->when($filters->customerId,    fn($q) => $q->where("{$orderTable}.customer_id", $filters->customerId))
+            ->when($filters->orderStatus,   fn($q) => $q->where("{$orderTable}.status", $filters->orderStatus))
+            ->when($filters->paymentMethod, fn($q) => $q->where("{$orderTable}.payment_method", $filters->paymentMethod))
+            ->when($filters->productId,     fn($q) => $q->where("{$orderItemTable}.product_id", $filters->productId))
+            ->when($filters->categoryId,    fn($q) => $q->where($categoryColumn, $filters->categoryId))
             ->groupBy("{$orderItemTable}.product_id", "{$orderItemTable}.product_name", "{$orderItemTable}.product_sku");
     }
 
@@ -323,85 +296,60 @@ class AnalyticsService
             return Customer::query()->whereRaw('0 = 1');
         }
 
-        $orderTable = $this->tables->order();
+        $customerTable  = $this->tables->customer();
+        $orderTable     = $this->tables->order();
         $orderItemTable = $this->tables->orderItem();
-        $productTable = $this->tables->product();
+        $productTable   = $this->tables->product();
         $categoryColumn = $this->tables->qualifiedProductColumn('category_id');
 
+        // Reusable closure to apply order-scoped filters to a sub-query builder
+        $applyOrderFilters = function ($query) use ($filters, $orderTable, $orderItemTable, $productTable, $categoryColumn): void {
+            $query
+                ->when($filters->startDate,     fn($q) => $q->where("{$orderTable}.created_at", '>=', $filters->startDate))
+                ->when($filters->endDate,       fn($q) => $q->where("{$orderTable}.created_at", '<=', $filters->endDate))
+                ->when($filters->orderStatus,   fn($q) => $q->where("{$orderTable}.status", $filters->orderStatus))
+                ->when($filters->paymentMethod, fn($q) => $q->where("{$orderTable}.payment_method", $filters->paymentMethod))
+                ->when($filters->productId, fn($q) => $q->whereExists(function ($ex) use ($filters, $orderTable, $orderItemTable): void {
+                    $ex->select(DB::raw(1))
+                        ->from($orderItemTable)
+                        ->whereColumn("{$orderItemTable}.order_id", "{$orderTable}.id")
+                        ->where("{$orderItemTable}.product_id", $filters->productId);
+                }))
+                ->when($filters->categoryId && $this->productsAvailable(), fn($q) => $q->whereExists(function ($ex) use ($filters, $orderTable, $orderItemTable, $productTable, $categoryColumn): void {
+                    $ex->select(DB::raw(1))
+                        ->from($orderItemTable)
+                        ->join($productTable, "{$productTable}.id", '=', "{$orderItemTable}.product_id")
+                        ->whereColumn("{$orderItemTable}.order_id", "{$orderTable}.id")
+                        ->where($categoryColumn, $filters->categoryId);
+                }));
+        };
+
         return Customer::query()
-            ->select("{$this->tables->customer()}.*")
-            ->selectSub(function ($query) use ($filters, $orderTable, $orderItemTable, $productTable, $categoryColumn): void {
-                $query->from($orderTable)
+            ->select("{$customerTable}.*")
+            ->selectSub(function ($q) use ($orderTable, $applyOrderFilters, $customerTable): void {
+                $q->from($orderTable)
                     ->selectRaw('COUNT(*)')
-                    ->whereColumn("{$orderTable}.customer_id", "{$this->tables->customer()}.id")
-                    ->when($filters->startDate, fn ($orderQuery) => $orderQuery->where("{$orderTable}.created_at", '>=', $filters->startDate))
-                    ->when($filters->endDate, fn ($orderQuery) => $orderQuery->where("{$orderTable}.created_at", '<=', $filters->endDate))
-                    ->when($filters->orderStatus, fn ($orderQuery) => $orderQuery->where("{$orderTable}.status", $filters->orderStatus))
-                    ->when($filters->paymentMethod, fn ($orderQuery) => $orderQuery->where("{$orderTable}.payment_method", $filters->paymentMethod))
-                    ->when($filters->productId, fn ($orderQuery) => $orderQuery->whereExists(function ($exists) use ($filters, $orderTable, $orderItemTable): void {
-                        $exists->select(DB::raw(1))
-                            ->from($orderItemTable)
-                            ->whereColumn("{$orderItemTable}.order_id", "{$orderTable}.id")
-                            ->where("{$orderItemTable}.product_id", $filters->productId);
-                    }))
-                    ->when($filters->categoryId && $this->productsAvailable(), fn ($orderQuery) => $orderQuery->whereExists(function ($exists) use ($filters, $orderTable, $orderItemTable, $productTable, $categoryColumn): void {
-                        $exists->select(DB::raw(1))
-                            ->from($orderItemTable)
-                            ->join($productTable, "{$productTable}.id", '=', "{$orderItemTable}.product_id")
-                            ->whereColumn("{$orderItemTable}.order_id", "{$orderTable}.id")
-                            ->where($categoryColumn, $filters->categoryId);
-                    }));
+                    ->whereColumn("{$orderTable}.customer_id", "{$customerTable}.id");
+                $applyOrderFilters($q);
             }, 'total_orders')
-            ->selectSub(function ($query) use ($filters, $orderTable, $orderItemTable, $productTable, $categoryColumn): void {
-                $query->from($orderTable)
+            ->selectSub(function ($q) use ($orderTable, $applyOrderFilters, $customerTable): void {
+                $q->from($orderTable)
                     ->selectRaw('COALESCE(SUM(total), 0)')
-                    ->whereColumn("{$orderTable}.customer_id", "{$this->tables->customer()}.id")
-                    ->where("{$orderTable}.payment_status", 'paid')
-                    ->when($filters->startDate, fn ($orderQuery) => $orderQuery->where("{$orderTable}.created_at", '>=', $filters->startDate))
-                    ->when($filters->endDate, fn ($orderQuery) => $orderQuery->where("{$orderTable}.created_at", '<=', $filters->endDate))
-                    ->when($filters->orderStatus, fn ($orderQuery) => $orderQuery->where("{$orderTable}.status", $filters->orderStatus))
-                    ->when($filters->paymentMethod, fn ($orderQuery) => $orderQuery->where("{$orderTable}.payment_method", $filters->paymentMethod))
-                    ->when($filters->productId, fn ($orderQuery) => $orderQuery->whereExists(function ($exists) use ($filters, $orderTable, $orderItemTable): void {
-                        $exists->select(DB::raw(1))
-                            ->from($orderItemTable)
-                            ->whereColumn("{$orderItemTable}.order_id", "{$orderTable}.id")
-                            ->where("{$orderItemTable}.product_id", $filters->productId);
-                    }))
-                    ->when($filters->categoryId && $this->productsAvailable(), fn ($orderQuery) => $orderQuery->whereExists(function ($exists) use ($filters, $orderTable, $orderItemTable, $productTable, $categoryColumn): void {
-                        $exists->select(DB::raw(1))
-                            ->from($orderItemTable)
-                            ->join($productTable, "{$productTable}.id", '=', "{$orderItemTable}.product_id")
-                            ->whereColumn("{$orderItemTable}.order_id", "{$orderTable}.id")
-                            ->where($categoryColumn, $filters->categoryId);
-                    }));
+                    ->whereColumn("{$orderTable}.customer_id", "{$customerTable}.id")
+                    ->where("{$orderTable}.payment_status", 'paid');
+                $applyOrderFilters($q);
             }, 'total_spent')
-            ->selectSub(function ($query) use ($filters, $orderTable, $orderItemTable, $productTable, $categoryColumn): void {
-                $query->from($orderTable)
+            ->selectSub(function ($q) use ($orderTable, $applyOrderFilters, $customerTable): void {
+                $q->from($orderTable)
                     ->selectRaw('MAX(created_at)')
-                    ->whereColumn("{$orderTable}.customer_id", "{$this->tables->customer()}.id")
-                    ->when($filters->startDate, fn ($orderQuery) => $orderQuery->where("{$orderTable}.created_at", '>=', $filters->startDate))
-                    ->when($filters->endDate, fn ($orderQuery) => $orderQuery->where("{$orderTable}.created_at", '<=', $filters->endDate))
-                    ->when($filters->orderStatus, fn ($orderQuery) => $orderQuery->where("{$orderTable}.status", $filters->orderStatus))
-                    ->when($filters->paymentMethod, fn ($orderQuery) => $orderQuery->where("{$orderTable}.payment_method", $filters->paymentMethod))
-                    ->when($filters->productId, fn ($orderQuery) => $orderQuery->whereExists(function ($exists) use ($filters, $orderTable, $orderItemTable): void {
-                        $exists->select(DB::raw(1))
-                            ->from($orderItemTable)
-                            ->whereColumn("{$orderItemTable}.order_id", "{$orderTable}.id")
-                            ->where("{$orderItemTable}.product_id", $filters->productId);
-                    }))
-                    ->when($filters->categoryId && $this->productsAvailable(), fn ($orderQuery) => $orderQuery->whereExists(function ($exists) use ($filters, $orderTable, $orderItemTable, $productTable, $categoryColumn): void {
-                        $exists->select(DB::raw(1))
-                            ->from($orderItemTable)
-                            ->join($productTable, "{$productTable}.id", '=', "{$orderItemTable}.product_id")
-                            ->whereColumn("{$orderItemTable}.order_id", "{$orderTable}.id")
-                            ->where($categoryColumn, $filters->categoryId);
-                    }));
+                    ->whereColumn("{$orderTable}.customer_id", "{$customerTable}.id");
+                $applyOrderFilters($q);
             }, 'last_order_date')
-            ->when($filters->customerId, fn (Builder $query) => $query->where("{$this->tables->customer()}.id", $filters->customerId))
-            ->when($filters->hasOrderScopedFilters() || $filters->startDate || $filters->endDate, fn (Builder $query) => $query->whereHas(
-                'orders',
-                fn (Builder $orderQuery) => $this->orderQuery($filters),
-            ));
+            ->when($filters->customerId, fn(Builder $q) => $q->where("{$customerTable}.id", $filters->customerId))
+            ->when(
+                $filters->hasOrderScopedFilters() || $filters->startDate || $filters->endDate,
+                fn(Builder $q) => $q->whereHas('orders', fn(Builder $oq) => $this->orderQuery($filters))
+            );
     }
 
     public function orderReportQuery(AnalyticsFilters $filters): Builder
@@ -413,7 +361,67 @@ class AnalyticsService
 
     public function formatCurrency(float $amount): string
     {
-        return '$'.number_format($amount, 2);
+        return '$' . number_format($amount, 2);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Protected helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Fix for PostgreSQL: aliases defined in SELECT are not visible in WHERE.
+     * Use a wrapping subquery so the filter runs on the derived column.
+     */
+    protected function resolveAverageClv(): float
+    {
+        if (! $this->tables->hasCustomers()) {
+            return 0.0;
+        }
+
+        $orderTable    = $this->tables->order();
+        $customerTable = $this->tables->customer();
+
+        // Build the paid-total subquery as a raw expression so it works on
+        // every supported driver without referencing the alias in WHERE.
+        $sub = DB::table($customerTable)
+            ->selectRaw(
+                "(SELECT COALESCE(SUM(o.total), 0) FROM {$orderTable} o " .
+                "WHERE o.customer_id = {$customerTable}.id " .
+                "AND o.payment_status = 'paid') AS paid_total"
+            );
+
+        // Wrap in an outer query and filter there — safe on pgsql / mysql / sqlite.
+        $values = DB::table(DB::raw("({$sub->toSql()}) as clv_sub"))
+            ->mergeBindings($sub)
+            ->where('paid_total', '>', 0)
+            ->pluck('paid_total');
+
+        return $values->isNotEmpty() ? (float) $values->avg() : 0.0;
+    }
+
+    protected function resolveHighestRevenueMonth(AnalyticsFilters $filters): ?object
+    {
+        $query = clone $this->paidOrderQuery($filters);
+
+        return match (DB::getDriverName()) {
+            'sqlite' => $query
+                ->selectRaw("strftime('%Y-%m', created_at) as revenue_month, SUM(total) as revenue")
+                ->groupBy('revenue_month')
+                ->orderByDesc('revenue')
+                ->first(),
+
+            'pgsql' => $query
+                ->selectRaw("to_char(created_at, 'YYYY-MM') as revenue_month, SUM(total) as revenue")
+                ->groupBy(DB::raw("to_char(created_at, 'YYYY-MM')"))
+                ->orderByDesc('revenue')
+                ->first(),
+
+            default => $query // MySQL / MariaDB
+                ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as revenue_month, SUM(total) as revenue')
+                ->groupBy('revenue_month')
+                ->orderByDesc('revenue')
+                ->first(),
+        };
     }
 
     protected function resolveMostPopularCategory(AnalyticsFilters $filters): ?string
@@ -422,26 +430,26 @@ class AnalyticsService
             return null;
         }
 
-        $productTable = $this->tables->product();
-        $categoryTable = $this->tables->category();
-        $orderTable = $this->tables->order();
+        $productTable   = $this->tables->product();
+        $categoryTable  = $this->tables->category();
+        $orderTable     = $this->tables->order();
         $orderItemTable = $this->tables->orderItem();
         $categoryColumn = $this->tables->qualifiedProductColumn('category_id');
 
         $result = DB::table($orderItemTable)
             ->select("{$categoryTable}.name as category_name", DB::raw("SUM({$orderItemTable}.quantity) as total_quantity"))
-            ->join($orderTable, "{$orderTable}.id", '=', "{$orderItemTable}.order_id")
-            ->join($productTable, "{$productTable}.id", '=', "{$orderItemTable}.product_id")
+            ->join($orderTable,    "{$orderTable}.id",    '=', "{$orderItemTable}.order_id")
+            ->join($productTable,  "{$productTable}.id",  '=', "{$orderItemTable}.product_id")
             ->join($categoryTable, "{$categoryTable}.id", '=', $categoryColumn)
             ->where("{$orderTable}.payment_status", 'paid')
-            ->when($this->tables->productUsesSoftDeletes(), fn ($query) => $query->whereNull("{$productTable}.deleted_at"))
-            ->when($filters->startDate, fn ($query) => $query->where("{$orderTable}.created_at", '>=', $filters->startDate))
-            ->when($filters->endDate, fn ($query) => $query->where("{$orderTable}.created_at", '<=', $filters->endDate))
-            ->when($filters->customerId, fn ($query) => $query->where("{$orderTable}.customer_id", $filters->customerId))
-            ->when($filters->orderStatus, fn ($query) => $query->where("{$orderTable}.status", $filters->orderStatus))
-            ->when($filters->paymentMethod, fn ($query) => $query->where("{$orderTable}.payment_method", $filters->paymentMethod))
-            ->when($filters->productId, fn ($query) => $query->where("{$orderItemTable}.product_id", $filters->productId))
-            ->when($filters->categoryId, fn ($query) => $query->where($categoryColumn, $filters->categoryId))
+            ->when($this->tables->productUsesSoftDeletes(), fn($q) => $q->whereNull("{$productTable}.deleted_at"))
+            ->when($filters->startDate,     fn($q) => $q->where("{$orderTable}.created_at", '>=', $filters->startDate))
+            ->when($filters->endDate,       fn($q) => $q->where("{$orderTable}.created_at", '<=', $filters->endDate))
+            ->when($filters->customerId,    fn($q) => $q->where("{$orderTable}.customer_id", $filters->customerId))
+            ->when($filters->orderStatus,   fn($q) => $q->where("{$orderTable}.status", $filters->orderStatus))
+            ->when($filters->paymentMethod, fn($q) => $q->where("{$orderTable}.payment_method", $filters->paymentMethod))
+            ->when($filters->productId,     fn($q) => $q->where("{$orderItemTable}.product_id", $filters->productId))
+            ->when($filters->categoryId,    fn($q) => $q->where($categoryColumn, $filters->categoryId))
             ->groupBy("{$categoryTable}.id", "{$categoryTable}.name")
             ->orderByDesc('total_quantity')
             ->first();
@@ -456,12 +464,12 @@ class AnalyticsService
         }
 
         $query = Customer::query()
-            ->when($filters->startDate, fn (Builder $customerQuery) => $customerQuery->where('created_at', '>=', $filters->startDate))
-            ->when($filters->endDate, fn (Builder $customerQuery) => $customerQuery->where('created_at', '<=', $filters->endDate))
-            ->when($filters->customerId, fn (Builder $customerQuery) => $customerQuery->where('id', $filters->customerId));
+            ->when($filters->startDate,  fn(Builder $q) => $q->where('created_at', '>=', $filters->startDate))
+            ->when($filters->endDate,    fn(Builder $q) => $q->where('created_at', '<=', $filters->endDate))
+            ->when($filters->customerId, fn(Builder $q) => $q->where('id', $filters->customerId));
 
         if ($filters->hasOrderScopedFilters()) {
-            $query->whereHas('orders', fn (Builder $orderQuery) => $this->applyNonDateFilters($orderQuery, $filters));
+            $query->whereHas('orders', fn(Builder $oq) => $this->applyNonDateFilters($oq, $filters));
         }
 
         return (int) $query->count();
@@ -474,24 +482,24 @@ class AnalyticsService
         }
 
         return (int) Product::query()
-            ->when($filters->categoryId, fn (Builder $query) => $query->where('category_id', $filters->categoryId))
-            ->when($filters->productId, fn (Builder $query) => $query->where('id', $filters->productId))
+            ->when($filters->categoryId, fn(Builder $q) => $q->where('category_id', $filters->categoryId))
+            ->when($filters->productId,  fn(Builder $q) => $q->where('id', $filters->productId))
             ->count();
     }
 
     protected function applyNonDateFilters(Builder $query, AnalyticsFilters $filters): Builder
     {
         return $query
-            ->when($filters->customerId, fn (Builder $orderQuery) => $orderQuery->where('customer_id', $filters->customerId))
-            ->when($filters->orderStatus, fn (Builder $orderQuery) => $orderQuery->where('status', $filters->orderStatus))
-            ->when($filters->paymentMethod, fn (Builder $orderQuery) => $orderQuery->where('payment_method', $filters->paymentMethod))
-            ->when($filters->productId, fn (Builder $orderQuery) => $orderQuery->whereHas(
+            ->when($filters->customerId,    fn(Builder $q) => $q->where('customer_id', $filters->customerId))
+            ->when($filters->orderStatus,   fn(Builder $q) => $q->where('status', $filters->orderStatus))
+            ->when($filters->paymentMethod, fn(Builder $q) => $q->where('payment_method', $filters->paymentMethod))
+            ->when($filters->productId, fn(Builder $q) => $q->whereHas(
                 'items',
-                fn (Builder $itemQuery) => $itemQuery->where('product_id', $filters->productId),
+                fn(Builder $iq) => $iq->where('product_id', $filters->productId),
             ))
-            ->when($filters->categoryId && $this->productsAvailable(), fn (Builder $orderQuery) => $orderQuery->whereHas(
+            ->when($filters->categoryId && $this->productsAvailable(), fn(Builder $q) => $q->whereHas(
                 'items.product',
-                fn (Builder $productQuery) => $productQuery->where('category_id', $filters->categoryId),
+                fn(Builder $pq) => $pq->where('category_id', $filters->categoryId),
             ));
     }
 
@@ -501,13 +509,13 @@ class AnalyticsService
     protected function resolveTrendPeriod(AnalyticsFilters $filters, string $period): array
     {
         $start = $filters->startDate ?? now()->subMonth();
-        $end = $filters->endDate ?? now();
+        $end   = $filters->endDate   ?? now();
 
         return match ($period) {
-            'weekly' => [$start, $end, 'perWeek'],
+            'weekly'  => [$start, $end, 'perWeek'],
             'monthly' => [$start, $end, 'perMonth'],
-            'yearly' => [$start, $end, 'perYear'],
-            default => [$start, $end, 'perDay'],
+            'yearly'  => [$start, $end, 'perYear'],
+            default   => [$start, $end, 'perDay'],
         };
     }
 
@@ -525,26 +533,29 @@ class AnalyticsService
             str_starts_with($key, 'orders_trend'),
             str_starts_with($key, 'customer_growth'),
             str_starts_with($key, 'product_performance') => collect(),
+
             $key === 'kpi_metrics' => [
-                'total_revenue' => 0.0,
-                'total_orders' => 0,
-                'total_customers' => 0,
-                'total_products' => 0,
+                'total_revenue'       => 0.0,
+                'total_orders'        => 0,
+                'total_customers'     => 0,
+                'total_products'      => 0,
                 'average_order_value' => 0.0,
-                'orders_today' => 0,
-                'revenue_today' => 0.0,
-                'pending_orders' => 0,
+                'orders_today'        => 0,
+                'revenue_today'       => 0.0,
+                'pending_orders'      => 0,
             ],
+
             $key === 'insight_metrics' => [
-                'best_selling_product' => null,
-                'most_active_customer' => null,
-                'highest_revenue_day' => null,
-                'highest_revenue_day_amount' => 0.0,
-                'highest_revenue_month' => null,
-                'highest_revenue_month_amount' => 0.0,
-                'most_popular_category' => null,
-                'average_customer_lifetime_value' => 0.0,
+                'best_selling_product'           => null,
+                'most_active_customer'           => null,
+                'highest_revenue_day'            => null,
+                'highest_revenue_day_amount'     => 0.0,
+                'highest_revenue_month'          => null,
+                'highest_revenue_month_amount'   => 0.0,
+                'most_popular_category'          => null,
+                'average_customer_lifetime_value'=> 0.0,
             ],
+
             default => null,
         };
     }
