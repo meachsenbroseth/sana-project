@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'empty_state' => 'N/A',
     'reports' => 'Reports',
     'page_title' => 'Analytics & Reports',
 
@@ -106,6 +107,17 @@ return [
         'highest_revenue_month' => 'Highest Revenue Month',
         'most_popular_category' => 'Most Popular Category',
         'average_clv' => 'Average Customer Lifetime Value',
+        'low_stock_alerts' => 'Low Stock Alerts',
+        'out_of_stock' => 'Out Of Stock',
+        'critical_stock' => 'Critical Stock',
+        'healthy_stock' => 'Healthy Stock',
+        'low_stock_desc'             => 'Products running low',
+        'out_of_stock_desc'          => 'Products with zero inventory',
+        'healthy_stock_desc'         => 'Products well stocked',
+        'out_of_stock_count'         => ':count items fully out of stock',
+        'critical_stock_count'       => ':count items critically low (≤5)',
+        'critical_stock_desc'        => 'Stock ≤ :threshold units',
+
     ],
 
     'charts' => [
@@ -182,4 +194,5 @@ return [
         'total_products'      => 'Total Products',
 
     ],
+
 ];

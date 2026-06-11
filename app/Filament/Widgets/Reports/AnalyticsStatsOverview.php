@@ -3,14 +3,13 @@
 namespace App\Filament\Widgets\Reports;
 
 use App\Filament\Widgets\Reports\Concerns\InteractsWithAnalytics;
+use App\Models\Customer;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\DB;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Flowframe\Trend\Trend;
 use Flowframe\Trend\TrendValue;
-use App\Models\Order;
-use App\Models\Customer;
-use App\Models\Product;
 
 class AnalyticsStatsOverview extends StatsOverviewWidget
 {
@@ -19,6 +18,9 @@ class AnalyticsStatsOverview extends StatsOverviewWidget
     protected static ?int $sort = 1;
 
     protected int|string|array $columnSpan = 'full';
+
+    protected const LOW_STOCK_THRESHOLD      = 10;
+    protected const CRITICAL_STOCK_THRESHOLD = 5;
 
     protected function getColumns(): int
     {
@@ -39,7 +41,7 @@ class AnalyticsStatsOverview extends StatsOverviewWidget
         $start = $filters->startDate ?? now()->subDays(6);
         $end   = $filters->endDate   ?? now();
 
-        // ── Trend charts (7-point sparklines) ────────────────────────────────
+        // ── Sparkline trend charts ────────────────────────────────────────────
 
         $revenueChart = Trend::query($this->analytics()->paidOrderQuery($filters))
             ->between($start, $end)
@@ -62,72 +64,186 @@ class AnalyticsStatsOverview extends StatsOverviewWidget
             ->map(fn(TrendValue $v) => $v->aggregate)
             ->toArray();
 
-        // ── Growth / context labels ───────────────────────────────────────────
+        // ── Low stock counts — single query, three derived values ─────────────
 
-        $revenueGrowthLabel = $this->growthLabel($metrics['total_revenue'], $metrics['revenue_today']);
-        $pendingLabel       = number_format($metrics['pending_orders']) . ' ' . __('analytics.kpis.pending');
-        $aovLabel           = __('analytics.kpis.aov_desc', ['value' => $format($metrics['average_order_value'])]);
+        $lowStockBase = DB::table('products')
+            ->whereNull('deleted_at')
+            ->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
+            ->where('stock_quantity', '>', 0)
+            ->when($filters->categoryId, fn($q) => $q->where('category_id', $filters->categoryId))
+            ->when($filters->productId,  fn($q) => $q->where('id', $filters->productId))
+            ->selectRaw('
+                COUNT(*) as total,
+                SUM(CASE WHEN stock_quantity <= 0 THEN 1 ELSE 0 END) as out_of_stock,
+                SUM(CASE WHEN stock_quantity BETWEEN 1 AND ? THEN 1 ELSE 0 END) as critical
+            ', [self::CRITICAL_STOCK_THRESHOLD])
+            ->first();
 
+        $lowStockTotal   = (int) ($lowStockBase->total        ?? 0);
+        $outOfStockCount = (int) ($lowStockBase->out_of_stock ?? 0);
+        $criticalCount   = (int) ($lowStockBase->critical     ?? 0);
+
+        // ── Context labels ────────────────────────────────────────────────────
+
+        $pendingLabel = number_format($metrics['pending_orders']) . ' ' . __('analytics.kpis.pending');
+        $aovLabel     = __('analytics.kpis.aov_desc', ['value' => $format($metrics['average_order_value'])]);
+
+        $lowStockDescription = match (true) {
+            $outOfStockCount > 0 => __('analytics.insights.out_of_stock_count', ['count' => $outOfStockCount]),
+            $criticalCount > 0   => __('analytics.insights.critical_stock_count', ['count' => $criticalCount]),
+            default              => __('analytics.insights.low_stock_desc'),
+        };
+
+        $lowStockColor = match (true) {
+            $outOfStockCount > 0 => 'danger',
+            $criticalCount > 0   => 'warning',
+            $lowStockTotal > 0   => 'warning',
+            default              => 'success',
+        };
+
+        $lowStockIcon = $outOfStockCount > 0
+            ? Heroicon::ExclamationCircle
+            : Heroicon::ExclamationTriangle;
+
+        // Add extra styling attributes for visual enhancement
         return [
-            // ── Row 1 ─────────────────────────────────────────────────────────
+            // ── Row 1: Core KPIs ──────────────────────────────────────────────
 
             Stat::make(__('analytics.kpis.total_revenue'), $format($metrics['total_revenue']))
                 ->description(__('analytics.kpis.today') . ' ' . $format($metrics['revenue_today']))
                 ->descriptionIcon(Heroicon::ArrowTrendingUp)
                 ->color('success')
-                ->chart($revenueChart),
+                ->chart($revenueChart)
+                ->extraAttributes([
+                    'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1',
+                    'style' => 'border-left: 4px solid var(--stat-bar);',
+                ]),
 
             Stat::make(__('analytics.kpis.total_orders'), number_format($metrics['total_orders']))
                 ->description($pendingLabel)
                 ->descriptionIcon(Heroicon::ShoppingCart)
                 ->color('warning')
                 ->chart($ordersChart)
-                ->url(route('filament.admin.resources.orders.index')),
+                ->url(route('filament.admin.resources.orders.index'))
+                ->extraAttributes([
+                    'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer',
+                    'style' => 'border-left: 4px solid var(--stat-bar);',
+                ]),
 
             Stat::make(__('analytics.kpis.total_customers'), number_format($metrics['total_customers']))
                 ->description(__('analytics.kpis.customers_desc'))
                 ->descriptionIcon(Heroicon::Users)
                 ->color('info')
                 ->chart($customersChart)
-                ->url(route('filament.admin.resources.customers.index')),
+                ->url(route('filament.admin.resources.customers.index'))
+                ->extraAttributes([
+                    'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer',
+                    'style' => 'border-left: 4px solid var(--stat-bar);',
+                ]),
 
             Stat::make(__('analytics.kpis.total_products'), number_format($metrics['total_products']))
                 ->description(__('analytics.kpis.products_desc'))
                 ->descriptionIcon(Heroicon::Cube)
                 ->color('gray')
-                ->url(route('filament.admin.resources.products.index')),
+                ->url(route('filament.admin.resources.products.index'))
+                ->extraAttributes([
+                    'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer',
+                    'style' => 'border-left: 4px solid var(--stat-bar);',
+                ]),
 
-            // ── Row 2 ─────────────────────────────────────────────────────────
+            // ── Row 2: Secondary KPIs ─────────────────────────────────────────
 
             Stat::make(__('analytics.kpis.average_order_value'), $format($metrics['average_order_value']))
                 ->description($aovLabel)
                 ->descriptionIcon(Heroicon::Calculator)
-                ->color('primary'),
+                ->color('primary')
+                ->extraAttributes([
+                    'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1',
+                    'style' => 'border-left: 4px solid var(--stat-bar);',
+                ]),
 
             Stat::make(__('analytics.kpis.orders_today'), number_format($metrics['orders_today']))
                 ->description(__('analytics.kpis.orders_today_desc'))
                 ->descriptionIcon(Heroicon::CalendarDays)
-                ->color('primary'),
+                ->color('primary')
+                ->extraAttributes([
+                    'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1',
+                    'style' => 'border-left: 4px solid var(--stat-bar);',
+                ]),
 
             Stat::make(__('analytics.kpis.revenue_today'), $format($metrics['revenue_today']))
-                ->description($revenueGrowthLabel)
-                // ->descriptionIcon(Heroicon::BankNotes)
-                ->color('success'),
+                ->description($this->growthLabel($metrics['total_revenue'], $metrics['revenue_today']))
+                ->descriptionIcon(Heroicon::ArrowTrendingUp)
+                ->color('success')
+                ->extraAttributes([
+                    'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1',
+                    'style' => 'border-left: 4px solid var(--stat-bar);',
+                ]),
 
             Stat::make(__('analytics.kpis.pending_orders'), number_format($metrics['pending_orders']))
                 ->description(__('analytics.kpis.pending_orders_desc'))
                 ->descriptionIcon(Heroicon::Clock)
                 ->color('danger')
-                ->url(route('filament.admin.resources.orders.index', ['tableFilters[status][value]' => 'pending'])),
+                ->url(route('filament.admin.resources.orders.index', [
+                    'tableFilters[status][value]' => 'pending',
+                ]))
+                ->extraAttributes([
+                    'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer',
+                    'style' => 'border-left: 4px solid var(--stat-bar);',
+                ]),
+
+            // ── Row 3: Inventory health ───────────────────────────────────────
+
+            Stat::make(__('analytics.insights.low_stock_alerts'), number_format($lowStockTotal))
+                ->description($lowStockDescription)
+                ->descriptionIcon($lowStockIcon)
+                ->color($lowStockColor)
+                ->url(route('filament.admin.resources.products.index', [
+                    'tableFilters[stock_status][value]' => 'low_stock',
+                ]))
+                ->extraAttributes([
+                    'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer',
+                    'style' => 'border-left: 4px solid var(--stat-bar);',
+                ]),
+
+            Stat::make(__('analytics.insights.out_of_stock'), number_format($outOfStockCount))
+                ->description(__('analytics.insights.out_of_stock_desc'))
+                ->descriptionIcon(Heroicon::NoSymbol)
+                ->color($outOfStockCount > 0 ? 'danger' : 'success')
+                ->url(route('filament.admin.resources.products.index', [
+                    'tableFilters[stock_status][value]' => 'out_of_stock',
+                ]))
+                ->extraAttributes([
+                    'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer',
+                    'style' => 'border-left: 4px solid var(--stat-bar);',
+                ]),
+
+            Stat::make(__('analytics.insights.critical_stock'), number_format($criticalCount))
+                ->description(__('analytics.insights.critical_stock_desc', ['threshold' => self::CRITICAL_STOCK_THRESHOLD]))
+                ->descriptionIcon(Heroicon::ExclamationTriangle)
+                ->color($criticalCount > 0 ? 'warning' : 'success')
+                ->url(route('filament.admin.resources.products.index', [
+                    'tableFilters[stock_status][value]' => 'low_stock',
+                ]))
+                ->extraAttributes([
+                    'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer',
+                    'style' => 'border-left: 4px solid var(--stat-bar);',
+                ]),
+
+            Stat::make(__('analytics.insights.healthy_stock'), number_format(max(0, $metrics['total_products'] - $lowStockTotal)))
+                ->description(__('analytics.insights.healthy_stock_desc'))
+                ->descriptionIcon(Heroicon::CheckCircle)
+                ->color('success')
+                ->url(route('filament.admin.resources.products.index'))
+                ->extraAttributes([
+                    'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer',
+                    'style' => 'border-left: 4px solid var(--stat-bar);',
+                ]),
         ];
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /**
-     * Returns a human-readable growth label comparing today's revenue to the
-     * all-time total (a simple "today vs period" indicator for the sparkline).
-     */
     protected function growthLabel(float $total, float $today): string
     {
         if ($total <= 0) {
