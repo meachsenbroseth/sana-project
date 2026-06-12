@@ -287,7 +287,7 @@
                     bakongAccountID:      env('BAKONG_MERCHANT_ID'),
                     merchantName:         env('BAKONG_MERCHANT_NAME'),
                     merchantCity:         env('BAKONG_MERCHANT_CITY'),
-                    currency:             KHQRData::CURRENCY_USD,
+                    currency:             KHQRData::CURRENCY_KHR,
                     amount:               $this->total,
                     expirationTimestamp:  (time() + self::PAYMENT_TIMEOUT_SECONDS) * 1000,
                 );
