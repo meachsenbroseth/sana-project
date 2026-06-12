@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Filament\Resources\ShippingMethods\ShippingMethodResource;
 use App\Models\SiteSetting;
 use BackedEnum;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
@@ -24,6 +25,7 @@ class SiteSettings extends Page implements HasForms
 {
     use InteractsWithForms;
     use WithFileUploads;
+    use HasPageShield;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Photo;
 

@@ -17,11 +17,37 @@ use UnitEnum;
 
 class PermissionResource extends Resource
 {
+    
     protected static ?string $model = Permission::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('ViewAny:Permission') ?? false;
+    }
+ 
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->can('Create:Permission') ?? false;
+    }
+ 
+    public static function canEdit($record): bool
+    {
+        return auth()->user()?->can('Update:Permission') ?? false;
+    }
+ 
+    public static function canDelete($record): bool
+    {
+        return auth()->user()?->can('Delete:Permission') ?? false;
+    }
+ 
+    public static function canDeleteAny(): bool
+    {
+        return auth()->user()?->can('Delete:Permission') ?? false;
+    }
 
     public static function form(Schema $schema): Schema
     {

@@ -10,6 +10,11 @@ class OrderStatuChart extends ChartWidget
     protected static ?int $sort = 3; // Places it right after your Revenue Chart
     protected ?string $heading = 'Order Status Overview';
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('View:OrderStatuChart') ?? false;
+    }
+
     protected function getData(): array
     {
         // 1. Count the number of orders in each specific status
@@ -43,6 +48,6 @@ class OrderStatuChart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'pie'; 
+        return 'pie';
     }
 }

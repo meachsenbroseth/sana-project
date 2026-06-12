@@ -13,12 +13,17 @@ class LatestOrders extends TableWidget
 {
     protected int|string|array $columnSpan = 'full';
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('View:LatestOrders') ?? false;
+    }
+
     protected static ?int $sort = 5;
 
     public function table(Table $table): Table
     {
         return $table
-            ->query(fn (): Builder => Order::query()->latest()->limit(10))
+            ->query(fn(): Builder => Order::query()->latest()->limit(10))
             ->heading(__('table.latest_orders'))
             ->paginated(false)
             ->columns([
@@ -34,7 +39,8 @@ class LatestOrders extends TableWidget
                     ->searchable()
                     ->sortable()
                     ->color('primary')
-                    ->url(fn ($record) => $record->customer
+                    ->url(
+                        fn($record) => $record->customer
                             ? CustomerResource::getUrl('edit', ['record' => $record->customer])
                             : null
                     ),
@@ -54,13 +60,13 @@ class LatestOrders extends TableWidget
                 TextColumn::make('payment_status')
                     ->label(__('table.payment_status'))
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'paid' => 'success',
                         'pending' => 'warning',
                         'failed' => 'danger',
                         default => 'gray',
                     })
-                    ->icon(fn (string $state): string => match ($state) {
+                    ->icon(fn(string $state): string => match ($state) {
                         'paid' => 'heroicon-m-check-circle',
                         'pending' => 'heroicon-m-clock',
                         'failed' => 'heroicon-m-x-circle',
@@ -71,7 +77,7 @@ class LatestOrders extends TableWidget
                 TextColumn::make('status')
                     ->label(__('table.status'))
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'pending' => 'warning',
                         'processing' => 'info',
                         'shipped' => 'primary',

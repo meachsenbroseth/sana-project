@@ -12,6 +12,11 @@ class OrderReportTable extends TableWidget
 {
     use InteractsWithAnalytics;
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('View:OrderReportTable') ?? false;
+    }
+
     protected static bool $isDiscovered = false;
 
 
@@ -27,7 +32,7 @@ class OrderReportTable extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->query(fn (): Builder => $this->analytics()->orderReportQuery($this->filters()))
+            ->query(fn(): Builder => $this->analytics()->orderReportQuery($this->filters()))
             ->columns([
                 TextColumn::make('order_number')
                     ->label(__('analytics.columns.order_number'))
@@ -39,13 +44,13 @@ class OrderReportTable extends TableWidget
                 TextColumn::make('status')
                     ->label(__('analytics.columns.status'))
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => __('order.status.'.$state, [], app()->getLocale()) !== 'order.status.'.$state
-                        ? __('order.status.'.$state)
+                    ->formatStateUsing(fn(string $state): string => __('order.status.' . $state, [], app()->getLocale()) !== 'order.status.' . $state
+                        ? __('order.status.' . $state)
                         : ucfirst($state)),
                 TextColumn::make('payment_method')
                     ->label(__('analytics.columns.payment_method'))
-                    ->formatStateUsing(fn (string $state): string => __('analytics.payment_methods.'.$state, [], app()->getLocale()) !== 'analytics.payment_methods.'.$state
-                        ? __('analytics.payment_methods.'.$state)
+                    ->formatStateUsing(fn(string $state): string => __('analytics.payment_methods.' . $state, [], app()->getLocale()) !== 'analytics.payment_methods.' . $state
+                        ? __('analytics.payment_methods.' . $state)
                         : $state),
                 TextColumn::make('total')
                     ->label(__('analytics.columns.total'))

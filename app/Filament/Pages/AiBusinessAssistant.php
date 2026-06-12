@@ -7,6 +7,7 @@ use App\Filament\Widgets\AiAssistantOverview;
 use App\Filament\Widgets\AiProductDemandChart;
 use App\Services\Ai\BusinessIntelligenceContextService;
 use BackedEnum;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,9 @@ use UnitEnum;
 
 class AiBusinessAssistant extends Page
 {
+
+    use HasPageShield;
+
     protected string $view = 'filament.pages.ai-business-assistant';
 
     protected static string $routePath = 'ai-assistant';

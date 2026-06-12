@@ -10,6 +10,11 @@ class CustomerGrowthChart extends ChartWidget
 {
     use InteractsWithAnalytics;
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('View:CustomerGrowthChart') ?? false;
+    }
+
     protected static bool $isDiscovered = false;
 
 
@@ -47,14 +52,14 @@ class CustomerGrowthChart extends ChartWidget
             'datasets' => [
                 [
                     'label' => __('analytics.charts.customers_label'),
-                    'data' => $data->map(fn (TrendValue $value): mixed => $value->aggregate)->toArray(),
+                    'data' => $data->map(fn(TrendValue $value): mixed => $value->aggregate)->toArray(),
                     'borderColor' => '#059669',
                     'backgroundColor' => 'rgba(5, 150, 105, 0.1)',
                     'fill' => $this->filter === 'trend',
                     'tension' => 0.35,
                 ],
             ],
-            'labels' => $data->map(fn (TrendValue $value): string => $value->date)->toArray(),
+            'labels' => $data->map(fn(TrendValue $value): string => $value->date)->toArray(),
         ];
     }
 }

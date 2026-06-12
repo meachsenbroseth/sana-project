@@ -9,6 +9,11 @@ class ProductPerformanceChart extends ChartWidget
 {
     use InteractsWithAnalytics;
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('View:ProductPerformanceChart') ?? false;
+    }
+
     protected static bool $isDiscovered = false;
 
 

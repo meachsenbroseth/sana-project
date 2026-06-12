@@ -14,10 +14,10 @@ use Flowframe\Trend\TrendValue;
 class StatsOverview extends StatsOverviewWidget
 {
 
-    //     public static function canView(): bool
-    // {
-    //     return false;
-    // }
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('View:StatsOverview');
+    }
 
 
     protected ?string $pollingInterval = '10s';
@@ -40,7 +40,7 @@ class StatsOverview extends StatsOverviewWidget
             ->between(start: now()->subDays(6), end: now())
             ->perDay()
             ->sum('total')
-            ->map(fn (TrendValue $value) => $value->aggregate)
+            ->map(fn(TrendValue $value) => $value->aggregate)
             ->toArray();
 
         // Orders Chart (Counting the number of orders)
@@ -48,7 +48,7 @@ class StatsOverview extends StatsOverviewWidget
             ->between(start: now()->subDays(6), end: now())
             ->perDay()
             ->count()
-            ->map(fn (TrendValue $value) => $value->aggregate)
+            ->map(fn(TrendValue $value) => $value->aggregate)
             ->toArray();
 
         // Customers Chart (Counting new registrations)
@@ -56,7 +56,7 @@ class StatsOverview extends StatsOverviewWidget
             ->between(start: now()->subDays(6), end: now())
             ->perDay()
             ->count()
-            ->map(fn (TrendValue $value) => $value->aggregate)
+            ->map(fn(TrendValue $value) => $value->aggregate)
             ->toArray();
 
 

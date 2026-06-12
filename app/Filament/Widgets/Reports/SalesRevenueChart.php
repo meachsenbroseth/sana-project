@@ -10,6 +10,12 @@ class SalesRevenueChart extends ChartWidget
 {
     use InteractsWithAnalytics;
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('View:SalesRevenueChart') ?? false;
+    }
+
+
     protected static bool $isDiscovered = false;
 
     protected static ?int $sort = 3;
@@ -53,14 +59,14 @@ class SalesRevenueChart extends ChartWidget
             'datasets' => [
                 [
                     'label' => __('analytics.charts.revenue_label'),
-                    'data' => $data->map(fn (TrendValue $value): mixed => $value->aggregate)->toArray(),
+                    'data' => $data->map(fn(TrendValue $value): mixed => $value->aggregate)->toArray(),
                     'borderColor' => '#1d398f',
                     'backgroundColor' => 'rgba(29, 57, 143, 0.1)',
                     'fill' => true,
                     'tension' => 0.3,
                 ],
             ],
-            'labels' => $data->map(fn (TrendValue $value): string => $value->date)->toArray(),
+            'labels' => $data->map(fn(TrendValue $value): string => $value->date)->toArray(),
         ];
     }
 }

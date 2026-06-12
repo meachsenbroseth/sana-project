@@ -10,8 +10,12 @@ class OrdersChart extends ChartWidget
 {
     use InteractsWithAnalytics;
 
-    protected static bool $isDiscovered = false;
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('View:OrdersChart') ?? false;
+    }
 
+    protected static bool $isDiscovered = false;
 
     protected static ?int $sort = 4;
 
@@ -44,8 +48,8 @@ class OrdersChart extends ChartWidget
 
         $labels = $data->map(function (TrendValue $value): string {
             if ($this->filter === 'status') {
-                return __('order.status.'.$value->date, [], app()->getLocale()) !== 'order.status.'.$value->date
-                    ? __('order.status.'.$value->date)
+                return __('order.status.' . $value->date, [], app()->getLocale()) !== 'order.status.' . $value->date
+                    ? __('order.status.' . $value->date)
                     : ucfirst($value->date);
             }
 
@@ -56,7 +60,7 @@ class OrdersChart extends ChartWidget
             'datasets' => [
                 [
                     'label' => __('analytics.charts.orders_label'),
-                    'data' => $data->map(fn (TrendValue $value): mixed => $value->aggregate)->toArray(),
+                    'data' => $data->map(fn(TrendValue $value): mixed => $value->aggregate)->toArray(),
                     'backgroundColor' => '#2563eb',
                 ],
             ],

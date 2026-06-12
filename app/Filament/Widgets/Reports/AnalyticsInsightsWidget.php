@@ -13,6 +13,11 @@ class AnalyticsInsightsWidget extends StatsOverviewWidget
 
     protected static bool $isDiscovered = false;
 
+        public static function canView(): bool
+    {
+        return auth()->user()?->can('View:AnalyticsInsights') ?? false;
+    }
+
 
     protected static ?int $sort = 2;
 

@@ -20,6 +20,7 @@ use App\Services\Analytics\AnalyticsService;
 use App\Services\Analytics\AnalyticsTableResolver;
 use BackedEnum;
 use Barryvdh\DomPDF\Facade\Pdf;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Actions\Action;
 use Filament\Actions\ExportAction;
 use Filament\Actions\Exports\Enums\ExportFormat;
@@ -35,6 +36,7 @@ use UnitEnum;
 class Reports extends BaseDashboard
 {
     use HasFiltersForm;
+    use HasPageShield;
 
     protected static string $routePath = 'reports';
 

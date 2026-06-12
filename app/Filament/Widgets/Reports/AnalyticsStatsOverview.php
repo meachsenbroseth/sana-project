@@ -13,6 +13,11 @@ class AnalyticsStatsOverview extends StatsOverviewWidget
 {
     use InteractsWithAnalytics;
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('View:StatsOverview') ?? false;
+    }
+
     protected static bool $isDiscovered = false;
 
     protected static ?int $sort = 1;
@@ -51,7 +56,7 @@ class AnalyticsStatsOverview extends StatsOverviewWidget
             ->where('is_active', 1)
             ->where(function ($q) {
                 $q->where('stock_status', 'out_of_stock')
-                  ->orWhere('stock_quantity', '<=', 0);
+                    ->orWhere('stock_quantity', '<=', 0);
             })
             ->when($filters->categoryId, fn($q) => $q->where('category_id', $filters->categoryId))
             ->when($filters->productId,  fn($q) => $q->where('id', $filters->productId))

@@ -12,6 +12,12 @@ class CustomerReportTable extends TableWidget
 {
     use InteractsWithAnalytics;
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('View:CustomerReportTable') ?? false;
+    }
+
+
     protected static bool $isDiscovered = false;
 
 
@@ -27,7 +33,7 @@ class CustomerReportTable extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->query(fn (): Builder => $this->analytics()->customerReportQuery($this->filters()))
+            ->query(fn(): Builder => $this->analytics()->customerReportQuery($this->filters()))
             ->columns([
                 TextColumn::make('name')
                     ->label(__('analytics.columns.customer_name'))

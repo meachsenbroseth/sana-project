@@ -14,10 +14,10 @@ class LowStockWidget extends BaseWidget
 
     protected static ?int $sort = 4;
 
-    // public static function canView(): bool
-    // {
-    //     return false;
-    // }
+public static function canView(): bool
+{
+    return auth()->user()?->can('View:LowStock') ?? false;
+}
 
     protected int|string|array $columnSpan = 'full';
 

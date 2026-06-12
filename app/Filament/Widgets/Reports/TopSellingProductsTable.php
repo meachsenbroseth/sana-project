@@ -12,8 +12,13 @@ class TopSellingProductsTable extends TableWidget
 {
     use InteractsWithAnalytics;
 
-    protected static bool $isDiscovered = false;
+        public static function canView(): bool
+    {
+        return auth()->user()?->can('View:TopSellingProductsTable') ?? false;
+    }
 
+
+    protected static bool $isDiscovered = false;
 
     protected static ?int $sort = 7;
 
