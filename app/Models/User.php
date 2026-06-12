@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
@@ -86,10 +86,10 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(OrderStatusHistory::class);
     }
 
-    public function canAccessPanel(Panel $panel): bool
-    {
-        return str_ends_with($this->email, '@example.com');
-    }
+    // public function canAccessPanel(Panel $panel): bool
+    // {
+    //     return str_ends_with($this->email, '@example.com');
+    // }
 
     public function getAvatarUrlAttribute(): string
     {

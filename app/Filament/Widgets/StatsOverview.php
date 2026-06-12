@@ -13,6 +13,13 @@ use Flowframe\Trend\TrendValue;
 
 class StatsOverview extends StatsOverviewWidget
 {
+
+    //     public static function canView(): bool
+    // {
+    //     return false;
+    // }
+
+
     protected ?string $pollingInterval = '10s';
 
     protected function getStats(): array
@@ -27,7 +34,7 @@ class StatsOverview extends StatsOverviewWidget
         $lowStock = Product::lowStock()->count();
 
         // --- 2. GENERATE DYNAMIC CHART DATA (Last 7 Days) ---
-        
+
         // Revenue Chart (Summing the 'total' column)
         $revenueData = Trend::query(Order::where('payment_status', 'paid'))
             ->between(start: now()->subDays(6), end: now())

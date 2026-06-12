@@ -249,3 +249,209 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
 .fi-ta-icon-item .fi-icon {
     color: currentColor !important;
 }
+
+
+/* =====================================================================
+   PHANNA COMPUTER — Stat Cards with forced color
+   Paste at the VERY BOTTOM of your theme.css
+   ===================================================================== */
+
+/* ── Card base reset & style ─────────────────────────────────────────── */
+.fi-wi-stats-overview-stat.fi-wi-stats-overview-stat.fi-wi-stats-overview-stat {
+    position: relative !important;
+    overflow: hidden !important;
+    border-radius: 16px !important;
+    padding: 1.35rem 1.25rem 1.1rem !important;
+    border: 1px solid rgba(0, 0, 0, 0.07) !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05) !important;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease !important;
+    background: #ffffff !important;
+}
+
+.fi-wi-stats-overview-stat.fi-wi-stats-overview-stat.fi-wi-stats-overview-stat:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.12), 0 4px 8px -4px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ── Shimmer sweep on hover ──────────────────────────────────────────── */
+.fi-wi-stats-overview-stat.fi-wi-stats-overview-stat.fi-wi-stats-overview-stat::after {
+    content: '' !important;
+    position: absolute !important;
+    inset: 0 !important;
+    background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.6) 50%, transparent 70%) !important;
+    transform: translateX(-120%) !important;
+    transition: transform 0.55s ease !important;
+    pointer-events: none !important;
+    z-index: 2 !important;
+}
+.fi-wi-stats-overview-stat.fi-wi-stats-overview-stat.fi-wi-stats-overview-stat:hover::after {
+    transform: translateX(120%) !important;
+}
+
+/* ── Top accent bar ──────────────────────────────────────────────────── */
+.fi-wi-stats-overview-stat.fi-wi-stats-overview-stat.fi-wi-stats-overview-stat::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important; left: 0 !important; right: 0 !important;
+    height: 4px !important;
+    border-radius: 16px 16px 0 0 !important;
+    background: linear-gradient(90deg, var(--sc-bar-a, #6b7280) 0%, var(--sc-bar-b, #9ca3af) 100%) !important;
+    z-index: 1 !important;
+}
+
+/* ── Color tokens per Filament color class ───────────────────────────── */
+.fi-wi-stats-overview-stat.fi-color-success {
+    --sc-bar-a:   #10b981 !important;
+    --sc-bar-b:   #34d399 !important;
+    --sc-val:     #064e3b !important;
+    --sc-lbl:     #6b7280 !important;
+    --sc-pill-bg: #ecfdf5 !important;
+    --sc-pill-tx: #065f46 !important;
+    --sc-pill-bd: #a7f3d0 !important;
+    --sc-dot:     #10b981 !important;
+    background: linear-gradient(160deg, #f0fdf9 0%, #ffffff 60%) !important;
+    border-color: #d1fae5 !important;
+}
+.fi-wi-stats-overview-stat.fi-color-warning {
+    --sc-bar-a:   #f59e0b !important;
+    --sc-bar-b:   #fbbf24 !important;
+    --sc-val:     #78350f !important;
+    --sc-lbl:     #6b7280 !important;
+    --sc-pill-bg: #fffbeb !important;
+    --sc-pill-tx: #92400e !important;
+    --sc-pill-bd: #fde68a !important;
+    --sc-dot:     #f59e0b !important;
+    background: linear-gradient(160deg, #fffcf0 0%, #ffffff 60%) !important;
+    border-color: #fde68a !important;
+}
+.fi-wi-stats-overview-stat.fi-color-danger {
+    --sc-bar-a:   #ef4444 !important;
+    --sc-bar-b:   #f87171 !important;
+    --sc-val:     #7f1d1d !important;
+    --sc-lbl:     #6b7280 !important;
+    --sc-pill-bg: #fef2f2 !important;
+    --sc-pill-tx: #991b1b !important;
+    --sc-pill-bd: #fecaca !important;
+    --sc-dot:     #ef4444 !important;
+    background: linear-gradient(160deg, #fff5f5 0%, #ffffff 60%) !important;
+    border-color: #fecaca !important;
+}
+.fi-wi-stats-overview-stat.fi-color-info {
+    --sc-bar-a:   #3b82f6 !important;
+    --sc-bar-b:   #60a5fa !important;
+    --sc-val:     #1e3a8a !important;
+    --sc-lbl:     #6b7280 !important;
+    --sc-pill-bg: #eff6ff !important;
+    --sc-pill-tx: #1e40af !important;
+    --sc-pill-bd: #bfdbfe !important;
+    --sc-dot:     #3b82f6 !important;
+    background: linear-gradient(160deg, #f0f5ff 0%, #ffffff 60%) !important;
+    border-color: #bfdbfe !important;
+}
+.fi-wi-stats-overview-stat.fi-color-primary {
+    --sc-bar-a:   #6366f1 !important;
+    --sc-bar-b:   #818cf8 !important;
+    --sc-val:     #312e81 !important;
+    --sc-lbl:     #6b7280 !important;
+    --sc-pill-bg: #eef2ff !important;
+    --sc-pill-tx: #3730a3 !important;
+    --sc-pill-bd: #c7d2fe !important;
+    --sc-dot:     #6366f1 !important;
+    background: linear-gradient(160deg, #f3f1ff 0%, #ffffff 60%) !important;
+    border-color: #c7d2fe !important;
+}
+.fi-wi-stats-overview-stat.fi-color-gray,
+.fi-wi-stats-overview-stat.fi-color-secondary {
+    --sc-bar-a:   #6b7280 !important;
+    --sc-bar-b:   #9ca3af !important;
+    --sc-val:     #111827 !important;
+    --sc-lbl:     #6b7280 !important;
+    --sc-pill-bg: #f9fafb !important;
+    --sc-pill-tx: #374151 !important;
+    --sc-pill-bd: #e5e7eb !important;
+    --sc-dot:     #6b7280 !important;
+    background: linear-gradient(160deg, #f9fafb 0%, #ffffff 60%) !important;
+    border-color: #e5e7eb !important;
+}
+
+/* ── Label (TOTAL REVENUE etc.) ──────────────────────────────────────── */
+.fi-wi-stats-overview-stat .fi-wi-stats-overview-stat-label {
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.07em !important;
+    color: var(--sc-lbl, #6b7280) !important;
+}
+
+/* ── Value ($581.01 etc.) ────────────────────────────────────────────── */
+.fi-wi-stats-overview-stat .fi-wi-stats-overview-stat-value {
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.03em !important;
+    color: var(--sc-val, #111827) !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+/* ── Description pill (Today $581.00 etc.) ───────────────────────────── */
+.fi-wi-stats-overview-stat .fi-wi-stats-overview-stat-description {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    color: var(--sc-pill-tx, #374151) !important;
+    background: var(--sc-pill-bg, #f9fafb) !important;
+    border: 1px solid var(--sc-pill-bd, #e5e7eb) !important;
+    padding: 0.3rem 0.75rem !important;
+    border-radius: 999px !important;
+    margin-top: 0.5rem !important;
+    transition: filter 0.2s ease, transform 0.2s ease !important;
+}
+.fi-wi-stats-overview-stat:hover .fi-wi-stats-overview-stat-description {
+    filter: brightness(0.96) !important;
+    transform: translateY(-1px) !important;
+}
+.fi-wi-stats-overview-stat .fi-wi-stats-overview-stat-description svg,
+.fi-wi-stats-overview-stat .fi-wi-stats-overview-stat-description .fi-icon {
+    width: 0.8rem !important;
+    height: 0.8rem !important;
+    color: var(--sc-pill-tx, #374151) !important;
+    flex-shrink: 0 !important;
+}
+
+/* ── Sparkline ───────────────────────────────────────────────────────── */
+.fi-wi-stats-overview-stat .fi-wi-stats-overview-stat-chart {
+    margin-top: 0.75rem !important;
+    opacity: 0.6 !important;
+    transition: opacity 0.3s ease !important;
+}
+.fi-wi-stats-overview-stat:hover .fi-wi-stats-overview-stat-chart {
+    opacity: 1 !important;
+}
+
+/* ── Dark mode ───────────────────────────────────────────────────────── */
+.dark .fi-wi-stats-overview-stat.fi-wi-stats-overview-stat.fi-wi-stats-overview-stat {
+    background: #1e2433 !important;
+    border-color: rgba(255,255,255,0.07) !important;
+}
+.dark .fi-wi-stats-overview-stat.fi-color-success  { background: linear-gradient(160deg,#052e1c 0%,#1e2433 60%) !important; border-color: rgba(16,185,129,0.2) !important; --sc-val:#6ee7b7 !important; --sc-pill-bg:rgba(16,185,129,0.12) !important; --sc-pill-bd:rgba(16,185,129,0.3) !important; --sc-pill-tx:#6ee7b7 !important; }
+.dark .fi-wi-stats-overview-stat.fi-color-warning  { background: linear-gradient(160deg,#2d1e02 0%,#1e2433 60%) !important; border-color: rgba(245,158,11,0.2) !important;  --sc-val:#fde68a !important; --sc-pill-bg:rgba(245,158,11,0.12) !important;  --sc-pill-bd:rgba(245,158,11,0.3) !important;  --sc-pill-tx:#fde68a !important; }
+.dark .fi-wi-stats-overview-stat.fi-color-danger   { background: linear-gradient(160deg,#2d0808 0%,#1e2433 60%) !important; border-color: rgba(239,68,68,0.2) !important;   --sc-val:#fca5a5 !important; --sc-pill-bg:rgba(239,68,68,0.12) !important;   --sc-pill-bd:rgba(239,68,68,0.3) !important;   --sc-pill-tx:#fca5a5 !important; }
+.dark .fi-wi-stats-overview-stat.fi-color-info     { background: linear-gradient(160deg,#0d1e3d 0%,#1e2433 60%) !important; border-color: rgba(59,130,246,0.2) !important;  --sc-val:#93c5fd !important; --sc-pill-bg:rgba(59,130,246,0.12) !important;  --sc-pill-bd:rgba(59,130,246,0.3) !important;  --sc-pill-tx:#93c5fd !important; }
+.dark .fi-wi-stats-overview-stat.fi-color-primary  { background: linear-gradient(160deg,#18154a 0%,#1e2433 60%) !important; border-color: rgba(99,102,241,0.2) !important;  --sc-val:#a5b4fc !important; --sc-pill-bg:rgba(99,102,241,0.12) !important;  --sc-pill-bd:rgba(99,102,241,0.3) !important;  --sc-pill-tx:#a5b4fc !important; }
+.dark .fi-wi-stats-overview-stat.fi-color-gray,
+.dark .fi-wi-stats-overview-stat.fi-color-secondary { background: linear-gradient(160deg,#111827 0%,#1e2433 60%) !important; border-color: rgba(107,114,128,0.2) !important; --sc-val:#e5e7eb !important; --sc-pill-bg:rgba(107,114,128,0.12) !important; --sc-pill-bd:rgba(107,114,128,0.3) !important; --sc-pill-tx:#e5e7eb !important; }
+.dark .fi-wi-stats-overview-stat .fi-wi-stats-overview-stat-label { color: #9ca3af !important; }
+.dark .fi-wi-stats-overview-stat .fi-wi-stats-overview-stat-value { color: var(--sc-val, #f1f5f9) !important; }
+
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .fi-wi-stats-overview-stat.fi-wi-stats-overview-stat.fi-wi-stats-overview-stat,
+    .fi-wi-stats-overview-stat.fi-wi-stats-overview-stat.fi-wi-stats-overview-stat::after {
+        transition: none !important;
+    }
+    .fi-wi-stats-overview-stat.fi-wi-stats-overview-stat.fi-wi-stats-overview-stat:hover {
+        transform: none !important;
+    }
+}

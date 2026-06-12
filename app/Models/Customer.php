@@ -17,7 +17,7 @@ class Customer extends Authenticatable
         'password',
         'phone',
         'google_id',
-        'facebook_id', 
+        'facebook_id',
         'provider',
         'date_of_birth',
         'gender',
@@ -68,7 +68,7 @@ class Customer extends Authenticatable
 
     public function getTotalSpendAttribute()
     {
-        return $this->orders()->where('payment_status', 'paid')->sum('total_amount');
+        return $this->orders()->where('payment_status', 'paid')->sum('total');
     }
 
     public function getOrderCountAttribute()

@@ -22,6 +22,11 @@ return [
 
     'gemini_model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
 
+    'business_assistant' => [
+        'provider' => env('AI_BUSINESS_ASSISTANT_PROVIDER', 'gemini'),
+        'model' => env('AI_BUSINESS_ASSISTANT_MODEL', env('GEMINI_MODEL', 'gemini-2.5-flash')),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Caching
