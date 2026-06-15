@@ -1,0 +1,4 @@
+/var/www/html/vendor/phpunit
+/var/www/html/vendor/mockery
+/var/www/html/vendor/fakerphp
+/var/www/html/vendor/pestphp

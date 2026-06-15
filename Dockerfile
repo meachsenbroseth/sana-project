@@ -1,37 +1,68 @@
 # syntax=docker/dockerfile:1
+# Multi-stage build for production PHP 8.4 + Laravel + Nginx + Supervisor
 
-FROM composer:2 AS vendor
+# ============================================================
+# STAGE 1: Composer dependencies
+# ============================================================
+FROM composer:2.8 AS vendor
 
 WORKDIR /app
+
 COPY composer.json composer.lock ./
 
 RUN composer install \
     --no-dev \
     --no-interaction \
     --no-scripts \
+    --no-autoloader \
     --prefer-dist \
     --ignore-platform-reqs
 
-
-FROM node:22-bookworm-slim AS assets
+# ============================================================
+# STAGE 2: Node assets (Vite build)
+# ============================================================
+FROM node:22-alpine AS assets
 
 WORKDIR /app
+
+RUN apk add --no-cache libc6-compat
+
 COPY package.json package-lock.json ./
-RUN npm ci
+
+RUN npm ci --no-audit --no-fund && \
+    npm cache clean --force
 
 COPY --from=vendor /app/vendor ./vendor
 COPY . .
+
 RUN npm run build
 
+# ============================================================
+# STAGE 3: Production image
+# ============================================================
+FROM php:8.4-fpm-bookworm AS production
 
-FROM php:8.4-fpm-bookworm
+ARG WWWGROUP=1001
+ARG WWWUSER=1001
 
+ENV APP_ENV=production \
+    APP_DEBUG=false \
+    DEBIAN_FRONTEND=noninteractive \
+    PHP_OPCACHE_ENABLE=1 \
+    COMPOSER_ALLOW_SUPERUSER=1 \
+    TZ=UTC
+
+# System packages
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         nginx \
         supervisor \
+        ca-certificates \
+        curl \
+        gettext-base \
         git \
         unzip \
+        zip \
         libicu-dev \
         libzip-dev \
         libpng-dev \
@@ -39,87 +70,121 @@ RUN apt-get update \
         libfreetype6-dev \
         libpq-dev \
         libsqlite3-dev \
-    && rm -rf /var/lib/apt/lists/*
+        libonig-dev \
+        libxml2-dev \
+        libwebp-dev \
+        libxpm-dev \
+        cron \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+# PHP extensions
+RUN docker-php-ext-configure gd \
+    --with-freetype \
+    --with-jpeg \
+    --with-webp \
+    --with-xpm \
     && docker-php-ext-install -j"$(nproc)" \
         bcmath \
         gd \
         intl \
+        mbstring \
         opcache \
         pcntl \
-        pdo_mysql \
         pdo_pgsql \
         pdo_sqlite \
-        zip
+        pdo_mysql \
+        xml \
+        zip \
+        exif
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Redis extension from PECL
+RUN pecl install redis \
+    && docker-php-ext-enable redis
 
+# Enable OPcache
+RUN docker-php-ext-enable opcache
+
+# Install composer
+COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
+
+# Create application user with proper home
+RUN groupadd --force -g ${WWWGROUP} app \
+    && useradd -ms /bin/bash --no-user-group -g app -u ${WWWUSER} app \
+    && mkdir -p /home/app/.composer \
+    && chown -R app:app /home/app
+
+# Application directory setup
 WORKDIR /var/www/html
 
-COPY . .
+# Copy application source
+COPY --chown=app:app . .
 
+# Copy vendor from composer stage
+COPY --chown=app:app --from=vendor /app/vendor ./vendor
+
+# Copy built assets from node stage
+COPY --chown=app:app --from=assets /app/public/build ./public/build
+
+# Create required directories with proper permissions
+RUN mkdir -p \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/framework/cache/data \
+        storage/logs \
+        storage/app/public \
+        bootstrap/cache \
+        /var/log/php \
+        /var/log/supervisor \
+    && chown -R app:app storage bootstrap/cache /var/log/php /var/log/supervisor \
+    && chmod -R 775 storage bootstrap/cache
+
+# Install application dependencies with production optimizations
 RUN composer install \
     --no-dev \
     --no-interaction \
     --prefer-dist \
     --optimize-autoloader \
-    --ignore-platform-reqs
+    --classmap-authoritative \
+    --no-ansi
 
-COPY --from=assets /app/public/build ./public/build
+# PHP configuration
+COPY docker/php.ini /usr/local/etc/php/conf.d/production.ini
+COPY docker/opcache-blacklist.txt /etc/php/opcache-blacklist.txt
 
-RUN mkdir -p \
-        storage/framework/sessions \
-        storage/framework/views \
-        storage/framework/cache \
-        storage/logs \
-        bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R ug+rwx storage bootstrap/cache
+# PHP-FPM configuration for production
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
-RUN cat > /etc/nginx/sites-available/default <<'EOF'
-server {
-    listen 80;
-    server_name _;
-    root /var/www/html/public;
+COPY docker/www.conf /usr/local/etc/php-fpm.d/www.conf
 
-    index index.php index.html;
+# Nginx configuration
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/nginx-laravel.conf /etc/nginx/conf.d/laravel.conf
 
-    client_max_body_size 50M;
+# Supervisor configuration
+COPY docker/supervisord.conf /etc/supervisor/supervisord.conf
+COPY docker/supervisor-laravel.conf /etc/supervisor/conf.d/laravel.conf
 
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
+# Healthcheck script
+COPY docker/healthcheck.sh /usr/local/bin/healthcheck.sh
+RUN chmod +x /usr/local/bin/healthcheck.sh
 
-    location ~ \.php$ {
-        include fastcgi_params;
-        fastcgi_pass 127.0.0.1:9000;
-        fastcgi_index index.php;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        fastcgi_param DOCUMENT_ROOT $realpath_root;
-    }
+# Entrypoint
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-    location ~ /\. {
-        deny all;
-    }
-}
-EOF
+# Cleanup
+RUN apt-get clean \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && docker-php-ext-enable opcache
 
-RUN cat > /etc/supervisor/conf.d/supervisord.conf <<'EOF'
-[supervisord]
-nodaemon=true
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD /usr/local/bin/healthcheck.sh
 
-[program:php-fpm]
-command=php-fpm
-autostart=true
-autorestart=true
+EXPOSE 8000
 
-[program:nginx]
-command=nginx -g "daemon off;"
-autostart=true
-autorestart=true
-EOF
-
-EXPOSE 80
-
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Note: We run as root so supervisor can manage php-fpm/nginx.
+# The app user (non-root) runs queue workers and scheduler for security.
+# The PHP-FPM pool runs as 'app' user via www.conf configuration.
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

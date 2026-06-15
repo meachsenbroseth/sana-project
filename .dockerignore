@@ -1,24 +1,66 @@
-/vendor
-/node_modules
+# Git
 .git
 .gitattributes
 .gitignore
-.dockerignore
-Dockerfile*
-docker-compose*.yml
-docker-compose*.yaml
+.github
+
+# Environment
 .env
 .env.*
 !.env.example
+
+# Dependencies
+/vendor
+/node_modules
+
+# Build artifacts
+/public/build
+/public/hot
+/public/storage
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+docker-compose*.yaml
+.dockerignore
+
+# Laravel
 /storage/*.key
 /storage/logs/*
 /storage/framework/cache/*
 /storage/framework/sessions/*
 /storage/framework/views/*
-/bootstrap/cache/*
-*.md
+/storage/app/public/*
+/bootstrap/cache/*.php
+!.gitignore
+
+# IDE & Editor
 .editorconfig
 .phpunit.result.cache
 .php-cs-fixer.cache
+.php-cs-fixer.php
+.phpstorm.meta.php
+_ide_*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
 npm-debug.log*
-yarn-error.log
+yarn-error.log*
+yarn-debug.log*
+
+# Tests
+/coverage
+/.phpunit
+/phpunit.xml
+
+# Other
+*.md
+*.log
+compose.yaml
+nixpacks.toml
+boost.json
+pint.json
+phpunit.xml
