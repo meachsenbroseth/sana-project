@@ -52,20 +52,49 @@ success "Required environment variables verified"
 # =============================================================================
 if [ "$DB_CONNECTION" = "pgsql" ]; then
     log "Waiting for PostgreSQL to be ready at ${DB_HOST}:${DB_PORT}..."
+
+    log "PostgreSQL connection parameters:"
+    log "  DB_HOST:      ${DB_HOST}"
+    log "  DB_PORT:      ${DB_PORT}"
+    log "  DB_DATABASE:  ${DB_DATABASE}"
+    log "  DB_USERNAME:  ${DB_USERNAME}"
+    log "  DB_PASSWORD:  [REDACTED]"
+
+    log "Loaded PHP extensions (PostgreSQL/PDO related):"
+    php -r "
+        \$exts = get_loaded_extensions();
+        foreach (\$exts as \$ext) {
+            if (stripos(\$ext, 'pgsql') !== false || stripos(\$ext, 'pdo') !== false) {
+                echo \"  - \$ext\n\";
+            }
+        }
+    "
+
     retries=60
-    until php -r "
-        \$p = @pg_connect(
-            'host=${DB_HOST} port=${DB_PORT} dbname=${DB_DATABASE} user=${DB_USERNAME} password=${DB_PASSWORD}'
-        );
-        exit((int)(\$p === false));
-    " 2>/dev/null; do
-        retries=$((retries - 1))
-        if [ $retries -le 0 ]; then
+    while [ \$retries -gt 0 ]; do
+        if php -r "
+            try {
+                \$dsn = 'pgsql:host=${DB_HOST};port=${DB_PORT};dbname=${DB_DATABASE}';
+                new PDO(\$dsn, '${DB_USERNAME}', '${DB_PASSWORD}', [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_TIMEOUT => 5,
+                ]);
+                exit(0);
+            } catch (PDOException \$e) {
+                fwrite(STDERR, \$e->getMessage() . PHP_EOL);
+                exit(1);
+            }
+        "; then
+            success "PostgreSQL is ready"
+            break
+        fi
+        retries=\$((retries - 1))
+        if [ \$retries -le 0 ]; then
             fail "PostgreSQL did not become available after 60 attempts"
         fi
+        log "Retrying... (\${retries} attempts remaining)"
         sleep 2
     done
-    success "PostgreSQL is ready"
 fi
 
 # =============================================================================

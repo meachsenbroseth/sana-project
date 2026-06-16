@@ -75,6 +75,7 @@ RUN apt-get update \
         libwebp-dev \
         libxpm-dev \
         cron \
+        postgresql-client \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # PHP extensions
