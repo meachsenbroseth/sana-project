@@ -937,39 +937,52 @@
                                 ← Back to Review
                             </button>
                             <button wire:click="placeOrder"
-                                class="w-full sm:w-auto px-8 py-3 rounded-xl font-bold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]
+                                wire:loading.attr="disabled"
+                                class="w-full sm:w-auto px-8 py-3 rounded-xl font-bold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
                                 {{ $paymentMethod === 'KHQR'
                                     ? 'bg-[#ED1C24] hover:bg-[#d91920] text-white'
                                     : 'bg-[#2563EB] hover:bg-[#1d4ed8] text-white' }}">
 
                                 <div class="flex items-center justify-center gap-2">
 
+                                    {{-- Loading spinner (shown while placeOrder is running) --}}
+                                    <svg wire:loading wire:target="placeOrder"
+                                        class="animate-spin w-5 h-5"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                    </svg>
+
                                     @if($paymentMethod === 'KHQR')
-                                        {{-- QR Icon --}}
-                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                        {{-- QR Icon (hide while loading) --}}
+                                        <svg xmlns="http://www.w3.org/2000/svg" wire:loading.remove wire:target="placeOrder"
                                             class="w-5 h-5"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                            stroke-width="2">
+                                            fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M4 4h5v5H4V4zm11 0h5v5h-5V4zM4 15h5v5H4v-5zm8-8h1m3 3h1m-5 5h1m3 0h1m-4 4h5"/>
                                         </svg>
 
-                                        <span>Scan & Pay with KHQR</span>
+                                        <span>
+                                            <span wire:loading.remove wire:target="placeOrder">Scan & Pay with KHQR</span>
+                                            <span wire:loading wire:target="placeOrder">Processing…</span>
+                                        </span>
                                     @else
-                                        {{-- Cart Icon --}}
-                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                        {{-- Cart Icon (hide while loading) --}}
+                                        <svg xmlns="http://www.w3.org/2000/svg" wire:loading.remove wire:target="placeOrder"
                                             class="w-5 h-5"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                            stroke-width="2">
+                                            fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M3 3h2l.4 2M7 13h10l4-8H5.4m1.6 8L5.4 5M7 13l-1 5h12m-9 0a1 1 0 102 0m6 0a1 1 0 102 0"/>
                                         </svg>
 
-                                        <span>Place Order</span>
+                                        <span>
+                                            <span wire:loading.remove wire:target="placeOrder">Place Order</span>
+                                            <span wire:loading wire:target="placeOrder">Processing…</span>
+                                        </span>
                                     @endif
 
                                 </div>
