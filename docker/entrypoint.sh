@@ -1,27 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
-# =============================================================================
-# Laravel Production Entrypoint
-# =============================================================================
-# This script prepares the Laravel application for production execution.
-# It handles: env validation, DB readiness, migrations, caching, storage link,
-# and finally starts Supervisor to manage all processes.
-# =============================================================================
-
 trap 'echo "Entrypoint interrupted. Exiting."; exit 0' INT TERM
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-log() { echo -e "${BLUE}[DEPLOY]${NC} $1"; }
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
+log()     { echo -e "${BLUE}[DEPLOY]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-fail() { echo -e "${RED}[FAIL]${NC} $1"; exit 1; }
+warn()    { echo -e "${YELLOW}[WARN]${NC} $1"; }
+fail()    { echo -e "${RED}[FAIL]${NC} $1"; exit 1; }
 
 APP_DIR=/var/www/html
 cd "$APP_DIR"
@@ -30,7 +16,6 @@ cd "$APP_DIR"
 # STEP 1: Verify required environment variables
 # =============================================================================
 log "Verifying required environment variables..."
-
 : "${APP_KEY:?APP_KEY is required. Generate with: php artisan key:generate --show}"
 : "${APP_ENV:=production}"
 : "${APP_DEBUG:=false}"
@@ -44,61 +29,41 @@ if [ "$DB_CONNECTION" = "pgsql" ]; then
     : "${DB_USERNAME:?DB_USERNAME is required}"
     : "${DB_PASSWORD:?DB_PASSWORD is required}"
 fi
-
 success "Required environment variables verified"
 
 # =============================================================================
 # STEP 2: Wait for database to be ready
 # =============================================================================
 if [ "$DB_CONNECTION" = "pgsql" ]; then
-    log "Waiting for PostgreSQL to be ready at ${DB_HOST}:${DB_PORT}..."
-
-    log "PostgreSQL connection parameters:"
-    log "  DB_HOST:      ${DB_HOST}"
-    log "  DB_PORT:      ${DB_PORT}"
-    log "  DB_DATABASE:  ${DB_DATABASE}"
-    log "  DB_USERNAME:  ${DB_USERNAME}"
-    log "  DB_PASSWORD:  [REDACTED]"
-
-    log "Loaded PHP extensions (PostgreSQL/PDO related):"
-    php -r "
-        \$exts = get_loaded_extensions();
-        foreach (\$exts as \$ext) {
-            if (stripos(\$ext, 'pgsql') !== false || stripos(\$ext, 'pdo') !== false) {
-                echo \"  - \$ext\n\";
-            }
-        }
-    "
+    log "Waiting for PostgreSQL at ${DB_HOST}:${DB_PORT}..."
 
     retries=60
-    while [ \$retries -gt 0 ]; do
-        if php -r "
-            try {
-                \$dsn = 'pgsql:host=${DB_HOST};port=${DB_PORT};dbname=${DB_DATABASE}';
-                new PDO(\$dsn, '${DB_USERNAME}', '${DB_PASSWORD}', [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_TIMEOUT => 5,
-                ]);
-                exit(0);
-            } catch (PDOException \$e) {
-                fwrite(STDERR, \$e->getMessage() . PHP_EOL);
-                exit(1);
-            }
-        "; then
-            success "PostgreSQL is ready"
-            break
-        fi
-        retries=\$((retries - 1))
-        if [ \$retries -le 0 ]; then
+    until php -r "
+        try {
+            new PDO(
+                'pgsql:host=${DB_HOST};port=${DB_PORT};dbname=${DB_DATABASE}',
+                '${DB_USERNAME}',
+                '${DB_PASSWORD}',
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 5]
+            );
+            exit(0);
+        } catch (PDOException \$e) {
+            fwrite(STDERR, \$e->getMessage() . PHP_EOL);
+            exit(1);
+        }
+    "; do
+        retries=$((retries - 1))
+        if [ "$retries" -le 0 ]; then
             fail "PostgreSQL did not become available after 60 attempts"
         fi
-        log "Retrying... (\${retries} attempts remaining)"
+        log "Retrying... (${retries} attempts remaining)"
         sleep 2
     done
+    success "PostgreSQL is ready"
 fi
 
 # =============================================================================
-# STEP 3: Create storage directories and set permissions
+# STEP 3: Storage directories and permissions
 # =============================================================================
 log "Setting up storage directories..."
 mkdir -p \
@@ -107,90 +72,65 @@ mkdir -p \
     storage/framework/cache/data \
     storage/logs \
     storage/app/public
-
 chmod -R 775 storage bootstrap/cache
 success "Storage directories ready"
 
 # =============================================================================
-# STEP 4: Create storage symlink
+# STEP 4: Storage symlink
 # =============================================================================
 log "Creating storage symlink..."
 if [ ! -L public/storage ]; then
     php artisan storage:link --no-interaction --force 2>/dev/null || \
-    ln -sf ../storage/app/public public/storage
+        ln -sf ../storage/app/public public/storage
 fi
-success "Storage symlink created"
+success "Storage symlink ready"
 
 # =============================================================================
-# STEP 5: Run database migrations (safely)
+# STEP 5: Migrations
 # =============================================================================
-log "Running database migrations..."
-php artisan migrate --force --no-interaction 2>&1 || warn "Migration encountered issues"
-success "Migrations completed"
+if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
+    log "Running database migrations..."
+    php artisan migrate --force --no-interaction 2>&1 || warn "Migration encountered issues"
+    success "Migrations complete"
+fi
 
 # =============================================================================
-# STEP 6: Cache Laravel configurations for production
+# STEP 6: Cache for production
 # =============================================================================
 log "Caching Laravel configurations..."
-
-# Clear existing caches first
 php artisan optimize:clear --no-interaction 2>/dev/null || true
-
-# Cache config (combines all config files into one cached file)
-php artisan config:cache --no-interaction 2>&1 && \
-    success "Config cached" || \
-    warn "Config cache failed (env vars with closures may prevent this)"
-
-# Cache routes (compiles route definitions to plain PHP)
-php artisan route:cache --no-interaction 2>&1 && \
-    success "Routes cached" || \
-    warn "Route cache failed (closures in routes may prevent this)"
-
-# Cache events (optimizes event discovery)
-php artisan event:cache --no-interaction 2>&1 && \
-    success "Events cached" || \
-    warn "Event cache failed"
-
-# Cache views (compiles Blade templates to plain PHP)
-php artisan view:cache --no-interaction 2>&1 && \
-    success "Views cached" || \
-    warn "View cache failed"
+php artisan config:cache --no-interaction && success "Config cached"   || warn "Config cache failed"
+php artisan route:cache  --no-interaction && success "Routes cached"   || warn "Route cache failed"
+php artisan event:cache  --no-interaction && success "Events cached"   || warn "Event cache failed"
+php artisan view:cache   --no-interaction && success "Views cached"    || warn "View cache failed"
 
 # =============================================================================
-# STEP 7: Create OPcache file cache directory
+# STEP 7: OPcache file-cache directory
 # =============================================================================
 log "Setting up OPcache..."
-mkdir -p /tmp/opcache
-chmod 777 /tmp/opcache
+mkdir -p /tmp/opcache && chmod 777 /tmp/opcache
 success "OPcache directory ready"
 
 # =============================================================================
-# STEP 8: Verify critical paths
+# STEP 8: Sanity checks
 # =============================================================================
 log "Verifying application..."
-
-if [ ! -f vendor/autoload.php ]; then
-    fail "Composer autoloader not found. Did the build complete successfully?"
-fi
-
-if [ ! -d public/build ]; then
-    warn "Vite build directory not found. Assets may not load. Run: npm run build"
-fi
-
-php artisan about --no-interaction 2>/dev/null | head -20 || \
-    warn "Unable to display application info"
-
+[ -f vendor/autoload.php ] || fail "Composer autoloader not found"
+[ -d public/build ]        || warn "Vite build directory not found — run npm run build"
+php artisan about --no-interaction 2>/dev/null | head -20 || warn "Could not display application info"
 success "Application verified"
 
+# Optional: regenerate Filament Shield permissions
+if [ "${FILAMENT_SHIELD_GENERATE:-false}" = "true" ]; then
+    php artisan shield:generate --all --no-interaction || true
+fi
+
 # =============================================================================
-# STEP 9: Substitute environment variables in Nginx config
+# STEP 9: Configure Nginx port (Railway injects $PORT at runtime)
 # =============================================================================
-log "Configuring Nginx port..."
+log "Configuring Nginx..."
 PORT="${PORT:-8000}"
-
-# Replace __PORT__ placeholder with the dynamic Railway port
 sed -i "s/__PORT__/${PORT}/g" /etc/nginx/conf.d/laravel.conf
-
 success "Nginx configured on port ${PORT}"
 
 # =============================================================================
