@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
@@ -69,7 +69,7 @@ class User extends Authenticatable
         return Str::of($this->name)
             ->explode(' ')
             ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
+            ->map(fn($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
 
@@ -86,13 +86,14 @@ class User extends Authenticatable
         return $this->hasMany(OrderStatusHistory::class);
     }
 
-    // public function canAccessPanel(Panel $panel): bool
-    // {
-    //     return str_ends_with($this->email, '@example.com');
-    // }
+    public function canAccessPanel(Panel $panel): bool
+    {
+        // Adjust 'super_admin' or 'admin' to match your setup
+        return $this->hasRole('super_admin');
+    }
 
     public function getAvatarUrlAttribute(): string
     {
-        return $this->avatar ? Storage::url($this->avatar) : 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&color=7F9CF5&background=EBF4FF';
+        return $this->avatar ? Storage::url($this->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
     }
 }
