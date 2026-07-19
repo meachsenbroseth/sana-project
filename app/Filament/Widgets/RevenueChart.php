@@ -13,6 +13,11 @@ class RevenueChart extends ChartWidget
     protected ?string $heading = 'Revenue Chart';
     public ?string $filter = 'week';
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('View:' . class_basename(static::class)) ?? false;
+    }
+
     protected function getData(): array
     {
         $activeFilter = $this->filter;

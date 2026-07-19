@@ -62,6 +62,11 @@ class AiBusinessAssistant extends Page
         return __('analytics.ai_assistant.navigation_label');
     }
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->can('View:' . class_basename(static::class)) ?? false;
+    }
+
     public function getTitle(): string
     {
         return __('analytics.ai_assistant.title');

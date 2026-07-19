@@ -14,11 +14,10 @@ use Flowframe\Trend\TrendValue;
 class StatsOverview extends StatsOverviewWidget
 {
 
-    //     public static function canView(): bool
-    // {
-    //     return false;
-    // }
-
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('View:' . class_basename(static::class)) ?? false;
+    }
 
     protected ?string $pollingInterval = '10s';
 

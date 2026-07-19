@@ -15,6 +15,11 @@ class LatestOrders extends TableWidget
 
     protected static ?int $sort = 5;
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('View:' . class_basename(static::class)) ?? false;
+    }
+
     public function table(Table $table): Table
     {
         return $table

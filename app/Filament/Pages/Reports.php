@@ -61,6 +61,11 @@ class Reports extends BaseDashboard
         return __('analytics.reports');
     }
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->can('View:' . class_basename(static::class)) ?? false;
+    }
+
     public function getTitle(): string
     {
         return __('analytics.page_title');
