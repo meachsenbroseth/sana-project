@@ -49,19 +49,21 @@ new class extends Component {
 };
 ?>
 
-@if($recommendations->isNotEmpty())
-    <div class="mb-10 sm:mb-16">
-        <div class="flex flex-wrap gap-2 justify-between items-end border-b border-gray-200 pb-3 sm:pb-4 mb-5 sm:mb-6">
-            <h3 class="text-xl sm:text-2xl font-bold text-gray-900">
-                {{ auth('customer')->check() ? 'Recommended for You' : 'Trending Now' }}
-            </h3>
-            <a wire:navigate href="{{ route('products.index') }}" class="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-800">View All &rarr;</a>
-        </div>
+<div>
+    @if($recommendations->isNotEmpty())
+        <div class="mb-10 sm:mb-16">
+            <div class="flex flex-wrap gap-2 justify-between items-end border-b border-gray-200 pb-3 sm:pb-4 mb-5 sm:mb-6">
+                <h3 class="text-xl sm:text-2xl font-bold text-gray-900">
+                    {{ auth('customer')->check() ? 'Recommended for You' : 'Trending Now' }}
+                </h3>
+                <a wire:navigate href="{{ route('products.index') }}" class="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-800">View All &rarr;</a>
+            </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
-            @foreach($recommendations as $product)
-                <livewire:product-card :key="'rec-' . $product->id" :product="$product" context="recommendation" />
-            @endforeach
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
+                @foreach($recommendations as $product)
+                    <livewire:product-card :key="'rec-' . $product->id" :product="$product" context="recommendation" />
+                @endforeach
+            </div>
         </div>
-    </div>
-@endif
+    @endif
+</div>

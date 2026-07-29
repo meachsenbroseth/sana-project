@@ -230,7 +230,7 @@ new class extends Component {
             </div>
         @endif
 
-        <livewire:⚡recommended-for-you />
+        <livewire:recommended-for-you />
 
         @if ($featuredProducts->count() > 0)
             <div class="mb-10 sm:mb-16">

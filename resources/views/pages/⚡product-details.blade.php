@@ -458,7 +458,7 @@ new class extends Component {
                     @else
                         <div class="text-center py-8">
                             <p class="text-gray-500">
-                                No reviews yet. Be the first to review this product!
+                                No reviews yet.
                             </p>
                         </div>
                     @endif
@@ -467,6 +467,6 @@ new class extends Component {
         </div>
 
         <!-- Similar Products -->
-        <livewire:⚡similar-products :product="$this->product" />
+        <livewire:similar-products :product="$this->product" />
     </div>
 </div>

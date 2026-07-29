@@ -155,8 +155,13 @@ class Product extends Model
             ->latest();
     }
 
-    public function searchableAs(): string
+        public function orderItems(): HasMany
     {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public function searchableAs(): string
+    {   
         return 'products_index';
     }
 
