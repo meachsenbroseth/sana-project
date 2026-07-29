@@ -13,10 +13,9 @@ use Flowframe\Trend\TrendValue;
 
 class StatsOverview extends StatsOverviewWidget
 {
-
     public static function canView(): bool
     {
-        return auth()->user()?->can('View:' . class_basename(static::class)) ?? false;
+        return auth()->user()?->can('View:'.class_basename(static::class)) ?? false;
     }
 
     protected ?string $pollingInterval = '10s';
@@ -58,24 +57,23 @@ class StatsOverview extends StatsOverviewWidget
             ->map(fn (TrendValue $value) => $value->aggregate)
             ->toArray();
 
-
         // --- 3. RETURN THE STATS ---
         return [
-            Stat::make('Total Revenue', '$' . number_format($totalRevenue, 2))
-                ->description('Today $' . number_format($todayRevenue, 2))
+            Stat::make('Total Revenue', '$'.number_format($totalRevenue, 2))
+                ->description('Today $'.number_format($todayRevenue, 2))
                 ->descriptionIcon(Heroicon::ArrowTrendingUp)
                 ->color('success')
                 ->chart($revenueData), // 🔥 Completely Dynamic!
 
             Stat::make('Total Order', $totalOrder)
-                ->description(number_format($pendingOrder) . ' pending')
+                ->description(number_format($pendingOrder).' pending')
                 ->descriptionIcon(Heroicon::ShoppingCart)
                 ->color('warning')
                 ->url(route('filament.admin.resources.orders.index'))
                 ->chart($ordersData), // 🔥 Completely Dynamic!
 
             Stat::make('Total Customers', $totalCustomers)
-                ->description(number_format($thisMonthCustomer) . ' new this month')
+                ->description(number_format($thisMonthCustomer).' new this month')
                 ->descriptionIcon(Heroicon::Users)
                 ->url(route('filament.admin.resources.customers.index'))
                 ->color('info')

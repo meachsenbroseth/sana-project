@@ -14,7 +14,6 @@ class CustomerReportTable extends TableWidget
 
     protected static bool $isDiscovered = false;
 
-
     protected static ?int $sort = 8;
 
     protected int|string|array $columnSpan = 'full';

@@ -21,6 +21,7 @@ class PermissionResource extends Resource
     {
         return false;
     }
+
     protected static ?string $model = Permission::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;

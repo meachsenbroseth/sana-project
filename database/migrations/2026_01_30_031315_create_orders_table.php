@@ -30,7 +30,7 @@ return new class extends Migration
             $table->string('shipping_state')->nullable();
             $table->string('shipping_country');
 
-            $table->enum('payment_method',['cash_on_delivery', 'KHQR'])->default('cash_on_delivery');
+            $table->enum('payment_method', ['cash_on_delivery', 'KHQR'])->default('cash_on_delivery');
             $table->string('payment_status')->default('pending');
             $table->string('transaction_id')->nullable();
             $table->enum('status', ['pending', 'processing', 'shipped', 'delivered', 'cancelled'])->default('pending');

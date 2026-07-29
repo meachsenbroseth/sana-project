@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\SiteSetting;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\SiteSetting>
+ * @extends Factory<SiteSetting>
  */
 class SiteSettingFactory extends Factory
 {

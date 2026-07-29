@@ -22,17 +22,19 @@ class ProductImage extends Model
     ];
 
     #[Scope]
-    protected function primary(Builder $query): void 
+    protected function primary(Builder $query): void
     {
         $query->where('is_primary', true);
     }
 
-    public function product(){
+    public function product()
+    {
         return $this->belongsTo(Product::class);
     }
 
-    //helper
-    public function getUrlAttribute(){
-        return asset('storage/' . $this->image_path);
+    // helper
+    public function getUrlAttribute()
+    {
+        return asset('storage/'.$this->image_path);
     }
 }

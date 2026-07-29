@@ -63,7 +63,7 @@ class Reports extends BaseDashboard
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->can('View:' . class_basename(static::class)) ?? false;
+        return auth()->user()?->can('View:'.class_basename(static::class)) ?? false;
     }
 
     public function getTitle(): string

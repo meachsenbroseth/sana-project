@@ -177,7 +177,7 @@ class SiteSettings extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->can('View:' . class_basename(static::class)) ?? false;
+        return auth()->user()?->can('View:'.class_basename(static::class)) ?? false;
     }
 
     public static function getNavigationLabel(): string

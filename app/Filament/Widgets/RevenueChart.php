@@ -10,12 +10,14 @@ use Flowframe\Trend\TrendValue;
 class RevenueChart extends ChartWidget
 {
     protected static ?int $sort = 2;
+
     protected ?string $heading = 'Revenue Chart';
+
     public ?string $filter = 'week';
 
     public static function canView(): bool
     {
-        return auth()->user()?->can('View:' . class_basename(static::class)) ?? false;
+        return auth()->user()?->can('View:'.class_basename(static::class)) ?? false;
     }
 
     protected function getData(): array
@@ -37,13 +39,13 @@ class RevenueChart extends ChartWidget
             'datasets' => [
                 [
                     'label' => 'Revenue ($)',
-                    'data' => $data->map(fn(TrendValue $value) => $value->aggregate)->toArray(),
+                    'data' => $data->map(fn (TrendValue $value) => $value->aggregate)->toArray(),
                     // Optional: Make the chart line match your theme's primary blue!
                     'borderColor' => '#1d398f',
                     'backgroundColor' => '#1d398f',
                 ],
             ],
-            'labels' => $data->map(fn(TrendValue $value) => $value->date)->toArray(),
+            'labels' => $data->map(fn (TrendValue $value) => $value->date)->toArray(),
         ];
     }
 
@@ -52,7 +54,7 @@ class RevenueChart extends ChartWidget
         return 'line';
     }
 
-    protected function getFilters(): array|null
+    protected function getFilters(): ?array
     {
         return [
             'week' => 'Last Week',

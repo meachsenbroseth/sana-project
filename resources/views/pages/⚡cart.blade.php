@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Product;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 use Livewire\Attributes\Computed;
 
@@ -86,13 +87,48 @@ new class extends Component {
     #[Computed]
     public function hasUnavailableItems(): bool
     {
-        return collect($this->cart)->contains(function (array $item): bool {
+        foreach ($this->cart as $item) {
             $product = Product::query()->find($item['product_id']);
 
-            return ! $product
+            if (! $product
                 || ! $product->isAvailableForPurchase()
-                || (int) $item['quantity'] > (int) $product->stock_quantity;
-        });
+                || (int) $item['quantity'] > (int) $product->stock_quantity
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    #[Computed]
+    public function similarProducts(): Collection
+    {
+        if (empty($this->cart)) {
+            return collect();
+        }
+
+        $cartProductIds = collect($this->cart)->pluck('product_id')->unique()->all();
+
+        $allSimilarIds = \App\Models\ProductSimilarity::query()
+            ->whereIn('product_id', $cartProductIds)
+            ->whereNotIn('related_id', $cartProductIds)
+            ->selectRaw('related_id, SUM(score) as total_score')
+            ->groupBy('related_id')
+            ->orderByDesc('total_score')
+            ->limit(4)
+            ->pluck('related_id');
+
+        if ($allSimilarIds->isEmpty()) {
+            return collect();
+        }
+
+        return Product::query()
+            ->whereIn('id', $allSimilarIds)
+            ->where('is_active', true)
+            ->with(['brand', 'category', 'primeImage'])
+            ->orderByRaw('array_position(ARRAY[' . $allSimilarIds->implode(',') . ']::bigint[], id)')
+            ->get();
     }
 };
 ?>
@@ -206,7 +242,7 @@ new class extends Component {
                     @endforeach
 
                     <!-- Clear Cart -->
-                    <div class="flex justify-between items-center pt-4">
+                    <div class="flex justify-between items-center pt-4 border-b border-gray-200 pb-8 mb-8">
                         <button wire:click="clearCart" wire:confirm="Are you sure you want to clear the cart?"
                             class="text-red-600 hover:text-red-700 font-medium">
                             Clear Cart
@@ -216,6 +252,20 @@ new class extends Component {
                             ← Continue Shopping
                         </a>
                     </div>
+
+                    <!-- Cart Add-on Strip -->
+                    @if($this->similarProducts->isNotEmpty())
+                        <div class="mt-8">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4">Frequently Bought Together</h3>
+                            <div class="flex overflow-x-auto gap-4 hide-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+                                @foreach($this->similarProducts as $product)
+                                    <div class="w-48 flex-shrink-0">
+                                        <livewire:product-card :key="'cart-similar-' . $product->id" :product="$product" context="recommendation" />
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Order Summary -->

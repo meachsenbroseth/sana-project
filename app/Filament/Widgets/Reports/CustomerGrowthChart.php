@@ -12,7 +12,6 @@ class CustomerGrowthChart extends ChartWidget
 
     protected static bool $isDiscovered = false;
 
-
     protected static ?int $sort = 5;
 
     protected int|string|array $columnSpan = 1;

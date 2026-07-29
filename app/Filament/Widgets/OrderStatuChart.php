@@ -8,11 +8,12 @@ use Filament\Widgets\ChartWidget;
 class OrderStatuChart extends ChartWidget
 {
     protected static ?int $sort = 3; // Places it right after your Revenue Chart
+
     protected ?string $heading = 'Order Status Overview';
 
     public static function canView(): bool
     {
-        return auth()->user()?->can('View:' . class_basename(static::class)) ?? false;
+        return auth()->user()?->can('View:'.class_basename(static::class)) ?? false;
     }
 
     protected function getData(): array

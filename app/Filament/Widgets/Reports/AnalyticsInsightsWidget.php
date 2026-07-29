@@ -13,7 +13,6 @@ class AnalyticsInsightsWidget extends StatsOverviewWidget
 
     protected static bool $isDiscovered = false;
 
-
     protected static ?int $sort = 2;
 
     protected int|string|array $columnSpan = 'full';

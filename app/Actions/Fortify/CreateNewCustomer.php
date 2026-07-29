@@ -42,7 +42,7 @@ class CreateNewCustomer implements CreatesNewUsers
             'is_active' => true,
         ]);
 
-        //send the welcome email
+        // send the welcome email
 
         return $customer;
     }

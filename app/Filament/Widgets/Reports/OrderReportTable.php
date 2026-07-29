@@ -14,7 +14,6 @@ class OrderReportTable extends TableWidget
 
     protected static bool $isDiscovered = false;
 
-
     protected static ?int $sort = 9;
 
     protected int|string|array $columnSpan = 'full';

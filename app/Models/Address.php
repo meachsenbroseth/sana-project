@@ -38,7 +38,8 @@ class Address extends Model
         return $this->belongsTo(Customer::class);
     }
 
-    public function getFullAddressAttribute(){
+    public function getFullAddressAttribute()
+    {
         return implode(',', array_filter([
             $this->address_line_1,
             $this->address_line_2,

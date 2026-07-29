@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Actions\LogInteraction;
 use App\Filament\Resources\Orders\OrderResource;
 use App\Mail\OrderConfirmation;
 use App\Models\Order;
@@ -25,6 +26,19 @@ class OrderObserver
             'status' => $order->status,
             'notes' => 'Order created',
         ]);
+
+        // 1b. Log purchase interactions for each item
+        $order->loadMissing('items');
+        $logInteraction = app(LogInteraction::class);
+
+        foreach ($order->items as $item) {
+            $logInteraction->handle(
+                $order->customer,
+                null,
+                $item->product,
+                'purchase',
+            );
+        }
 
         // 2. Send the confirmation email to the customer
         if ($order->customer && $order->customer->email) {

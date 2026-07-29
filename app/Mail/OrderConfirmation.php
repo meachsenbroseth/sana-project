@@ -7,6 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -16,6 +17,7 @@ class OrderConfirmation extends Mailable implements ShouldQueue
     use Queueable, SerializesModels;
 
     public Order $order;
+
     /**
      * Create a new message instance.
      */
@@ -31,7 +33,7 @@ class OrderConfirmation extends Mailable implements ShouldQueue
     {
         return new Envelope(
             from: new Address(config('mail.from.address'), config('mail.from.name')),
-            subject: 'Order Confirmation - ' .$this->order->order_number,
+            subject: 'Order Confirmation - '.$this->order->order_number,
         );
     }
 
@@ -43,7 +45,7 @@ class OrderConfirmation extends Mailable implements ShouldQueue
         return new Content(
             view: 'mail.order-confirmation',
             with: [
-                'order' => $this->order
+                'order' => $this->order,
             ]
         );
     }
@@ -51,7 +53,7 @@ class OrderConfirmation extends Mailable implements ShouldQueue
     /**
      * Get the attachments for the message.
      *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * @return array<int, Attachment>
      */
     public function attachments(): array
     {

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->boolean('is_approved')->default(false);
             $table->timestamps();
 
-            $table->unique(['product_id','customer_id']);
+            $table->unique(['product_id', 'customer_id']);
         });
     }
 

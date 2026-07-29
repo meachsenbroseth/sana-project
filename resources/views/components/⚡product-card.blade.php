@@ -2,9 +2,11 @@
 
 use Livewire\Component;
 use App\Models\Product;
+use App\Actions\LogInteraction;
 
 new class extends Component {
     public Product $product;
+    public string $context = 'default';
     public function addToCart()
     {
         $this->product->refresh();
@@ -47,6 +49,15 @@ new class extends Component {
          // Dispatch event to update cart icon
          $this->dispatch('cart-updated');
 
+         if ($this->context === 'recommendation') {
+             app(LogInteraction::class)->handle(
+                 auth('customer')->user(),
+                 session()->getId(),
+                 $this->product,
+                 'add_to_cart'
+             );
+         }
+
          session()->flash('success', $this->product->name.' has been added to your cart.');
     }
     // Helper method to format price
@@ -54,11 +65,25 @@ new class extends Component {
     {
         return '$' . number_format($price, 2);
     }
+
+    public function logClickAndNavigate()
+    {
+        if ($this->context === 'recommendation') {
+            app(LogInteraction::class)->handle(
+                auth('customer')->user(),
+                session()->getId(),
+                $this->product,
+                'search_click'
+            );
+        }
+
+        $this->redirectRoute('products.show', ['slug' => $this->product->slug], navigate: true);
+    }
 };
 ?>
 <div>
     <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
-        <a wire:navigate href="{{ route('products.show', $this->product->slug) }}">
+        <a wire:click.prevent="logClickAndNavigate" href="{{ route('products.show', $this->product->slug) }}" class="cursor-pointer block">
             <!-- Product Image -->
             <div class="relative aspect-square overflow-hidden bg-gray-100">
                 @if ($product->primeImage)

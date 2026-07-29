@@ -8,6 +8,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Hash;
 
 class EditProfile extends BaseEditProfile
 {
@@ -53,7 +54,7 @@ class EditProfile extends BaseEditProfile
                             TextInput::make('password')
                                 ->password()
                                 ->revealable()
-                                ->dehydrateStateUsing(fn ($state) => \Illuminate\Support\Facades\Hash::make($state))
+                                ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                                 ->dehydrated(fn ($state) => filled($state))
                                 ->same('passwordConfirmation'),
 

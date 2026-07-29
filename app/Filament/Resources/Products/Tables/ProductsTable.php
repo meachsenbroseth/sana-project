@@ -102,7 +102,7 @@ class ProductsTable
                     ->falseLabel('Healthy Stock (> 10)')
                     ->queries(
                         true: fn (Builder $query) => $query->where('stock_quantity', '<=', 10)
-                                                        ->where('stock_quantity', '>', 0),
+                            ->where('stock_quantity', '>', 0),
                         false: fn (Builder $query) => $query->where('stock_quantity', '>', 10),
                     ),
             ])

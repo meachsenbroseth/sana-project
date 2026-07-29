@@ -33,24 +33,24 @@ class GoogleAuthController extends Controller
                 ->orWhere('email', $googleUser->email)
                 ->first();
 
-            if (!$user) {
+            if (! $user) {
                 $user = Customer::create([
-                    'name'      => $googleUser->name,
-                    'email'     => $googleUser->email,
+                    'name' => $googleUser->name,
+                    'email' => $googleUser->email,
                     'google_id' => $googleUser->id,
-                    'provider'  => 'google',
-                    'avatar'    => $googleUser->avatar,
-                    'password'  => bcrypt(Str::random(24)),
+                    'provider' => 'google',
+                    'avatar' => $googleUser->avatar,
+                    'password' => bcrypt(Str::random(24)),
                     'role_name' => 'User',
-                    'status'    => 'Active',
+                    'status' => 'Active',
                     'join_date' => now(),
                 ]);
             } else {
                 // Link Google account if they previously signed up via standard email/password
-                if (!$user->google_id) {
+                if (! $user->google_id) {
                     $user->update([
                         'google_id' => $googleUser->id,
-                        'provider'  => 'google',
+                        'provider' => 'google',
                     ]);
                 }
             }
@@ -58,7 +58,7 @@ class GoogleAuthController extends Controller
             $user->update(['last_login' => now()]);
 
             // Specify your custom guard if 'web' still points to the default User model
-            Auth::guard('customer')->login($user); 
+            Auth::guard('customer')->login($user);
 
             return redirect()->route('home');
 

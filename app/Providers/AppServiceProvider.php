@@ -27,8 +27,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if (request()->server('HTTP_X_FORWARDED_PROTO') === 'https') {
-        URL::forceScheme('https');
-    }
+            URL::forceScheme('https');
+        }
         $this->configureDefaults();
 
         Review::observe(ReviewObserver::class);

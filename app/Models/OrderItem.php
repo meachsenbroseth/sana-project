@@ -15,16 +15,20 @@ class OrderItem extends Model
         'unit_amount',
         'total_amount',
     ];
+
     protected $casts = [
         'quantity' => 'integer',
         'unit_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
     ];
 
-    public function order(){
+    public function order()
+    {
         return $this->belongsTo(Order::class);
     }
-    public function product(){
+
+    public function product()
+    {
         return $this->belongsTo(Product::class);
     }
 }

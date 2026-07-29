@@ -50,7 +50,7 @@ test('khqr success polling creates only one order and decrements stock once', fu
 
     $this->actingAs($customer, 'customer');
 
-    \Mockery::mock('overload:KHQR\BakongKHQR')
+    Mockery::mock('overload:KHQR\BakongKHQR')
         ->shouldReceive('checkTransactionByMD5')
         ->once()
         ->with('khqr-md5-123')

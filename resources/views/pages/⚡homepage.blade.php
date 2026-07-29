@@ -217,7 +217,7 @@ new class extends Component {
                             </a>
                         @endforeach
                     </div>
-
+                    
                     <button @click="scrollNext"
                         class="absolute right-0 z-10 -mr-5 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center border border-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all opacity-0 group-hover:opacity-100 hidden sm:flex">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -229,6 +229,8 @@ new class extends Component {
                 </div>
             </div>
         @endif
+
+        <livewire:⚡recommended-for-you />
 
         @if ($featuredProducts->count() > 0)
             <div class="mb-10 sm:mb-16">

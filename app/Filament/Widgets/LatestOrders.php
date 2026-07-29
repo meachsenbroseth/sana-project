@@ -17,7 +17,7 @@ class LatestOrders extends TableWidget
 
     public static function canView(): bool
     {
-        return auth()->user()?->can('View:' . class_basename(static::class)) ?? false;
+        return auth()->user()?->can('View:'.class_basename(static::class)) ?? false;
     }
 
     public function table(Table $table): Table

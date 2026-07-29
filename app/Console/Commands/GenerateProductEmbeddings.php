@@ -3,14 +3,15 @@
 namespace App\Console\Commands;
 
 use App\Models\Product;
-use Illuminate\Console\Command;
-use Laravel\Ai\Embeddings; // <-- The correct class
-use Laravel\Ai\Enums\Lab;  // <-- The correct enum
 use Exception;
+use Illuminate\Console\Command; // <-- The correct class
+use Laravel\Ai\Embeddings;  // <-- The correct enum
+use Laravel\Ai\Enums\Lab;
 
 class GenerateProductEmbeddings extends Command
 {
     protected $signature = 'products:generate-embeddings {--force : Regenerate embeddings} {--delay=2 : Seconds to wait}';
+
     protected $description = 'Generate and store OpenAI embeddings for products';
 
     public function handle(): int
@@ -29,6 +30,7 @@ class GenerateProductEmbeddings extends Command
 
         if ($total === 0) {
             $this->info($force ? 'No products to process.' : 'All products already have embeddings.');
+
             return self::SUCCESS;
         }
 
@@ -43,6 +45,7 @@ class GenerateProductEmbeddings extends Command
 
             if ($toProcess->isEmpty()) {
                 $bar->advance($products->count());
+
                 return;
             }
 
@@ -52,10 +55,10 @@ class GenerateProductEmbeddings extends Command
             try {
                 // Retry 3 times, wait 2 seconds between fails
                 $response = retry(3, function () use ($texts) {
-                    
+
                     // THIS IS THE CORRECT LARAVEL 12 AI SDK SYNTAX
                     return Embeddings::for($texts)->generate(Lab::OpenAI, 'text-embedding-3-small');
-                    
+
                 }, 2000);
 
                 foreach ($toProcess->values() as $i => $product) {
@@ -63,7 +66,7 @@ class GenerateProductEmbeddings extends Command
                     $product->saveQuietly();
                 }
             } catch (Exception $e) {
-                $this->error("\nBatch failed: " . $e->getMessage());
+                $this->error("\nBatch failed: ".$e->getMessage());
             }
 
             $bar->advance($products->count());

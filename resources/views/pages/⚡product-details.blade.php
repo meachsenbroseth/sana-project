@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\LogInteraction;
 use Livewire\Component;
 use App\Models\Product;
 use Illuminate\Support\Collection;
@@ -8,7 +9,6 @@ new class extends Component {
     public Product $product;
     public int $quantity = 1;
     public $selectedImage = null;
-    public Collection $relatedProducts;
 
     public function mount($slug)
     {
@@ -17,11 +17,15 @@ new class extends Component {
         // increment the views
         $this->product->incrementViews();
 
+        app(LogInteraction::class)->handle(
+            auth('customer')->user(),
+            session()->getId(),
+            $this->product,
+            'view',
+        );
+
         // Set default selected image
         $this->selectedImage = $this->product->images->first()?->image_path;
-
-        // related products
-        $this->relatedProducts = Product::active()->where('category_id', $this->product->category_id)->whereKeyNot($this->product->id)->orderByDesc('is_featured')->inRandomOrder()->limit(4)->get();
     }
     public function selectImage(string $path)
     {
@@ -97,6 +101,13 @@ new class extends Component {
 
         // Update cart icon component
         $this->dispatch('cart-updated');
+
+        app(LogInteraction::class)->handle(
+            auth('customer')->user(),
+            session()->getId(),
+            $this->product,
+            'add_to_cart',
+        );
 
         // Flash message
         session()->flash('success', $this->product->name . ' has been added to your cart.');
@@ -455,17 +466,7 @@ new class extends Component {
             </div>
         </div>
 
-        <!-- Related Products -->
-        @if ($this->relatedProducts->count() > 0)
-            <section>
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    @foreach ($this->relatedProducts as $relatedProduct)
-                        <livewire:product-card :product="$relatedProduct" :key="'related-' . $relatedProduct->id" />
-                    @endforeach
-                </div>
-            </section>
-        @endif
+        <!-- Similar Products -->
+        <livewire:⚡similar-products :product="$this->product" />
     </div>
 </div>

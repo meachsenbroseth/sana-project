@@ -20,8 +20,8 @@ return new class extends Migration
             $table->string('sku')->unique();
             $table->longText('description')->nullable();
             $table->decimal('price', 10, 2);
-            $table->decimal('compare_price',10,2)->nullable();
-            $table->decimal('cost_price',10,2)->nullable();
+            $table->decimal('compare_price', 10, 2)->nullable();
+            $table->decimal('cost_price', 10, 2)->nullable();
             $table->integer('stock_quantity')->default(0);
             $table->integer('low_stock_threshold')->default(10);
             $table->boolean('manage_stock')->default(true);
