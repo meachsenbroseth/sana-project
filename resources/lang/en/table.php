@@ -31,6 +31,8 @@ return [
     'payment_status' => 'Payment Status',
     'items' => 'Items',
     'tracking_number' => 'Tracking Number',
+    'done_by' => 'Completed By',
+    'done_at' => 'Completed At',
     'product' => 'Product',
     'rating' => 'Rating',
     'comment' => 'Comment',

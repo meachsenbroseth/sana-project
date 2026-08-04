@@ -31,6 +31,8 @@ return [
     'payment_status' => 'ស្ថានភាពទូទាត់',
     'items' => 'មុខទំនិញ',
     'tracking_number' => 'លេខតាមដាន',
+    'done_by' => 'បញ្ចប់ដោយ',
+    'done_at' => 'បញ្ចប់នៅ',
     'product' => 'ផលិតផល',
     'rating' => 'ពិន្ទុ',
     'comment' => 'មតិយោបល់',

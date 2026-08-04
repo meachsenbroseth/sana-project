@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Orders\Schemas;
 
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -28,21 +29,19 @@ class OrderForm
                             ->icon('heroicon-m-shopping-cart')
                             ->schema([
 
-                                // --- 1. CUSTOMER & BASIC INFO ---
                                 Section::make(__('order.sections.customer_information'))->schema([
                                     Select::make('customer_id')
                                         ->relationship('customer', 'name')
                                         ->searchable()
                                         ->preload()
-                                        ->disabled() // LOCKED
+                                        ->disabled()
                                         ->required(),
                                     TextInput::make('order_number')
-                                        ->disabled() // LOCKED
+                                        ->disabled()
                                         ->dehydrated()
                                         ->required(),
                                 ])->columns(2),
 
-                                // --- 1.5 SHIPPING INFORMATION ---
                                 Section::make(__('order.sections.shipping_information'))->schema([
                                     TextInput::make('shipping_full_name')
                                         ->label(__('order.recipient_name'))
@@ -69,11 +68,10 @@ class OrderForm
                                         ->disabled(),
                                 ])->columns(2),
 
-                                // --- 2. ORDER ITEMS ---
                                 Section::make(__('order.sections.items'))->schema([
                                     Repeater::make('items')
                                         ->relationship()
-                                        ->disabled() // LOCKED
+                                        ->disabled()
                                         ->schema([
                                             Select::make('product_id')
                                                 ->relationship('product', 'name')
@@ -82,15 +80,9 @@ class OrderForm
                                                 ->required()
                                                 ->columnSpan(3),
 
-                                            // ADDED: Product SKU
                                             TextInput::make('product_sku')
                                                 ->label(__('order.product_sku'))
                                                 ->copyable()
-                                                // ->extraInputAttributes([
-                                                //     'x-on:click' => '$clipboard($event.target.value); $tooltip(\'Copied!\')',
-                                                //     'style' => 'cursor: pointer;',
-                                                //     'title' => 'Highlight to copy',
-                                                // ])
                                                 ->columnSpan(3),
 
                                             TextInput::make('quantity')
@@ -112,30 +104,29 @@ class OrderForm
                                                 ->prefix('$')
                                                 ->columnSpan(2),
                                         ])
-                                        ->columns(12), // UPGRADED: Expanded to 12 columns so the new SKU fits perfectly
+                                        ->columns(12),
                                 ]),
 
-                                // --- 3. FINANCIALS ---
                                 Section::make(__('order.sections.totals'))->schema([
                                     TextInput::make('subtotal')
                                         ->numeric()
                                         ->prefix('$')
-                                        ->disabled() // LOCKED
+                                        ->disabled()
                                         ->default(0),
                                     TextInput::make('discount_amount')
                                         ->numeric()
                                         ->prefix('$')
-                                        ->disabled() // LOCKED
+                                        ->disabled()
                                         ->default(0),
                                     TextInput::make('shipping_cost')
                                         ->numeric()
                                         ->prefix('$')
-                                        ->disabled() // LOCKED
+                                        ->disabled()
                                         ->default(0),
                                     TextInput::make('total')
                                         ->numeric()
                                         ->prefix('$')
-                                        ->disabled() // LOCKED
+                                        ->disabled()
                                         ->required(),
                                 ])->columns(4),
                             ]),
@@ -147,7 +138,6 @@ class OrderForm
                             ->icon('heroicon-m-truck')
                             ->schema([
 
-                                // --- 4. ORDER STATUS ---
                                 Section::make(__('order.sections.order_status'))->schema([
                                     Select::make('status')
                                         ->label(__('order.status_label'))
@@ -178,6 +168,24 @@ class OrderForm
                                     Textarea::make('admin_notes')
                                         ->columnSpanFull(),
                                 ])->columns(2),
+
+                                // --- DONE TRACKING (READ-ONLY, AUTO-SET) ---
+                                Section::make(__('order.sections.completion'))
+                                    ->schema([
+                                        TextInput::make('doneBy.name')
+                                            ->label(__('order.done_by'))
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->placeholder('—'),
+
+                                        DateTimePicker::make('done_at')
+                                            ->label(__('order.done_at'))
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->native(false),
+                                    ])
+                                    ->columns(2)
+                                    ->visible(fn ($record) => $record?->done_at !== null),
                             ]),
                     ]),
             ]);

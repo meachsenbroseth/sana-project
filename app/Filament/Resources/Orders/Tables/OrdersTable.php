@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Orders\Tables;
 
 use App\Filament\Resources\Customers\CustomerResource;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -11,6 +13,7 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -39,8 +42,9 @@ class OrdersTable
 
                 TextColumn::make('discount_amount')
                     ->label(__('table.discount'))
-                    ->money('USD') // UPGRADE: Formatted as money to match the total column
-                    ->sortable(),
+                    ->money('USD')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('total')
                     ->label(__('table.total'))
@@ -52,14 +56,12 @@ class OrdersTable
                 TextColumn::make('payment_status')
                     ->label(__('table.payment_status'))
                     ->badge()
-                    // UPGRADE: Added colors so you can identify payment status at a glance
                     ->color(fn (string $state): string => match ($state) {
                         'paid' => 'success',
                         'pending' => 'warning',
                         'failed' => 'danger',
                         default => 'gray',
                     })
-                    // UPGRADE: Added icons for extra visual polish
                     ->icon(fn (string $state): string => match ($state) {
                         'paid' => 'heroicon-m-check-circle',
                         'pending' => 'heroicon-m-clock',
@@ -71,7 +73,6 @@ class OrdersTable
                 TextColumn::make('status')
                     ->label(__('table.status'))
                     ->badge()
-                    // UPGRADE: Added colors for the fulfillment status
                     ->color(fn (string $state): string => match ($state) {
                         'pending' => 'warning',
                         'processing' => 'info',
@@ -85,13 +86,28 @@ class OrdersTable
                     ->counts('items')
                     ->label(__('order.items'))
                     ->color('info')
-                    ->badge(),
+                    ->badge()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('tracking_number')
                     ->label(__('table.tracking_number'))
-                    ->toggleable()
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->copyable()
                     ->searchable(),
+
+                // --- DONE TRACKING COLUMNS ---
+                TextColumn::make('doneBy.name')
+                    ->label(__('table.done_by'))
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->searchable(),
+
+                TextColumn::make('done_at')
+                    ->label(__('table.done_at'))
+                    ->dateTime()
+                    ->placeholder('—')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('created_at')
                     ->label(__('table.created_at'))
@@ -122,10 +138,8 @@ class OrdersTable
                         'delivered' => __('order.status.delivered'),
                         'cancelled' => __('order.status.cancelled'),
                     ])
-                    ->native(false), // Keeps the modern search box style
-                    // ->indicator(__('order.status')),
+                    ->native(false),
 
-                // 2. Payment Status Filter (Updated)
                 SelectFilter::make('payment_status')
                     ->label(__('order.payment_status_label'))
                     ->options([
@@ -136,7 +150,6 @@ class OrdersTable
                     ->native(false)
                     ->indicator(__('order.payment')),
 
-                // 3. (Optional Bonus) Filter by Date
                 Filter::make('created_at')
                     ->form([
                         DatePicker::make('created_from')->label(__('order.order_date_from')),
@@ -153,18 +166,50 @@ class OrdersTable
                                 fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     }),
-
             ])
             ->recordActions([
-                ViewAction::make()
-                    ->button()
-                    ->color('info'),
-                DeleteAction::make()
-                    ->button()
-                    ->color('danger'),
-                EditAction::make()
-                    ->button()
-                    ->color('warning'),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->color('info'),
+                    EditAction::make()
+                        ->color('warning'),
+                    Action::make('markDone')
+                        ->label(__('order.actions.mark_done'))
+                        ->icon('heroicon-m-check-badge')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->visible(fn ($record) => $record->done_at === null)
+                        ->action(function ($record) {
+                            $record->update([
+                                'done_at' => now(),
+                                'done_by' => auth()->id(),
+                            ]);
+
+                            Notification::make()
+                                ->title(__('order.notifications.marked_done'))
+                                ->success()
+                                ->send();
+                        }),
+                    Action::make('unmarkDone')
+                        ->label(__('order.actions.unmark_done'))
+                        ->icon('heroicon-m-x-circle')
+                        ->color('gray')
+                        ->requiresConfirmation()
+                        ->visible(fn ($record) => $record->done_at !== null)
+                        ->action(function ($record) {
+                            $record->update([
+                                'done_at' => null,
+                                'done_by' => null,
+                            ]);
+
+                            Notification::make()
+                                ->title(__('order.notifications.unmarked_done'))
+                                ->warning()
+                                ->send();
+                        }),
+                    DeleteAction::make()
+                        ->color('danger'),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

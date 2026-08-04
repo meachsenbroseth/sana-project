@@ -40,12 +40,15 @@ class Order extends Model
         'customer_notes',
         'admin_notes',
         'stock_deducted_at',
+        'done_by',
+        'done_at',
     ];
 
     protected function casts(): array
     {
         return [
             'stock_deducted_at' => 'datetime',
+            'done_at' => 'datetime',
         ];
     }
 
@@ -95,6 +98,11 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function doneBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'done_by');
     }
 
     public function statusHistories(): HasMany

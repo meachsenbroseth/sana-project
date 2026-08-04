@@ -2,6 +2,14 @@
 
 return [
     'export_orders' => 'Export Orders',
+    'actions' => [
+        'mark_done' => 'Mark Done',
+        'unmark_done' => 'Unmark Done',
+    ],
+    'notifications' => [
+        'marked_done' => 'Order marked as done.',
+        'unmarked_done' => 'Order completion cleared.',
+    ],
     'items' => 'Items',
     'status' => 'Status',
     'payment' => 'Payment',
@@ -20,6 +28,8 @@ return [
     'unit_price' => 'Unit Price',
     'item_total' => 'Item Total',
     'tracking_help' => 'Shipping tracking number',
+    'done_by' => 'Completed By',
+    'done_at' => 'Completed At',
     'tabs' => [
         'management' => 'Order Management',
         'details' => 'Order Details',
@@ -31,6 +41,7 @@ return [
         'items' => 'Order Items',
         'totals' => 'Order Totals',
         'order_status' => 'Order Status',
+        'completion' => 'Completion Details',
     ],
     'status' => [
         'pending' => 'Pending',
