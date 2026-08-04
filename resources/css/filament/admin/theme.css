@@ -247,6 +247,12 @@ li.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon {
     color: currentColor !important;
 }
 
+/* Dropdown list item icons (row-action ActionGroup) must inherit the
+   per-action color class rather than the global white sidebar rule. */
+.fi-dropdown-list-item .fi-icon {
+    color: currentColor !important;
+}
+
 
 /* =====================================================================
    PHANNA COMPUTER — Stat Cards with forced color

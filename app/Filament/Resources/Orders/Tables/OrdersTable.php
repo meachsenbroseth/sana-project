@@ -170,8 +170,10 @@ class OrdersTable
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make()
+                        ->icon('heroicon-m-eye')
                         ->color('info'),
                     EditAction::make()
+                        ->icon('heroicon-m-pencil-square')
                         ->color('warning'),
                     Action::make('markDone')
                         ->label(__('order.actions.mark_done'))
@@ -208,6 +210,7 @@ class OrdersTable
                                 ->send();
                         }),
                     DeleteAction::make()
+                        ->icon('heroicon-m-trash')
                         ->color('danger'),
                 ]),
             ])
