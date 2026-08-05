@@ -99,15 +99,13 @@ class OrdersTable
                 TextColumn::make('doneBy.name')
                     ->label(__('table.done_by'))
                     ->placeholder('—')
-                    ->toggleable(isToggledHiddenByDefault: true)
                     ->searchable(),
 
                 TextColumn::make('done_at')
                     ->label(__('table.done_at'))
                     ->dateTime()
                     ->placeholder('—')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
 
                 TextColumn::make('created_at')
                     ->label(__('table.created_at'))

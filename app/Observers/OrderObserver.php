@@ -7,8 +7,9 @@ use App\Mail\OrderConfirmation;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\OrderStockService;
-use Filament\Notifications\Actions\NotificationAction;
+use Filament\Actions\Action as NotificationAction;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -20,71 +21,92 @@ class OrderObserver
      */
     public function created(Order $order): void
     {
-        // 1. Log the initial status history
+        // 1. Log the initial status history (runs inside the transaction — atomic with the order)
         $order->statusHistories()->create([
             'status' => $order->status,
             'notes' => 'Order created',
         ]);
 
-        // 2. Send the confirmation email to the customer
-        if ($order->customer && $order->customer->email) {
-            Mail::to($order->customer->email)->queue(new OrderConfirmation($order));
-        }
+        // 2–4. Send notifications AFTER the transaction commits so that items
+        //      created by createOrderItems() in the checkout flow are already
+        //      in the database when this callback runs.
+        DB::afterCommit(function () use ($order) {
+            // Re-fresh the order so created_at is populated and items are available
+            $order->refresh()->loadMissing('items');
 
-        // 3. Notify the Admins in Filament
-        $admins = User::all();
+            // 2. Send the confirmation email to the customer
+            if ($order->customer && $order->customer->email) {
+                Mail::to($order->customer->email)->queue(new OrderConfirmation($order));
+            }
 
-        Notification::make()
-            ->title('New Order Received! 🚀')
-            ->body("Order #{$order->order_number} has been placed for $".number_format($order->total, 2).'.')
-            ->icon('heroicon-o-shopping-bag')
-            ->success()
-            // ->actions([
-            //     NotificationAction::make('viewOrder')
-            //         ->label('View Order')
-            //         ->button()
-            //         ->url(fn () => OrderResource::getUrl(
-            //             'edit',
-            //             ['record' => $order->getKey()]
-            //         )),
-            // ])
-            ->sendToDatabase($admins);
+            // 3. Notify the Admins in Filament
+            $admins = User::all();
 
-        // send to telegram
-        Http::withoutVerifying()->post(
-            'https://api.telegram.org/bot'.config('services.telegram.bot_token').'/sendMessage',
-            [
-                'chat_id' => config('services.telegram.chat_id'),
-                'parse_mode' => 'HTML',
-                'text' => implode("\n", [
-                    '<b>NEW ORDER</b>  #'.$order->order_number,
-                    '─────────────────────────',
-                    '',
-                    '<b>CUSTOMER</b>',
-                    '  Name     '.($order->customer?->name ?? 'Guest'),
-                    '  Email    '.($order->customer?->email ?? 'N/A'),
-                    '  Phone    '.($order->shipping_phone ?? 'N/A'),
-                    '',
-                    '<b>ORDER</b>',
-                    '  Status   '.$order->status,
-                    '  Payment  '.$order->payment_method,
-                    '  Total    $'.number_format($order->total, 2),
-                    '  Shipping '.($order->shipping_method ?? 'Standard'),
-                    '',
-                    '<b>ADDRESS</b>',
-                    '  '.$order->shipping_address_line_1,
-                    ($order->shipping_address_line_2 ? '  '.$order->shipping_address_line_2 : null),
-                    '  '.implode(', ', array_filter([$order->shipping_city, $order->shipping_state])),
-                    '  '.$order->shipping_country,
-                    '',
-                    '<b>NOTE</b>',
-                    '  '.($order->customer_notes ?? 'No notes'),
-                    '',
-                    '─────────────────────────',
-                    $order->created_at->format('d M Y  h:i A'),
-                ]),
-            ]
-        );
+            Notification::make()
+                ->title('New Order Received! 🚀')
+                ->body("Order #{$order->order_number} has been placed for $".number_format($order->total, 2).'.')
+                ->icon('heroicon-o-shopping-bag')
+                ->success()
+                ->actions([
+                    NotificationAction::make('viewOrder')
+                        ->label('View Order')
+                        ->button()
+                        ->url(fn () => OrderResource::getUrl(
+                            'edit',
+                            ['record' => $order->getKey()]
+                        )),
+                ])
+                ->sendToDatabase($admins);
+
+            // 4. Send to Telegram
+            $itemLines = $order->items->map(function ($item) {
+                $name = $item->product_name ?? 'Unknown product';
+                $sku = $item->product_sku ? " ({$item->product_sku})" : '';
+                $qty = $item->quantity;
+                $unit = number_format($item->unit_amount, 2);
+                $lineTotal = number_format($item->total_amount, 2);
+
+                return "  {$qty}x {$name}{$sku} — \${$unit} each = \${$lineTotal}";
+            })->implode("\n");
+
+            Http::withoutVerifying()->post(
+                'https://api.telegram.org/bot'.config('services.telegram.bot_token').'/sendMessage',
+                [
+                    'chat_id' => config('services.telegram.chat_id'),
+                    'parse_mode' => 'HTML',
+                    'text' => implode("\n", [
+                        '<b>NEW ORDER</b>  #'.$order->order_number,
+                        '─────────────────────────',
+                        '',
+                        '<b>CUSTOMER</b>',
+                        '  Name     '.($order->customer?->name ?? 'Guest'),
+                        '  Email    '.($order->customer?->email ?? 'N/A'),
+                        '  Phone    '.($order->shipping_phone ?? 'N/A'),
+                        '',
+                        '<b>ORDER</b>',
+                        '  Status   '.$order->status,
+                        '  Payment  '.$order->payment_method,
+                        '  Total    $'.number_format($order->total, 2),
+                        '  Shipping '.($order->shipping_method ?? 'Standard'),
+                        '',
+                        '<b>ITEMS</b>',
+                        $itemLines,
+                        '',
+                        '<b>ADDRESS</b>',
+                        '  '.$order->shipping_address_line_1,
+                        ($order->shipping_address_line_2 ? '  '.$order->shipping_address_line_2 : null),
+                        '  '.implode(', ', array_filter([$order->shipping_city, $order->shipping_state])),
+                        '  '.$order->shipping_country,
+                        '',
+                        '<b>NOTE</b>',
+                        '  '.($order->customer_notes ?? 'No notes'),
+                        '',
+                        '─────────────────────────',
+                        $order->created_at->format('d M Y  h:i A'),
+                    ]),
+                ]
+            );
+        });
     }
 
     /**
