@@ -474,7 +474,8 @@ public function categoryPerformance(AnalyticsFilters $filters): Collection
                 DB::raw("COUNT(DISTINCT {$orderItemTable}.product_id) as product_count"),
                 DB::raw("COALESCE(SUM({$orderItemTable}.quantity), 0) as units_sold"),
                 DB::raw("COALESCE(SUM({$orderItemTable}.total_amount), 0) as revenue"),
-                DB::raw("COALESCE(AVG({$orderItemTable}.unit_price), 0) as avg_price"),
+                // DB::raw("COALESCE(AVG({$orderItemTable}.unit_price), 0) as avg_price"),
+                DB::raw("COALESCE(AVG({$orderItemTable}.unit_amount), 0) as avg_price"),
             ])
             ->join($orderTable,    "{$orderTable}.id",    '=', "{$orderItemTable}.order_id")
             ->join($productTable,  "{$productTable}.id",  '=', "{$orderItemTable}.product_id")
@@ -535,7 +536,8 @@ public function topCustomers(AnalyticsFilters $filters, int $limit = 10): Collec
         }
 
         return Product::query()
-            ->lowStock()
+            ->where('manage_stock', true)
+            ->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
             ->orderBy('stock_quantity')
             ->get(['name', 'sku', 'stock_quantity', 'low_stock_threshold']);
     }

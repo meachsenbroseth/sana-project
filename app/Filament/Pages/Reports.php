@@ -189,42 +189,38 @@ class Reports extends BaseDashboard
             Action::make('exportPdf')
                 ->label(__('analytics.export.pdf'))
                 ->icon(Heroicon::OutlinedDocumentArrowDown)
-                ->color('gray')
+                ->color('info')
                 ->action(function () {
                     $filters = AnalyticsFilters::fromPageFilters($this->filters);
                     $analytics = app(AnalyticsService::class);
 
                     $pdf = Pdf::loadView('pdf.analytics-report', [
-                        'title' => __('analytics.page_title'),
-                        'generatedAt' => now()->format('Y-m-d H:i'),
-                        'kpis' => $analytics->kpiMetrics($filters),
-                        'insights' => $analytics->insightMetrics($filters),
-                        'topProducts' => $analytics->topSellingProductsQuery($filters)->limit(10)->get(),
+                        'title'                     => __('analytics.page_title'),
+                        'generatedAt'               => now()->format('Y-m-d H:i'),
+                        'filtersSummary'            => $filters->summary(),
+                        'kpis'                      => $analytics->kpiMetrics($filters),
+                        'insights'                  => $analytics->insightMetrics($filters),
+                        'revenueBreakdown'          => $analytics->revenueBreakdown($filters),
+                        'orderStatusDistribution'   => $analytics->orderStatusDistribution($filters),
+                        'paymentMethodDistribution' => $analytics->paymentMethodDistribution($filters),
+                        'paymentStatusDistribution' => $analytics->paymentStatusDistribution($filters),
+                        'categoryPerformance'       => $analytics->categoryPerformance($filters),
+                        'topProducts'               => $analytics->topSellingProductsQuery($filters)->limit(10)->get(),
+                        'topCustomers'              => $analytics->topCustomers($filters),
+                        'orderReport'               => $analytics->orderReportQuery($filters)->limit(50)->get(),
+                        'customerReport'            => $analytics->customerReportQuery($filters)
+                            ->orderByDesc('total_spent')
+                            ->limit(50)
+                            ->get(),
+                        'lowStockProducts'          => $analytics->lowStockProducts(),
+                        'recentOrders'              => $analytics->recentOrders($filters),
                     ]);
 
                     return response()->streamDownload(
                         fn () => print ($pdf->output()),
-                        'analytics-report-'.now()->format('Y-m-d').'.pdf',
+                        'analytics-report-' . now()->format('Y-m-d') . '.pdf'
                     );
                 }),
-            // ExportAction::make('exportExcel')
-            //     ->label(__('analytics.export.excel'))
-            //     ->icon(Heroicon::OutlinedTableCells)
-            //     ->color('success')
-            //     ->exporter(AnalyticsOrderReportExporter::class)
-            //     ->formats([ExportFormat::Xlsx])
-            //     ->modifyQueryUsing(fn () => app(AnalyticsService::class)->orderReportQuery(
-            //         AnalyticsFilters::fromPageFilters($this->filters),
-            //     )),
-            ExportAction::make('exportCsv')
-                ->label(__('analytics.export.csv'))
-                ->icon(Heroicon::OutlinedArrowDownTray)
-                ->color('info')
-                ->exporter(AnalyticsOrderReportExporter::class)
-                ->formats([ExportFormat::Csv])
-                ->modifyQueryUsing(fn () => app(AnalyticsService::class)->orderReportQuery(
-                    AnalyticsFilters::fromPageFilters($this->filters),
-                )),
         ];
     }
 }

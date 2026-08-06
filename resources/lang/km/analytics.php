@@ -176,4 +176,9 @@ return [
         'total' => 'សរុប',
         'created_date' => 'កាលបរិច្ឆេទបង្កើត',
     ],
+
+    'summary' => [
+        'total_orders' => 'ចំនួនការបញ្ជាទិញសរុប',
+        'total_revenue' => 'ចំណូលសរុប',
+    ],
 ];

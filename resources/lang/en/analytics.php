@@ -195,4 +195,9 @@ return [
 
     ],
 
+    'summary' => [
+        'total_orders' => 'Total Orders',
+        'total_revenue' => 'Total Revenue',
+    ],
+
 ];
