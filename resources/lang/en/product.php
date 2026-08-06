@@ -14,6 +14,10 @@ return [
     'created' => 'Created',
     'stock_availability' => 'Stock Availability',
     'all_products' => 'All Products',
+    'supplier' => 'Supplier',
+    'low_stock' => 'Low Stock',
+    'low_stock_only' => 'Low Stock Only',
+    'healthy_stock' => 'Healthy Stock',
     'tabs' => [
         'product_details' => 'Product Details',
         'basic_information' => 'Basic Information',

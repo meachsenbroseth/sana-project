@@ -18,4 +18,5 @@ return [
     'permission' => 'Permission',
     'review' => 'Review',
     'shipping_method' => 'Shipping Method',
+    'supplier' => 'Supplier',
 ];

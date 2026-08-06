@@ -14,6 +14,7 @@ return [
     'created' => 'បានបង្កើត',
     'stock_availability' => 'ភាពមានស្តុក',
     'all_products' => 'ផលិតផលទាំងអស់',
+    'supplier' => 'អ្នកផ្គត់ផ្គង់',
     'tabs' => [
         'product_details' => 'ព័ត៌មានលម្អិតផលិតផល',
         'basic_information' => 'ព័ត៌មានមូលដ្ឋាន',

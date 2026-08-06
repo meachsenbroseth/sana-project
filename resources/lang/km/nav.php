@@ -18,4 +18,5 @@ return [
     'permission' => 'សិទ្ធិ',
     'review' => 'ការវាយតម្លៃ',
     'shipping_method' => 'វិធីសាស្ត្រដឹកជញ្ជូន',
+    'supplier' => 'អ្នកផ្គត់ផ្គង់',
 ];

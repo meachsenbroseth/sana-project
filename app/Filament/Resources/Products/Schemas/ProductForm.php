@@ -90,6 +90,12 @@ class ProductForm
                                         ->minValue(0)
                                         ->step(0.01)
                                         ->prefix('$'),
+                                    Select::make('supplier_id')
+                                        ->label(__('product.supplier'))
+                                        ->relationship('supplier', 'name')
+                                        ->preload()
+                                        ->searchable()
+                                        ->nullable(),
                                 ])->columns(2),
                                 Section::make(__('product.sections.inventory'))->schema([
                                     Toggle::make('manage_stock')

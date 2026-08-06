@@ -65,6 +65,7 @@ class StatsOverview extends StatsOverviewWidget
                 ->description('Today $' . number_format($todayRevenue, 2))
                 ->descriptionIcon(Heroicon::ArrowTrendingUp)
                 ->color('success')
+                ->url(route('filament.admin.pages.reports'))
                 ->chart($revenueData), // 🔥 Completely Dynamic!
 
             Stat::make('Total Order', $totalOrder)

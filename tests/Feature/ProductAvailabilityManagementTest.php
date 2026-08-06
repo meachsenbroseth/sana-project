@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Supplier;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
@@ -129,3 +130,20 @@ function createOrderForAvailabilityManagement(Product $product, int $quantity): 
 
     return $order;
 }
+
+test('product supplier_id can be assigned and retrieved', function () {
+    $supplier = Supplier::factory()->create();
+
+    $product = createProductForAvailabilityManagement(5);
+    $product->update(['supplier_id' => $supplier->id]);
+
+    expect($product->refresh()->supplier_id)->toBe($supplier->id)
+        ->and($product->supplier->name)->toBe($supplier->name);
+});
+
+test('product without a supplier remains valid and available', function () {
+    $product = createProductForAvailabilityManagement(5);
+
+    expect($product->supplier_id)->toBeNull()
+        ->and($product->isAvailableForPurchase())->toBeTrue();
+});
