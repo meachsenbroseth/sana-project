@@ -207,7 +207,10 @@ class Reports extends BaseDashboard
                         'categoryPerformance'       => $analytics->categoryPerformance($filters),
                         'topProducts'               => $analytics->topSellingProductsQuery($filters)->limit(10)->get(),
                         'topCustomers'              => $analytics->topCustomers($filters),
-                        'orderReport'               => $analytics->orderReportQuery($filters)->limit(50)->get(),
+                        'orderReport' => $analytics->orderReportQuery($filters)
+                            ->where('payment_status', 'paid')
+                            ->limit(50)
+                            ->get(),
                         'customerReport'            => $analytics->customerReportQuery($filters)
                             ->orderByDesc('total_spent')
                             ->limit(50)

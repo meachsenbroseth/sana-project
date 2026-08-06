@@ -28,7 +28,7 @@ class OrderReportTable extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->query(fn (): Builder => $this->analytics()->orderReportQuery($this->filters()))
+            ->query(fn (): Builder => $this->analytics()->orderReportQuery($this->filters())->where('payment_status', 'paid'))
             ->columns([
                 TextColumn::make('order_number')
                     ->label(__('analytics.columns.order_number'))

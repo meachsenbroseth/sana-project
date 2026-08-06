@@ -235,8 +235,7 @@
                 <th>Order #</th>
                 <th>Customer</th>
                 <th>Status</th>
-                <th>Payment</th>
-                <th>Payment Status</th>
+                <th>Payment Method</th>
                 <th class="numeric">Discount</th>
                 <th class="numeric">Shipping</th>
                 <th class="numeric">Total</th>
@@ -250,11 +249,6 @@
                 <td>{{ $order->customer?->name ?? '—' }}</td>
                 <td><span class="badge badge-{{ $order->status }}">{{ ucfirst($order->status) }}</span></td>
                 <td>{{ ucfirst(str_replace('_', ' ', $order->payment_method)) }}</td>
-                <td>
-                    <span class="badge {{ $order->payment_status === 'paid' ? 'badge-paid' : 'badge-unpaid' }}">
-                        {{ ucfirst($order->payment_status) }}
-                    </span>
-                </td>
                 <td class="numeric">${{ number_format($order->discount_amount, 2) }}</td>
                 <td class="numeric">${{ number_format($order->shipping_cost, 2) }}</td>
                 <td class="numeric">${{ number_format($order->total, 2) }}</td>
@@ -264,7 +258,7 @@
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="5" style="text-align:right;">{{ $orderReport->count() }} orders</td>
+                <td colspan="4" style="text-align:right;">{{ $orderReport->count() }} paid orders</td>
                 <td class="numeric">${{ number_format($orderReport->sum('discount_amount'), 2) }}</td>
                 <td class="numeric">${{ number_format($orderReport->sum('shipping_cost'), 2) }}</td>
                 <td class="numeric">${{ number_format($orderReport->sum('total'), 2) }}</td>
