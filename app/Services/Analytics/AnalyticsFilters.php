@@ -96,4 +96,12 @@ class AnalyticsFilters
             $this->datePreset,
         ]));
     }
+    public function summary(): string
+    {
+        if ($this->datePreset === self::PRESET_CUSTOM) {
+            return ($this->startDate?->format('M d, Y') ?? '?') . ' — ' . ($this->endDate?->format('M d, Y') ?? '?');
+        }
+
+        return ucfirst(str_replace('_', ' ', $this->datePreset));
+    }
 }

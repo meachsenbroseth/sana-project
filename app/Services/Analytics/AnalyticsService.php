@@ -365,6 +365,208 @@ class AnalyticsService
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+// PDF Report helpers
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Revenue breakdown: subtotal, discounts, shipping, net.
+ *
+ * @return array{subtotal: float, discount_amount: float, shipping_cost: float, net_revenue: float}
+ */
+public function revenueBreakdown(AnalyticsFilters $filters): array
+{
+    return $this->remember('revenue_breakdown', $filters, function () use ($filters): array {
+        $paid = $this->paidOrderQuery($filters);
+
+        $result = (clone $paid)
+            ->selectRaw('
+                COALESCE(SUM(subtotal), 0) as subtotal,
+                COALESCE(SUM(discount_amount), 0) as discount_amount,
+                COALESCE(SUM(shipping_cost), 0) as shipping_cost,
+                COALESCE(SUM(total), 0) as net_revenue
+            ')
+            ->first();
+
+        return [
+            'subtotal'        => (float) $result->subtotal,
+            'discount_amount' => (float) $result->discount_amount,
+            'shipping_cost'   => (float) $result->shipping_cost,
+            'net_revenue'     => (float) $result->net_revenue,
+        ];
+    });
+}
+
+/**
+ * Order counts grouped by status.
+ *
+ * @return array<string, int>
+ */
+public function orderStatusDistribution(AnalyticsFilters $filters): array
+{
+    return $this->remember('order_status_distribution', $filters, function () use ($filters): array {
+        return (clone $this->orderQuery($filters))
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->get()
+            ->pluck('count', 'status')
+            ->map(fn (int $count): int => $count)
+            ->toArray();
+    });
+}
+
+/**
+ * Order counts grouped by payment method.
+ *
+ * @return array<string, int>
+ */
+public function paymentMethodDistribution(AnalyticsFilters $filters): array
+{
+    return $this->remember('payment_method_distribution', $filters, function () use ($filters): array {
+        return (clone $this->orderQuery($filters))
+            ->selectRaw('payment_method, COUNT(*) as count')
+            ->groupBy('payment_method')
+            ->get()
+            ->pluck('count', 'payment_method')
+            ->map(fn (int $count): int => $count)
+            ->toArray();
+    });
+}
+
+/**
+ * Order counts grouped by payment status.
+ *
+ * @return array<string, int>
+ */
+public function paymentStatusDistribution(AnalyticsFilters $filters): array
+{
+    return $this->remember('payment_status_distribution', $filters, function () use ($filters): array {
+        return (clone $this->orderQuery($filters))
+            ->selectRaw('payment_status, COUNT(*) as count')
+            ->groupBy('payment_status')
+            ->get()
+            ->pluck('count', 'payment_status')
+            ->map(fn (int $count): int => $count)
+            ->toArray();
+    });
+}
+
+/**
+ * Category performance: products, units sold, revenue per category.
+ *
+ * @return Collection<int, object>
+ */
+public function categoryPerformance(AnalyticsFilters $filters): Collection
+{
+    return $this->remember('category_performance', $filters, function () use ($filters): Collection {
+        if (! $this->productsAvailable() || ! $this->tables->hasCategories() || ! $this->tables->hasOrderItems()) {
+            return collect();
+        }
+
+        $productTable   = $this->tables->product();
+        $categoryTable  = $this->tables->category();
+        $orderTable     = $this->tables->order();
+        $orderItemTable = $this->tables->orderItem();
+        $categoryColumn = $this->tables->qualifiedProductColumn('category_id');
+
+        return DB::table($orderItemTable)
+            ->select([
+                "{$categoryTable}.name as category_name",
+                DB::raw("COUNT(DISTINCT {$orderItemTable}.product_id) as product_count"),
+                DB::raw("COALESCE(SUM({$orderItemTable}.quantity), 0) as units_sold"),
+                DB::raw("COALESCE(SUM({$orderItemTable}.total_amount), 0) as revenue"),
+                DB::raw("COALESCE(AVG({$orderItemTable}.unit_price), 0) as avg_price"),
+            ])
+            ->join($orderTable,    "{$orderTable}.id",    '=', "{$orderItemTable}.order_id")
+            ->join($productTable,  "{$productTable}.id",  '=', "{$orderItemTable}.product_id")
+            ->join($categoryTable, "{$categoryTable}.id", '=', $categoryColumn)
+            ->where("{$orderTable}.payment_status", 'paid')
+            ->when($this->tables->productUsesSoftDeletes(), fn ($q) => $q->whereNull("{$productTable}.deleted_at"))
+            ->when($filters->startDate,     fn ($q) => $q->where("{$orderTable}.created_at", '>=', $filters->startDate))
+            ->when($filters->endDate,       fn ($q) => $q->where("{$orderTable}.created_at", '<=', $filters->endDate))
+            ->when($filters->customerId,    fn ($q) => $q->where("{$orderTable}.customer_id", $filters->customerId))
+            ->when($filters->orderStatus,   fn ($q) => $q->where("{$orderTable}.status", $filters->orderStatus))
+            ->when($filters->paymentMethod, fn ($q) => $q->where("{$orderTable}.payment_method", $filters->paymentMethod))
+            ->when($filters->productId,     fn ($q) => $q->where("{$orderItemTable}.product_id", $filters->productId))
+            ->when($filters->categoryId,    fn ($q) => $q->where($categoryColumn, $filters->categoryId))
+            ->groupBy("{$categoryTable}.id", "{$categoryTable}.name")
+            ->orderByDesc('revenue')
+            ->get();
+    });
+}
+
+/**
+ * Top customers by total spending.
+ *
+ * @return Collection<int, Customer>
+ */
+public function topCustomers(AnalyticsFilters $filters, int $limit = 10): Collection
+{
+    return $this->remember('top_customers', $filters, function () use ($filters, $limit): Collection {
+        if (! $this->tables->hasCustomers()) {
+            return collect();
+        }
+
+        return $this->customerReportQuery($filters)
+            ->orderByDesc('total_spent')
+            ->limit($limit)
+            ->get()
+            ->map(fn (Customer $customer): object => (object) [
+                'customer_name'  => $customer->name,
+                'customer_email' => $customer->email,
+                'order_count'    => (int) $customer->total_orders,
+                'total_spent'    => (float) $customer->total_spent,
+                'avg_order_value' => $customer->total_orders > 0
+                    ? round($customer->total_spent / $customer->total_orders, 2)
+                    : 0.0,
+                'last_order_date' => $customer->last_order_date,
+            ]);
+    });
+}
+
+    /**
+     * Products at or below their low stock threshold.
+     *
+     * @return Collection<int, Product>
+     */
+    public function lowStockProducts(): Collection
+    {
+        if (! $this->productsAvailable()) {
+            return collect();
+        }
+
+        return Product::query()
+            ->lowStock()
+            ->orderBy('stock_quantity')
+            ->get(['name', 'sku', 'stock_quantity', 'low_stock_threshold']);
+    }
+
+    /**
+     * Recent orders with customer and line-item details for the PDF report.
+     *
+     * @return Collection<int, Order>
+     */
+    public function recentOrders(AnalyticsFilters $filters, int $limit = 10): Collection
+    {
+        return $this->remember('recent_orders', $filters, function () use ($filters, $limit): Collection {
+            return $this->orderReportQuery($filters)
+                ->limit($limit)
+                ->get()
+                ->map(fn (Order $order): object => (object) [
+                    'order_number'    => $order->order_number,
+                    'customer_name'   => $order->customer?->name ?? '—',
+                    'subtotal'        => (float) $order->subtotal,
+                    'discount_amount' => (float) $order->discount_amount,
+                    'shipping_cost'   => (float) $order->shipping_cost,
+                    'total'           => (float) $order->total,
+                    'payment_method'  => $order->payment_method,
+                    'payment_status'  => $order->payment_status,
+                    'status'          => $order->status,
+                    'created_at'      => $order->created_at,
+                ]);
+        });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Protected helpers
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -526,6 +728,39 @@ class AnalyticsService
             ->whereRaw('0 = 1');
     }
 
+    // protected function emptyResultForKey(string $key): mixed
+    // {
+    //     return match (true) {
+    //         str_starts_with($key, 'revenue_trend'),
+    //         str_starts_with($key, 'orders_trend'),
+    //         str_starts_with($key, 'customer_growth'),
+    //         str_starts_with($key, 'product_performance') => collect(),
+
+    //         $key === 'kpi_metrics' => [
+    //             'total_revenue'       => 0.0,
+    //             'total_orders'        => 0,
+    //             'total_customers'     => 0,
+    //             'total_products'      => 0,
+    //             'average_order_value' => 0.0,
+    //             'orders_today'        => 0,
+    //             'revenue_today'       => 0.0,
+    //             'pending_orders'      => 0,
+    //         ],
+
+    //         $key === 'insight_metrics' => [
+    //             'best_selling_product'           => null,
+    //             'most_active_customer'           => null,
+    //             'highest_revenue_day'            => null,
+    //             'highest_revenue_day_amount'     => 0.0,
+    //             'highest_revenue_month'          => null,
+    //             'highest_revenue_month_amount'   => 0.0,
+    //             'most_popular_category'          => null,
+    //             'average_customer_lifetime_value'=> 0.0,
+    //         ],
+
+    //         default => null,
+    //     };
+    // }
     protected function emptyResultForKey(string $key): mixed
     {
         return match (true) {
@@ -555,6 +790,21 @@ class AnalyticsService
                 'most_popular_category'          => null,
                 'average_customer_lifetime_value'=> 0.0,
             ],
+
+            $key === 'revenue_breakdown' => [
+                'subtotal'        => 0.0,
+                'discount_amount' => 0.0,
+                'shipping_cost'   => 0.0,
+                'net_revenue'     => 0.0,
+            ],
+
+            $key === 'order_status_distribution',
+            $key === 'payment_method_distribution',
+            $key === 'payment_status_distribution' => [],
+
+            $key === 'category_performance',
+            $key === 'top_customers',
+            $key === 'recent_orders' => collect(),
 
             default => null,
         };

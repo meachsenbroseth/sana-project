@@ -7,6 +7,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -139,28 +140,54 @@ class OrderForm
                             ->schema([
 
                                 Section::make(__('order.sections.order_status'))->schema([
-                                    Select::make('status')
+                                    ToggleButtons::make('status')
                                         ->label(__('order.status_label'))
                                         ->options([
-                                            'pending' => __('order.status.pending'),
+                                            'pending'    => __('order.status.pending'),
                                             'processing' => __('order.status.processing'),
-                                            'shipped' => __('order.status.shipped'),
-                                            'delivered' => __('order.status.delivered'),
-                                            'cancelled' => __('order.status.cancelled'),
+                                            'shipped'    => __('order.status.shipped'),
+                                            'delivered'  => __('order.status.delivered'),
+                                            'cancelled'  => __('order.status.cancelled'),
                                         ])
-                                        ->native(false)
+                                        ->grouped()
+                                        ->icons([
+                                            'pending'    => 'heroicon-o-clock',
+                                            'processing' => 'heroicon-o-arrow-path',
+                                            'shipped'    => 'heroicon-o-truck',
+                                            'delivered'  => 'heroicon-o-check-circle',
+                                            'cancelled'  => 'heroicon-o-x-circle',
+                                        ])
+                                        ->colors([
+                                            'pending'    => 'warning',
+                                            'processing' => 'info',
+                                            'shipped'    => 'primary',
+                                            'delivered'  => 'success',
+                                            'cancelled'  => 'danger',
+                                        ])
                                         ->required()
-                                        ->default('pending'),
+                                        ->default('pending')
+                                        ->columnSpanFull(),
 
-                                    Select::make('payment_status')
+                                    ToggleButtons::make('payment_status')
                                         ->options([
                                             'pending' => __('order.payment_status.pending'),
-                                            'paid' => __('order.payment_status.paid'),
-                                            'failed' => __('order.payment_status.failed'),
+                                            'paid'    => __('order.payment_status.paid'),
+                                            'failed'  => __('order.payment_status.failed'),
                                         ])
-                                        ->native(false)
+                                        ->grouped()
+                                        ->icons([
+                                            'pending' => 'heroicon-o-clock',
+                                            'paid'    => 'heroicon-o-check-circle',
+                                            'failed'  => 'heroicon-o-x-circle',
+                                        ])
+                                        ->colors([
+                                            'pending' => 'warning',
+                                            'paid'    => 'success',
+                                            'failed'  => 'danger',
+                                        ])
                                         ->required()
-                                        ->default('pending'),
+                                        ->default('pending')
+                                        ->columnSpanFull(),
 
                                     TextInput::make('tracking_number')
                                         ->helperText(__('order.tracking_help')),
@@ -169,23 +196,24 @@ class OrderForm
                                         ->columnSpanFull(),
                                 ])->columns(2),
 
-                                // --- DONE TRACKING (READ-ONLY, AUTO-SET) ---
-                                Section::make(__('order.sections.completion'))
-                                    ->schema([
-                                        TextInput::make('doneBy.name')
-                                            ->label(__('order.done_by'))
-                                            ->disabled()
-                                            ->dehydrated(false)
-                                            ->placeholder('—'),
+// --- DONE TRACKING (READ-ONLY, AUTO-SET) ---
+Section::make(__('order.sections.completion'))
+    ->schema([
+        TextInput::make('done_by_name')
+            ->label(__('order.done_by'))
+            ->formatStateUsing(fn ($record) => $record?->doneBy?->name)
+            ->disabled()
+            ->dehydrated(false)
+            ->placeholder('—'),
 
-                                        DateTimePicker::make('done_at')
-                                            ->label(__('order.done_at'))
-                                            ->disabled()
-                                            ->dehydrated(false)
-                                            ->native(false),
-                                    ])
-                                    ->columns(2)
-                                    ->visible(fn ($record) => $record?->done_at !== null),
+        DateTimePicker::make('done_at')
+            ->label(__('order.done_at'))
+            ->disabled()
+            ->dehydrated(false)
+            ->native(false),
+    ])
+    ->columns(2)
+    ->visible(fn ($record) => $record?->done_at !== null),
                             ]),
                     ]),
             ]);
