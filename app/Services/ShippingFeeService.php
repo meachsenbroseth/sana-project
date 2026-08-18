@@ -13,6 +13,10 @@ class ShippingFeeService
      */
     public function feeFor(ShippingMethod $shippingMethod, Province $province): ?float
     {
+        if ($shippingMethod->requires_direct_arrangement) {
+            return 0.0;
+        }
+
         $pivot = $shippingMethod->provinces()
             ->wherePivot('province_id', $province->id)
             ->first();

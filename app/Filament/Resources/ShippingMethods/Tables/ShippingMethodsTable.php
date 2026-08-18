@@ -27,12 +27,9 @@ class ShippingMethodsTable
                     ->badge()
                     ->color('info')
                     ->suffix(' '.__('shipping_method.province_fees.provinces_suffix')),
-                SelectColumn::make('status')
-                    ->label(__('table.status'))
-                    ->options([
-                        'active' => __('shipping_method.status.active'),
-                        'inactive' => __('shipping_method.status.inactive'),
-                    ]),
+                TextColumn::make('status')
+                    ->badge()
+                    ->label(__('table.status')),
                 TextColumn::make('created_at')
                     ->label(__('table.created_at'))
                     ->dateTime()

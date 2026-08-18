@@ -5,7 +5,9 @@ namespace App\Filament\Resources\ShippingMethods\Schemas;
 use App\Models\Province;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -21,6 +23,10 @@ class ShippingMethodForm
                         TextInput::make('name')
                             ->required()
                             ->maxLength(255),
+                        // Toggle::make('requires_direct_arrangement')
+                        //     ->label(__('shipping_method.fields.requires_direct_arrangement'))
+                        //     ->helperText(__('shipping_method.fields.requires_direct_arrangement_helper'))
+                        //     ->default(false),
                         ToggleButtons::make('status')
                             ->required()
                             ->inline()
@@ -29,6 +35,11 @@ class ShippingMethodForm
                                 'active' => __('shipping_method.status.active'),
                                 'inactive' => __('shipping_method.status.inactive'),
                             ]),
+                        Textarea::make('note')
+                            ->label(__('shipping_method.fields.note'))
+                            ->helperText(__('shipping_method.fields.note_helper'))
+                            ->rows(3)
+                            ->columnSpanFull(),
                     ])
                     ->columns(2),
 

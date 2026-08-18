@@ -37,7 +37,8 @@ test('creating a shipping method with province fees syncs pivot rows', function 
     $province1 = Province::factory()->create(['name_en' => 'Phnom Penh', 'code' => 'T-PP']);
     $province2 = Province::factory()->create(['name_en' => 'Siem Reap', 'code' => 'T-SR']);
 
-    $this->actingAs($user); Gate::before(fn () => true);
+    $this->actingAs($user);
+    Gate::before(fn () => true);
     Gate::before(fn () => true);
 
     Livewire::test(CreateShippingMethod::class)
@@ -69,11 +70,14 @@ test('creating a shipping method with province fees syncs pivot rows', function 
 test('creating a shipping method with no province fees saves fine', function (): void {
     $user = User::factory()->create(['email' => 'admin@phanna.com']);
 
-    $this->actingAs($user); Gate::before(fn () => true);
+    $this->actingAs($user);
+    Gate::before(fn () => true);
 
     Livewire::test(CreateShippingMethod::class)
         ->fillForm([
             'name' => 'No Province Method',
+            'note' => 'Courier payment is arranged directly.',
+            'requires_direct_arrangement' => true,
             'status' => 'active',
         ])
         ->call('create')
@@ -82,7 +86,32 @@ test('creating a shipping method with no province fees saves fine', function ():
     $method = ShippingMethod::query()->where('name', 'No Province Method')->first();
 
     expect($method)->not->toBeNull()
+        ->and($method->note)->toBe('Courier payment is arranged directly.')
+        ->and($method->requires_direct_arrangement)->toBeTrue()
         ->and($method->provinces()->count())->toBe(0);
+});
+
+test('editing a shipping method saves its note and direct courier arrangement setting', function (): void {
+    $user = User::factory()->create(['email' => 'admin@phanna.com']);
+    $method = ShippingMethod::factory()->create([
+        'note' => null,
+        'requires_direct_arrangement' => false,
+    ]);
+
+    $this->actingAs($user);
+    Gate::before(fn () => true);
+
+    Livewire::test(EditShippingMethod::class, ['record' => $method->getRouteKey()])
+        ->fillForm([
+            'note' => 'Pay the courier when your delivery arrives.',
+            'requires_direct_arrangement' => true,
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($method->fresh())
+        ->note->toBe('Pay the courier when your delivery arrives.')
+        ->requires_direct_arrangement->toBeTrue();
 });
 
 test('editing a shipping method loads existing province fees into the repeater', function (): void {
@@ -92,7 +121,8 @@ test('editing a shipping method loads existing province fees into the repeater',
 
     $method->provinces()->attach($province->id, ['fee' => 6.75]);
 
-    $this->actingAs($user); Gate::before(fn () => true);
+    $this->actingAs($user);
+    Gate::before(fn () => true);
 
     $component = Livewire::test(EditShippingMethod::class, ['record' => $method->getRouteKey()]);
 
@@ -111,7 +141,8 @@ test('editing a shipping method saves updated province fees to the pivot table',
 
     $method->provinces()->attach($province1->id, ['fee' => 1.00]);
 
-    $this->actingAs($user); Gate::before(fn () => true);
+    $this->actingAs($user);
+    Gate::before(fn () => true);
 
     Livewire::test(EditShippingMethod::class, ['record' => $method->getRouteKey()])
         ->fillForm([
@@ -139,7 +170,8 @@ test('removing a province row from the repeater detaches it from the pivot table
     $method->provinces()->attach($province1->id, ['fee' => 2.00]);
     $method->provinces()->attach($province2->id, ['fee' => 3.00]);
 
-    $this->actingAs($user); Gate::before(fn () => true);
+    $this->actingAs($user);
+    Gate::before(fn () => true);
 
     // Save with only province1 — province2 should be synced away
     Livewire::test(EditShippingMethod::class, ['record' => $method->getRouteKey()])
@@ -162,7 +194,8 @@ test('submitting duplicate provinces in the repeater returns a validation error'
     $method = ShippingMethod::factory()->create();
     $province = Province::factory()->create(['name_en' => 'Kratié', 'code' => 'T-KR']);
 
-    $this->actingAs($user); Gate::before(fn () => true);
+    $this->actingAs($user);
+    Gate::before(fn () => true);
 
     Livewire::test(EditShippingMethod::class, ['record' => $method->getRouteKey()])
         ->fillForm([
@@ -188,7 +221,8 @@ test('province model rows are never created or mutated by saving province fees',
 
     $beforeCount = Province::query()->count();
 
-    $this->actingAs($user); Gate::before(fn () => true);
+    $this->actingAs($user);
+    Gate::before(fn () => true);
 
     Livewire::test(CreateShippingMethod::class)
         ->fillForm([

@@ -145,11 +145,16 @@
         }
 
         #[Computed]
-        public function availableProvinces()
+        public function availableProvinces(): \Illuminate\Database\Eloquent\Collection
         {
+            $hasDirectArrangementMethod = ShippingMethod::query()
+                ->active()
+                ->where('requires_direct_arrangement', true)
+                ->exists();
+
             return Province::query()
                 ->active()
-                ->whereHas('shippingMethods', fn ($q) => $q->active())
+                ->when(! $hasDirectArrangementMethod, fn ($query) => $query->whereHas('shippingMethods', fn ($shippingMethods) => $shippingMethods->active()))
                 ->orderBy('name_en')
                 ->get();
         }
@@ -859,6 +864,11 @@
                                                 <div class="flex items-center justify-between">
                                                     <p class="font-semibold text-gray-900">{{ $shippingMethod->name }}</p>
                                                 </div>
+                                                @if ((int) $selectedShippingMethodId === $shippingMethod->id && filled($shippingMethod->note))
+                                                    <flux:callout class="mt-3" color="blue" icon="information-circle">
+                                                        {{ $shippingMethod->note }}
+                                                    </flux:callout>
+                                                @endif
                                             </div>
                                         </label>
                                     @endforeach
@@ -1143,13 +1153,21 @@
                                 @endif
                             </span>
                         </div>
+                        @php
+                            $selectedShippingMethod = $this->shippingMethods->firstWhere('id', (int) $selectedShippingMethodId);
+                        @endphp
                         @if ($selectedShippingMethodId)
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-500">Method</span>
                                 <span class="font-medium text-gray-700">
-                                    {{ optional($this->shippingMethods->firstWhere('id', (int) $selectedShippingMethodId))->name ?? 'Not selected' }}
+                                    {{ $selectedShippingMethod?->name ?? 'Not selected' }}
                                 </span>
                             </div>
+                        @endif
+                        @if (filled($selectedShippingMethod?->note))
+                            <flux:callout class="mt-3" color="blue" icon="information-circle">
+                                {{ $selectedShippingMethod->note }}
+                            </flux:callout>
                         @endif
                         @if ($provinceId)
                             <div class="flex justify-between text-sm">

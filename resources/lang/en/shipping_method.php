@@ -10,6 +10,12 @@ return [
         'active' => 'Active',
         'inactive' => 'Inactive',
     ],
+    'fields' => [
+        'note' => 'Customer note',
+        'note_helper' => 'Shown to customers at checkout when this method is selected.',
+        'requires_direct_arrangement' => 'Direct courier arrangement',
+        'requires_direct_arrangement_helper' => 'Enable if delivery cost is arranged directly with the courier (shipping cost will show as free in checkout).',
+    ],
     'province_fees' => [
         'province' => 'Province',
         'fee' => 'Fee',

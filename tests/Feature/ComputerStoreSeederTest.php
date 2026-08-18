@@ -15,10 +15,13 @@ use App\Models\SiteSetting;
 use App\Models\User;
 use Database\Seeders\ComputerStoreSeeder;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\Http;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 test('it seeds complete computer store demo data', function () {
+    Http::fake();
+
     $this->seed(ComputerStoreSeeder::class);
 
     expect(Category::query()->count())->toBeGreaterThanOrEqual(5);
@@ -46,9 +49,22 @@ test('it seeds complete computer store demo data', function () {
     expect($product->category)->not->toBeNull();
     expect($product->brand)->not->toBeNull();
     expect($product->status)->toBe('new');
+
+    $expressDelivery = ShippingMethod::query()
+        ->where('name', 'Express Delivery')
+        ->first();
+
+    expect($expressDelivery)->not->toBeNull()
+        ->and($expressDelivery->status)->toBe('active')
+        ->and($expressDelivery->requires_direct_arrangement)->toBeTrue()
+        ->and($expressDelivery->note)->toBe('ចំពោះតម្លៃការដឹកជញ្ជូនត្រូវទប់ទាត់ជាមួយក្រុមហ៊ុនដឹកជញ្ជូនផ្ទាល់')
+        ->and((float) $expressDelivery->cost)->toBe(0.0)
+        ->and($expressDelivery->provinces()->count())->toBe(0);
 });
 
 test('computer store seeder is idempotent', function () {
+    Http::fake();
+
     $this->seed(ComputerStoreSeeder::class);
 
     $countsAfterFirstRun = [

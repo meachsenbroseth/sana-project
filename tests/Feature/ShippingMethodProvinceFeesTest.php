@@ -111,3 +111,15 @@ test('ShippingFeeService::feeFor returns null when province not covered', functi
 
     expect($fee)->toBeNull();
 });
+
+test('ShippingFeeService::feeFor returns zero for direct courier arrangement without a province fee', function (): void {
+    $method = ShippingMethod::factory()->create([
+        'requires_direct_arrangement' => true,
+    ]);
+    $province = Province::factory()->create();
+
+    $fee = app(ShippingFeeService::class)->feeFor($method, $province);
+
+    expect($method->provinces()->count())->toBe(0)
+        ->and($fee)->toBe(0.0);
+});

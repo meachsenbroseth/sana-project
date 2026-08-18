@@ -91,6 +91,27 @@ test('availableProvinces only returns provinces covered by at least one active s
         ->assertDontSeeHtml($uncoveredProvince->name_en);
 });
 
+test('availableProvinces includes every active province when direct courier arrangement is available', function (): void {
+    $coveredProvince = Province::factory()->create(['is_active' => true]);
+    $uncoveredProvince = Province::factory()->create(['is_active' => true]);
+    $method = ShippingMethod::factory()->create(['status' => 'active', 'requires_direct_arrangement' => true]);
+    $customer = makeCheckoutCustomer();
+    $product = makeCheckoutProduct();
+
+    session()->put('cart', [[
+        'product_id' => $product->id,
+        'name' => $product->name,
+        'price' => 20,
+        'quantity' => 1,
+    ]]);
+
+    Livewire::actingAs($customer, 'customer')
+        ->test('pages::checkout')
+        ->set('selectedShippingMethodId', $method->id)
+        ->assertSeeHtml($coveredProvince->name_en)
+        ->assertSeeHtml($uncoveredProvince->name_en);
+});
+
 // ---------------------------------------------------------------------------
 // Province selection populates districts
 // ---------------------------------------------------------------------------
@@ -147,6 +168,60 @@ test('selecting a province recalculates shipping fee from pivot', function (): v
         ->set('provinceId', $province->id);
 
     expect($component->get('calculatedShippingFee'))->toBe(4.50);
+});
+
+test('checkout shows only the selected shipping method note and recalculates direct courier arrangement to free', function (): void {
+    $province = Province::factory()->create(['is_active' => true]);
+    $standardMethod = makeActiveShippingMethodWithProvince($province, fee: 4.50);
+    $expressMethod = ShippingMethod::factory()->create([
+        'name' => 'Express Delivery',
+        'status' => 'active',
+        'note' => 'Courier payment is arranged directly.',
+        'requires_direct_arrangement' => true,
+    ]);
+    $customer = makeCheckoutCustomer();
+    $product = makeCheckoutProduct();
+
+    session()->put('cart', [[
+        'product_id' => $product->id,
+        'name' => $product->name,
+        'price' => 20,
+        'quantity' => 1,
+    ]]);
+
+    $component = Livewire::actingAs($customer, 'customer')
+        ->test('pages::checkout')
+        ->set('provinceId', $province->id)
+        ->set('selectedShippingMethodId', $expressMethod->id)
+        ->assertSee('Courier payment is arranged directly.')
+        ->assertSee('Free');
+
+    expect($component->get('calculatedShippingFee'))->toBe(0.0);
+
+    $component
+        ->set('selectedShippingMethodId', $standardMethod->id)
+        ->assertDontSee('Courier payment is arranged directly.');
+
+    expect($component->get('calculatedShippingFee'))->toBe(4.50);
+});
+
+test('checkout renders no callout for a selected shipping method without a note', function (): void {
+    $province = Province::factory()->create(['is_active' => true]);
+    $method = makeActiveShippingMethodWithProvince($province);
+    $customer = makeCheckoutCustomer();
+    $product = makeCheckoutProduct();
+
+    session()->put('cart', [[
+        'product_id' => $product->id,
+        'name' => $product->name,
+        'price' => 20,
+        'quantity' => 1,
+    ]]);
+
+    Livewire::actingAs($customer, 'customer')
+        ->test('pages::checkout')
+        ->set('selectedShippingMethodId', $method->id)
+        ->assertDontSee('data-flux-callout');
 });
 
 // ---------------------------------------------------------------------------
@@ -247,4 +322,45 @@ test('checkout fails when selected shipping method has no fee for the chosen pro
         ->set('districtId', $district->id)
         ->call('nextStep')
         ->assertHasErrors(['selectedShippingMethodId']);
+});
+
+test('checkout accepts a direct courier arrangement without a province fee and charges zero', function (): void {
+    Mail::fake();
+
+    $province = Province::factory()->create(['is_active' => true]);
+    $district = District::factory()->create(['province_id' => $province->id, 'is_active' => true]);
+    $method = ShippingMethod::factory()->create([
+        'status' => 'active',
+        'requires_direct_arrangement' => true,
+    ]);
+    $customer = makeCheckoutCustomer();
+    $product = makeCheckoutProduct(stock: 10);
+
+    session()->put('cart', [[
+        'product_id' => $product->id,
+        'name' => $product->name,
+        'price' => 20,
+        'quantity' => 1,
+    ]]);
+
+    Livewire::actingAs($customer, 'customer')
+        ->test('pages::checkout')
+        ->set('useExistingAddress', false)
+        ->set('selectedShippingMethodId', $method->id)
+        ->set('full_name', 'Test User')
+        ->set('phone', '012345678')
+        ->set('address_line_1', '123 Street')
+        ->set('provinceId', $province->id)
+        ->set('districtId', $district->id)
+        ->set('paymentMethod', 'cash_on_delivery')
+        ->call('placeOrder')
+        ->assertHasNoErrors();
+
+    $order = Order::query()->latest()->first();
+
+    expect($method->provinces()->count())->toBe(0)
+        ->and($order)->not->toBeNull()
+        ->and((float) $order->shipping_cost)->toBe(0.0)
+        ->and($order->province_id)->toBe($province->id)
+        ->and($order->district_id)->toBe($district->id);
 });

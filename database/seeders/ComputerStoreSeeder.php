@@ -378,7 +378,12 @@ class ComputerStoreSeeder extends Seeder
     {
         $rows = [
             ['name' => 'Standard Delivery', 'status' => 'active'],
-            ['name' => 'Express Delivery', 'status' => 'active'],
+            [
+                'name' => 'Express Delivery',
+                'status' => 'active',
+                'note' => 'ចំពោះតម្លៃការដឹកជញ្ជូនត្រូវទប់ទាត់ជាមួយក្រុមហ៊ុនដឹកជញ្ជូនផ្ទាល់',
+                'requires_direct_arrangement' => true,
+            ],
             ['name' => 'Pickup at Store', 'status' => 'active'],
             ['name' => 'Free Delivery', 'status' => 'inactive'],
         ];
