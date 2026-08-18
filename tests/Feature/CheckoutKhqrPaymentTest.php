@@ -32,8 +32,7 @@ test('khqr success polling creates only one order and decrements stock once', fu
     ]);
 
     $shippingMethod = ShippingMethod::factory()->create([
-        'name' => 'Standard Shipping',
-        'cost' => 2,
+        'name' => 'Standard',
         'status' => 'active',
     ]);
 
@@ -50,7 +49,7 @@ test('khqr success polling creates only one order and decrements stock once', fu
 
     $this->actingAs($customer, 'customer');
 
-    \Mockery::mock('overload:KHQR\BakongKHQR')
+    Mockery::mock('overload:KHQR\BakongKHQR')
         ->shouldReceive('checkTransactionByMD5')
         ->once()
         ->with('khqr-md5-123')
@@ -83,10 +82,32 @@ test('khqr polling returns early when order is already processing', function () 
         'status' => 'active',
     ]);
 
+    $category = \App\Models\Category::query()->create([
+        'name' => 'Test Cat',
+        'slug' => 'test-cat',
+    ]);
+    
+    $brand = \App\Models\Brand::query()->create([
+        'name' => 'Test Brand',
+        'slug' => 'test-brand',
+    ]);
+
+    $product = \App\Models\Product::query()->create([
+        'category_id' => $category->id,
+        'brand_id' => $brand->id,
+        'name' => 'Test Product',
+        'slug' => 'test-product',
+        'sku' => 'SKU-TEST-1',
+        'price' => 10,
+        'stock_quantity' => 10,
+        'stock_status' => 'in_stock',
+        'is_active' => true,
+    ]);
+
     session()->put('cart', [
         [
-            'product_id' => 999,
-            'name' => 'Unreachable Product',
+            'product_id' => $product->id,
+            'name' => $product->name,
             'price' => 10,
             'quantity' => 1,
         ],

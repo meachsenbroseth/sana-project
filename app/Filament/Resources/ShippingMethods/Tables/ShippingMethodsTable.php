@@ -20,10 +20,13 @@ class ShippingMethodsTable
                 TextColumn::make('name')
                     ->label(__('table.name'))
                     ->searchable(),
-                TextColumn::make('cost')
-                    ->label(__('table.cost'))
-                    ->money('USD')
-                    ->sortable(),
+
+                TextColumn::make('provinces_count')
+                    ->label(__('shipping_method.province_fees.covered_provinces'))
+                    ->counts('provinces')
+                    ->badge()
+                    ->color('info')
+                    ->suffix(' '.__('shipping_method.province_fees.provinces_suffix')),
                 SelectColumn::make('status')
                     ->label(__('table.status'))
                     ->options([

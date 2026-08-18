@@ -6,15 +6,18 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ShippingMethod extends Model
+class District extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'status',
+        'province_id',
+        'name_en',
+        'name_km',
+        'code',
+        'is_active',
     ];
 
     /**
@@ -23,20 +26,18 @@ class ShippingMethod extends Model
     protected function casts(): array
     {
         return [
-            'status' => 'string',
+            'is_active' => 'boolean',
         ];
     }
 
     #[Scope]
     protected function active(Builder $query): void
     {
-        $query->where('status', 'active');
+        $query->where('is_active', true);
     }
 
-    public function provinces(): BelongsToMany
+    public function province(): BelongsTo
     {
-        return $this->belongsToMany(Province::class, 'shipping_method_province')
-            ->withPivot('fee')
-            ->withTimestamps();
+        return $this->belongsTo(Province::class);
     }
 }

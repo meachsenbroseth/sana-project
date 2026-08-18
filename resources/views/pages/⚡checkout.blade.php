@@ -5,11 +5,14 @@
     use Illuminate\Validation\ValidationException;
 
     use App\Models\Address;
+    use App\Models\District;
     use App\Models\Order;
     use App\Models\OrderItem;
     use App\Models\Product;
+    use App\Models\Province;
     use App\Models\ShippingMethod;
     use App\Services\OrderStockService;
+    use App\Services\ShippingFeeService;
 
     use KHQR\BakongKHQR;
     use KHQR\Helpers\KHQRData;
@@ -49,8 +52,8 @@
         public string $phone              = '';
         public string $address_line_1     = '';
         public string $address_line_2     = '';
-        public string $city               = '';
-        public string $state              = '';
+        public ?int   $provinceId         = null;
+        public ?int   $districtId         = null;
         public string $country            = 'KH';
 
         // -------------------------------------------------------------------------
@@ -62,6 +65,13 @@
         public string $customerNotes           = '';
         public ?int   $selectedShippingMethodId = null;
         public string $merchantName            = '';
+
+        // -------------------------------------------------------------------------
+        // Shipping fee
+        // -------------------------------------------------------------------------
+
+        public ?float $calculatedShippingFee = null;
+        public bool   $shippingFeeUnavailable = false;
 
         // -------------------------------------------------------------------------
         // KHQR modal state
@@ -135,6 +145,30 @@
         }
 
         #[Computed]
+        public function availableProvinces()
+        {
+            return Province::query()
+                ->active()
+                ->whereHas('shippingMethods', fn ($q) => $q->active())
+                ->orderBy('name_en')
+                ->get();
+        }
+
+        #[Computed]
+        public function availableDistricts()
+        {
+            if (! $this->provinceId) {
+                return collect();
+            }
+
+            return District::query()
+                ->where('province_id', $this->provinceId)
+                ->active()
+                ->orderBy('name_en')
+                ->get();
+        }
+
+        #[Computed]
         public function subtotal(): float
         {
             return $this->getSubtotal();
@@ -160,6 +194,10 @@
         {
             if ($this->step === self::STEP_SHIPPING) {
                 if ($this->validateAddress() && $this->validateShippingMethod()) {
+                    if ($this->shippingFeeUnavailable) {
+                        $this->addError('selectedShippingMethodId', 'This shipping method is not available for the selected province.');
+                        return;
+                    }
                     $this->step = self::STEP_REVIEW;
                 }
                 return;
@@ -182,6 +220,49 @@
         }
 
         // -------------------------------------------------------------------------
+        // Reactive province/district handlers
+        // -------------------------------------------------------------------------
+
+        public function updatedProvinceId(): void
+        {
+            $this->districtId = null;
+            $this->recalculateShippingFee();
+        }
+
+        public function updatedSelectedShippingMethodId(): void
+        {
+            $this->recalculateShippingFee();
+        }
+
+        public function recalculateShippingFee(): void
+        {
+            if (! $this->selectedShippingMethodId || ! $this->provinceId) {
+                $this->calculatedShippingFee = null;
+                $this->shippingFeeUnavailable = false;
+                return;
+            }
+
+            $method   = ShippingMethod::query()->active()->find($this->selectedShippingMethodId);
+            $province = Province::find($this->provinceId);
+
+            if (! $method || ! $province) {
+                $this->calculatedShippingFee = null;
+                $this->shippingFeeUnavailable = false;
+                return;
+            }
+
+            $fee = app(ShippingFeeService::class)->feeFor($method, $province);
+            
+            if ($fee === null) {
+                $this->calculatedShippingFee = null;
+                $this->shippingFeeUnavailable = true;
+            } else {
+                $this->calculatedShippingFee = $fee;
+                $this->shippingFeeUnavailable = false;
+            }
+        }
+
+        // -------------------------------------------------------------------------
         // Validation
         // -------------------------------------------------------------------------
 
@@ -192,7 +273,23 @@
                     'full_name'      => 'required|string|max:255',
                     'phone'          => 'required|string|max:20',
                     'address_line_1' => 'required|string|max:255',
-                    'city'           => 'required|string|max:100',
+                    'provinceId'     => 'required|integer|exists:provinces,id',
+                    'districtId'     => [
+                        'required',
+                        'integer',
+                        'exists:districts,id',
+                        function (string $attribute, mixed $value, \Closure $fail): void {
+                            if ($value && $this->provinceId) {
+                                $belongs = \App\Models\District::where('id', $value)
+                                    ->where('province_id', $this->provinceId)
+                                    ->exists();
+
+                                if (! $belongs) {
+                                    $fail('The selected district does not belong to the selected province.');
+                                }
+                            }
+                        },
+                    ],
                     'country'        => 'required|string|max:2',
                 ]);
 
@@ -453,6 +550,8 @@
                     'shipping_state'          => $address->state,
                     'shipping_postal_code'    => $address->postal_code ?? '',
                     'shipping_country'        => $address->country,
+                    'province_id'             => $address->province_id,
+                    'district_id'             => $address->district_id,
                 ];
             }
 
@@ -462,9 +561,11 @@
                     'phone'          => $this->phone,
                     'address_line_1' => $this->address_line_1,
                     'address_line_2' => $this->address_line_2,
-                    'city'           => $this->city,
-                    'state'          => $this->state,
+                    'city'           => Province::find($this->provinceId)?->name_en ?? '',
+                    'state'          => District::find($this->districtId)?->name_en ?? '',
                     'country'        => $this->country,
+                    'province_id'    => $this->provinceId,
+                    'district_id'    => $this->districtId,
                     'is_default'     => ! $customer->address()->exists(),
                 ]);
             }
@@ -474,10 +575,12 @@
                 'shipping_phone'          => $this->phone,
                 'shipping_address_line_1' => $this->address_line_1,
                 'shipping_address_line_2' => $this->address_line_2,
-                'shipping_city'           => $this->city,
-                'shipping_state'          => $this->state,
+                'shipping_city'           => Province::find($this->provinceId)?->name_en ?? '',
+                'shipping_state'          => District::find($this->districtId)?->name_en ?? '',
                 'shipping_postal_code'    => '',
                 'shipping_country'        => $this->country,
+                'province_id'             => $this->provinceId,
+                'district_id'             => $this->districtId,
             ];
         }
 
@@ -564,12 +667,11 @@
 
         protected function getShippingCost(): float
         {
-            $method = ShippingMethod::query()
-                ->active()
-                ->whereKey($this->selectedShippingMethodId)
-                ->first();
+            if ($this->calculatedShippingFee !== null) {
+                return $this->calculatedShippingFee;
+            }
 
-            return $method ? (float) $method->cost : 0.0;
+            return 0.0;
         }
     };
 ?>
@@ -647,12 +749,19 @@
                         <h2 class="text-xl font-bold text-gray-900 mb-6">Shipping Address</h2>
 
                         @if ($this->addresses->count() > 0)
-                            <div class="mb-6">
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" wire:model.live="useExistingAddress" class="w-4 h-4 text-blue-600 rounded">
-                                    <span class="font-medium">Use saved address</span>
-                                </label>
-                            </div>
+                        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" wire:model.live="useExistingAddress" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="font-medium text-gray-900">Use saved address</span>
+                            </label>
+
+                            <button type="button" wire:click="$set('useExistingAddress', false)" class="inline-flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg font-semibold text-sm shadow-sm hover:bg-gray-50 transition focus:ring-2 focus:ring-blue-500">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Add New Address
+                            </button>
+                        </div>
 
                             @if ($useExistingAddress)
                                 <div class="grid gap-4 mb-6">
@@ -696,13 +805,29 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">City/Province *</label>
-                                        <input type="text" wire:model="city" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                        @error('city') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Province/City *</label>
+                                        <select wire:model.live="provinceId"
+                                                id="checkout-province"
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                            <option value="">— Select Province —</option>
+                                            @foreach ($this->availableProvinces as $province)
+                                                <option value="{{ $province->id }}">{{ $province->name_en }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('provinceId') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">District/Khan</label>
-                                        <input type="text" wire:model="state" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">District/Khan *</label>
+                                        <select wire:model.live="districtId"
+                                                id="checkout-district"
+                                                {{ ! $provinceId ? 'disabled' : '' }}
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                                            <option value="">— Select District —</option>
+                                            @foreach ($this->availableDistricts as $district)
+                                                <option value="{{ $district->id }}">{{ $district->name_en }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('districtId') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
                                 <div>
@@ -733,7 +858,6 @@
                                             <div class="border-2 rounded-xl p-4 peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
                                                 <div class="flex items-center justify-between">
                                                     <p class="font-semibold text-gray-900">{{ $shippingMethod->name }}</p>
-                                                    <p class="font-semibold text-blue-700">${{ number_format($shippingMethod->cost, 2) }}</p>
                                                 </div>
                                             </div>
                                         </label>
@@ -1006,10 +1130,16 @@
                         <div class="flex justify-between">
                             <span class="text-gray-600">Shipping</span>
                             <span class="font-medium">
-                                @if ($this->shippingCost > 0)
-                                    ${{ number_format($this->shippingCost, 2) }}
+                                @if ($this->shippingFeeUnavailable)
+                                    <span class="text-red-500 font-medium">Unavailable</span>
+                                @elseif ($this->calculatedShippingFee !== null)
+                                    @if ($this->shippingCost > 0)
+                                        ${{ number_format($this->shippingCost, 2) }}
+                                    @else
+                                        Free
+                                    @endif
                                 @else
-                                    <span class="text-green-600">FREE</span>
+                                    <span class="text-gray-400 font-medium text-xs">Select province to see shipping cost</span>
                                 @endif
                             </span>
                         </div>
@@ -1018,6 +1148,14 @@
                                 <span class="text-gray-500">Method</span>
                                 <span class="font-medium text-gray-700">
                                     {{ optional($this->shippingMethods->firstWhere('id', (int) $selectedShippingMethodId))->name ?? 'Not selected' }}
+                                </span>
+                            </div>
+                        @endif
+                        @if ($provinceId)
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Province</span>
+                                <span class="font-medium text-gray-700">
+                                    {{ $this->availableProvinces->firstWhere('id', $provinceId)?->name_en ?? '—' }}
                                 </span>
                             </div>
                         @endif
@@ -1046,7 +1184,7 @@
                                 <p class="text-sm text-gray-600">
                                     {{ $address_line_1 }}<br>
                                     @if ($address_line_2) {{ $address_line_2 }}<br> @endif
-                                    {{ $city }}@if ($state), {{ $state }}@endif<br>
+                                    {{ \App\Models\Province::find($provinceId)?->name_en }}@if ($districtId), {{ \App\Models\District::find($districtId)?->name_en }}@endif<br>
                                     {{ $country }}
                                 </p>
                             @endif

@@ -2,19 +2,19 @@
 
 namespace Database\Factories;
 
+use App\Models\ShippingMethod;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ShippingMethod>
+ * @extends Factory<ShippingMethod>
  */
 class ShippingMethodFactory extends Factory
 {
     public function definition(): array
     {
         return [
-            'name' => fake()->words(2, true),
-            'cost' => fake()->randomFloat(2, 1, 30),
-            'status' => 'active',
+            'name' => fake()->unique()->words(2, true),
+            'status' => fake()->randomElement(['active', 'inactive']),
         ];
     }
 

@@ -44,7 +44,7 @@ class ComputerStoreSeeder extends Seeder
     }
 
     /**
-     * @return array<string, \App\Models\Category>
+     * @return array<string, Category>
      */
     private function seedCategories(): array
     {
@@ -66,7 +66,7 @@ class ComputerStoreSeeder extends Seeder
     }
 
     /**
-     * @return array<string, \App\Models\Brand>
+     * @return array<string, Brand>
      */
     private function seedBrands(): array
     {
@@ -89,9 +89,9 @@ class ComputerStoreSeeder extends Seeder
     }
 
     /**
-     * @param  array<string, \App\Models\Category>  $categoryMap
-     * @param  array<string, \App\Models\Brand>  $brandMap
-     * @return array<string, \App\Models\Product>
+     * @param  array<string, Category>  $categoryMap
+     * @param  array<string, Brand>  $brandMap
+     * @return array<string, Product>
      */
     private function seedProducts(array $categoryMap, array $brandMap): array
     {
@@ -148,7 +148,7 @@ class ComputerStoreSeeder extends Seeder
     }
 
     /**
-     * @param  array<string, \App\Models\Product>  $productMap
+     * @param  array<string, Product>  $productMap
      */
     private function seedProductImages(array $productMap): void
     {
@@ -196,7 +196,7 @@ class ComputerStoreSeeder extends Seeder
     }
 
     /**
-     * @return array<string, \App\Models\Customer>
+     * @return array<string, Customer>
      */
     private function seedCustomers(): array
     {
@@ -226,7 +226,7 @@ class ComputerStoreSeeder extends Seeder
     }
 
     /**
-     * @param  array<string, \App\Models\Customer>  $customerMap
+     * @param  array<string, Customer>  $customerMap
      */
     private function seedAddresses(array $customerMap): void
     {
@@ -253,8 +253,8 @@ class ComputerStoreSeeder extends Seeder
     }
 
     /**
-     * @param  array<string, \App\Models\Customer>  $customerMap
-     * @return array<string, \App\Models\Order>
+     * @param  array<string, Customer>  $customerMap
+     * @return array<string, Order>
      */
     private function seedOrders(array $customerMap): array
     {
@@ -276,8 +276,8 @@ class ComputerStoreSeeder extends Seeder
     }
 
     /**
-     * @param  array<string, \App\Models\Order>  $orderMap
-     * @param  array<string, \App\Models\Product>  $productMap
+     * @param  array<string, Order>  $orderMap
+     * @param  array<string, Product>  $productMap
      */
     private function seedOrderItems(array $orderMap, array $productMap): void
     {
@@ -310,7 +310,7 @@ class ComputerStoreSeeder extends Seeder
     }
 
     /**
-     * @param  array<string, \App\Models\Order>  $orderMap
+     * @param  array<string, Order>  $orderMap
      */
     private function seedOrderStatusHistory(array $orderMap): void
     {
@@ -340,9 +340,9 @@ class ComputerStoreSeeder extends Seeder
     }
 
     /**
-     * @param  array<string, \App\Models\Customer>  $customerMap
-     * @param  array<string, \App\Models\Product>  $productMap
-     * @param  array<string, \App\Models\Order>  $orderMap
+     * @param  array<string, Customer>  $customerMap
+     * @param  array<string, Product>  $productMap
+     * @param  array<string, Order>  $orderMap
      */
     private function seedReviews(array $customerMap, array $productMap, array $orderMap): void
     {
@@ -377,10 +377,10 @@ class ComputerStoreSeeder extends Seeder
     private function seedShippingMethods(): void
     {
         $rows = [
-            ['name' => 'Standard Delivery', 'cost' => 3.00, 'status' => 'active'],
-            ['name' => 'Express Delivery', 'cost' => 6.00, 'status' => 'active'],
-            ['name' => 'Pickup at Store', 'cost' => 0.00, 'status' => 'active'],
-            ['name' => 'Free Delivery', 'cost' => 0.00, 'status' => 'inactive'],
+            ['name' => 'Standard Delivery', 'status' => 'active'],
+            ['name' => 'Express Delivery', 'status' => 'active'],
+            ['name' => 'Pickup at Store', 'status' => 'active'],
+            ['name' => 'Free Delivery', 'status' => 'inactive'],
         ];
 
         foreach ($rows as $row) {

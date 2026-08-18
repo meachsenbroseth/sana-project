@@ -91,9 +91,23 @@ test('checkout loads only active shipping methods', function () {
         'name' => 'Hidden Delivery',
     ]);
 
+    $category = \App\Models\Category::query()->create(['name' => 'Cat1', 'slug' => 'cat1']);
+    $brand = \App\Models\Brand::query()->create(['name' => 'Brand1', 'slug' => 'brand1']);
+    $product = \App\Models\Product::query()->create([
+        'category_id' => $category->id,
+        'brand_id' => $brand->id,
+        'name' => 'Test Product',
+        'slug' => 'test-product',
+        'sku' => 'SKU-1',
+        'price' => 25,
+        'stock_quantity' => 10,
+        'stock_status' => 'in_stock',
+        'is_active' => true,
+    ]);
+
     session()->put('cart', [
         [
-            'product_id' => 1,
+            'product_id' => $product->id,
             'name' => 'Test Product',
             'price' => 25,
             'quantity' => 1,
@@ -114,20 +128,36 @@ test('checkout requires selecting an active shipping method before moving to rev
         'password' => Hash::make('password'),
     ]);
 
+    $province = \App\Models\Province::factory()->create();
+    $district = \App\Models\District::factory()->create(['province_id' => $province->id]);
+    
     $activeShippingMethod = ShippingMethod::factory()->create([
-        'name' => 'Standard Shipping',
-        'cost' => 5.00,
+        'name' => 'Standard',
         'status' => 'active',
     ]);
+    $activeShippingMethod->provinces()->attach($province->id, ['fee' => 5]);
 
     $inactiveShippingMethod = ShippingMethod::factory()->inactive()->create([
         'name' => 'Disabled Shipping',
-        'cost' => 12.00,
+    ]);
+
+    $category = \App\Models\Category::query()->create(['name' => 'Cat2', 'slug' => 'cat2']);
+    $brand = \App\Models\Brand::query()->create(['name' => 'Brand2', 'slug' => 'brand2']);
+    $product = \App\Models\Product::query()->create([
+        'category_id' => $category->id,
+        'brand_id' => $brand->id,
+        'name' => 'Another Product',
+        'slug' => 'another-product',
+        'sku' => 'SKU-2',
+        'price' => 40,
+        'stock_quantity' => 10,
+        'stock_status' => 'in_stock',
+        'is_active' => true,
     ]);
 
     session()->put('cart', [
         [
-            'product_id' => 2,
+            'product_id' => $product->id,
             'name' => 'Another Product',
             'price' => 40,
             'quantity' => 1,
@@ -141,7 +171,8 @@ test('checkout requires selecting an active shipping method before moving to rev
         ->set('full_name', 'Shipping Customer')
         ->set('phone', '012345678')
         ->set('address_line_1', 'Street 1')
-        ->set('city', 'Phnom Penh')
+        ->set('provinceId', $province->id)
+        ->set('districtId', $district->id)
         ->set('country', 'KH')
         ->set('selectedShippingMethodId', $inactiveShippingMethod->id)
         ->call('nextStep')

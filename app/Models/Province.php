@@ -7,14 +7,17 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class ShippingMethod extends Model
+class Province extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'status',
+        'name_en',
+        'name_km',
+        'code',
+        'is_active',
     ];
 
     /**
@@ -23,19 +26,24 @@ class ShippingMethod extends Model
     protected function casts(): array
     {
         return [
-            'status' => 'string',
+            'is_active' => 'boolean',
         ];
     }
 
     #[Scope]
     protected function active(Builder $query): void
     {
-        $query->where('status', 'active');
+        $query->where('is_active', true);
     }
 
-    public function provinces(): BelongsToMany
+    public function districts(): HasMany
     {
-        return $this->belongsToMany(Province::class, 'shipping_method_province')
+        return $this->hasMany(District::class);
+    }
+
+    public function shippingMethods(): BelongsToMany
+    {
+        return $this->belongsToMany(ShippingMethod::class, 'shipping_method_province')
             ->withPivot('fee')
             ->withTimestamps();
     }

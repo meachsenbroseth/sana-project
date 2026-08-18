@@ -32,6 +32,8 @@ class Order extends Model
         'shipping_city',
         'shipping_state',
         'shipping_country',
+        'province_id',
+        'district_id',
         'payment_method',
         'payment_status',
         'transaction_id',
@@ -93,6 +95,16 @@ class Order extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function province(): BelongsTo
+    {
+        return $this->belongsTo(Province::class);
+    }
+
+    public function district(): BelongsTo
+    {
+        return $this->belongsTo(District::class);
     }
 
     public function items(): HasMany
