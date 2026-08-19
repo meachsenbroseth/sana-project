@@ -200,7 +200,7 @@
             if ($this->step === self::STEP_SHIPPING) {
                 if ($this->validateAddress() && $this->validateShippingMethod()) {
                     if ($this->shippingFeeUnavailable) {
-                        $this->addError('selectedShippingMethodId', 'This shipping method is not available for the selected province.');
+                        $this->addError('selectedShippingMethodId', 'សេវាកម្មដឹកជញ្ជូននេះមិនមានសម្រាប់តំបន់របស់អ្នកទេ សូមជ្រើសរើសវិធីសាស្ត្រដឹកជញ្ជូនផ្សេងទៀត');
                         return;
                     }
                     $this->step = self::STEP_REVIEW;
@@ -232,11 +232,13 @@
         {
             $this->districtId = null;
             $this->recalculateShippingFee();
+            $this->resetErrorBag('selectedShippingMethodId');
         }
 
         public function updatedSelectedShippingMethodId(): void
         {
             $this->recalculateShippingFee();
+            $this->resetErrorBag('selectedShippingMethodId');
         }
 
         public function recalculateShippingFee(): void
@@ -855,6 +857,11 @@
 
                         <div class="mt-6 pt-6 border-t">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">Shipping Method</h3>
+                            @error('selectedShippingMethodId')
+                                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                                    {{ $message }}
+                                </div>
+                            @enderror
                             @if ($this->shippingMethods->isNotEmpty())
                                 <div class="grid gap-3">
                                     @foreach ($this->shippingMethods as $shippingMethod)

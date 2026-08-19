@@ -321,7 +321,47 @@ test('checkout fails when selected shipping method has no fee for the chosen pro
         ->set('provinceId', $province->id)
         ->set('districtId', $district->id)
         ->call('nextStep')
+        ->assertSet('step', 1)
+        ->assertHasErrors(['selectedShippingMethodId'])
+        ->assertSee('សេវាកម្មដឹកជញ្ជូននេះមិនមានសម្រាប់តំបន់របស់អ្នកទេ សូមជ្រើសរើសវិធីសាស្ត្រដឹកជញ្ជូនផ្សេងទៀត');
+});
+
+test('changing to a covered province clears the unavailable shipping method error and advances checkout', function (): void {
+    $uncoveredProvince = Province::factory()->create(['is_active' => true]);
+    $coveredProvince = Province::factory()->create(['is_active' => true]);
+    $uncoveredDistrict = District::factory()->create(['province_id' => $uncoveredProvince->id, 'is_active' => true]);
+    $coveredDistrict = District::factory()->create(['province_id' => $coveredProvince->id, 'is_active' => true]);
+    $method = makeActiveShippingMethodWithProvince($coveredProvince, fee: 3.00);
+    $customer = makeCheckoutCustomer();
+    $product = makeCheckoutProduct();
+
+    session()->put('cart', [[
+        'product_id' => $product->id,
+        'name' => $product->name,
+        'price' => 20,
+        'quantity' => 1,
+    ]]);
+
+    $component = Livewire::actingAs($customer, 'customer')
+        ->test('pages::checkout')
+        ->set('useExistingAddress', false)
+        ->set('selectedShippingMethodId', $method->id)
+        ->set('full_name', 'Test User')
+        ->set('phone', '012345678')
+        ->set('address_line_1', '123 Street')
+        ->set('provinceId', $uncoveredProvince->id)
+        ->set('districtId', $uncoveredDistrict->id)
+        ->call('nextStep')
+        ->assertSet('step', 1)
         ->assertHasErrors(['selectedShippingMethodId']);
+
+    $component
+        ->set('provinceId', $coveredProvince->id)
+        ->set('districtId', $coveredDistrict->id)
+        ->assertHasNoErrors(['selectedShippingMethodId'])
+        ->call('nextStep')
+        ->assertSet('step', 2)
+        ->assertHasNoErrors();
 });
 
 test('checkout accepts a direct courier arrangement without a province fee and charges zero', function (): void {
