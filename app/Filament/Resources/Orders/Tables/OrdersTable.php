@@ -207,6 +207,48 @@ class OrdersTable
                                 ->warning()
                                 ->send();
                         }),
+                    Action::make('markPaid')
+                        ->label(__('order.actions.mark_paid'))
+                        ->icon('heroicon-m-banknotes')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->visible(fn ($record) => $record->payment_status !== 'paid')
+                        ->action(function ($record) {
+                            $record->update(['payment_status' => 'paid']);
+
+                            Notification::make()
+                                ->title(__('order.notifications.marked_paid'))
+                                ->success()
+                                ->send();
+                        }),
+                    Action::make('advanceStatus')
+                        ->label(fn ($record) => __('order.actions.advance_to', [
+                            'status' => __('order.status.'.self::nextStatus($record->status)),
+                        ]))
+                        ->icon('heroicon-m-arrow-right-circle')
+                        ->color('primary')
+                        ->requiresConfirmation()
+                        ->modalHeading(fn ($record) => __('order.actions.advance_to', [
+                            'status' => __('order.status.'.self::nextStatus($record->status)),
+                        ]))
+                        ->modalDescription(fn ($record) => __('order.actions.advance_status_confirm', [
+                            'status' => __('order.status.'.self::nextStatus($record->status)),
+                        ]))
+                        ->visible(fn ($record) => self::nextStatus($record->status) !== null && $record->status !== 'cancelled')
+                        ->action(function ($record) {
+                            $next = self::nextStatus($record->status);
+
+                            if ($next) {
+                                $record->update(['status' => $next]);
+
+                                Notification::make()
+                                    ->title(__('order.notifications.status_advanced', [
+                                        'status' => __('order.status.'.$next),
+                                    ]))
+                                    ->success()
+                                    ->send();
+                            }
+                        }),
                     DeleteAction::make()
                         ->icon('heroicon-m-trash')
                         ->color('danger'),
@@ -219,5 +261,19 @@ class OrdersTable
                     RestoreBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * Returns the next status in the fulfilment pipeline, or null when
+     * there is no further step (delivered / cancelled).
+     */
+    private static function nextStatus(string $current): ?string
+    {
+        return match ($current) {
+            'pending' => 'processing',
+            'processing' => 'shipped',
+            'shipped' => 'delivered',
+            default => null,
+        };
     }
 }

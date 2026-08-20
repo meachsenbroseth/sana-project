@@ -5,10 +5,15 @@ return [
     'actions' => [
         'mark_done' => 'សម្គាល់ថាបញ្ចប់',
         'unmark_done' => 'លុបការបញ្ចប់',
+        'mark_paid' => 'សម្គាល់ថាបានបង់',
+        'advance_to' => 'រីកចម្រើនទៅ :status',
+        'advance_status_confirm' => 'តើអ្នកប្រាកដថាចង់រីកចម្រើនការបញ្ជាទិញនេះទៅ :status?',
     ],
     'notifications' => [
         'marked_done' => 'ការបញ្ជាទិញបានសម្គាល់ថាបញ្ចប់ហើយ។',
         'unmarked_done' => 'ព័ត៌មានការបញ្ចប់ត្រូវបានលុប។',
+        'marked_paid' => 'ការបញ្ជាទិញបានសម្គាល់ថាបានបង់ហើយ។',
+        'status_advanced' => 'ស្ថានភាពការបញ្ជាទិញបានរីកចម្រើនទៅ :status។',
     ],
     'items' => 'ទំនិញ',
     'status' => 'ស្ថានភាព',
