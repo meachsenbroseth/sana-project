@@ -840,6 +840,7 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Country *</label>
                                     <select wire:model="country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                        @error('country') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                                         <option value="KH">Cambodia</option>
                                         <option value="US">United States</option>
                                         <option value="CA">Canada</option>
@@ -889,7 +890,10 @@
                             <a wire:navigate href="{{ route('cart.index') }}" class="w-full sm:w-auto text-center text-gray-600 hover:text-gray-900 font-medium py-2">
                                 ← Back to Cart
                             </a>
-                            <button wire:click="nextStep" class="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                            @if ($errors->any())
+                                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">សូមបញ្ចូលព័ត៌មានឲ្យបានត្រឹមត្រូវ</div>
+                            @endif
+                            <button wire:click="nextStep" class="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold" x-on:click="setTimeout(()=>{ const el=document.querySelector('.text-red-600'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); }, 100)">
                                 Continue to Review
                             </button>
                         </div>
@@ -1137,7 +1141,26 @@
             {{-- ── Order Summary sidebar ── --}}
             <div class="lg:col-span-1 mt-6 lg:mt-0">
                 <div class="bg-white rounded-xl shadow-sm p-6 sticky top-24">
-                    <h2 class="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
+                        <h2 class="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
+                        <div class="mb-4">
+                            <h3 class="text-sm font-medium text-gray-900 mb-2">Products</h3>
+                            <div class="space-y-2 max-h-64 overflow-y-auto">
+                                @foreach ($cart as $item)
+                                    <div class="flex items-center space-x-2">
+                                        @if (!empty($item['image']))
+                                            <img src="{{ asset('storage/' . $item['image']) }}" alt="{{ $item['name'] }}" class="w-8 h-8 object-cover rounded">
+                                        @else
+                                            <div class="w-8 h-8 bg-gray-200 rounded"></div>
+                                        @endif
+                                        <div class="flex-1 text-sm">
+                                            <div class="font-medium text-gray-900">{{ $item['name'] }}</div>
+                                            <div class="text-gray-500">x{{ $item['quantity'] }}</div>
+                                        </div>
+                                        <div class="font-medium text-gray-900">${{ number_format($item['price'] * $item['quantity'], 2) }}</div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
 
                     <div class="space-y-3 mb-6">
                         <div class="flex justify-between">
