@@ -12,12 +12,12 @@ use App\Filament\Widgets\Reports\OrdersChart;
 use App\Filament\Widgets\Reports\ProductPerformanceChart;
 use App\Filament\Widgets\Reports\SalesRevenueChart;
 use App\Filament\Widgets\Reports\TopSellingProductsTable;
-use App\Models\Category;
-use App\Models\Customer;
-use App\Models\Product;
+// use App\Models\Category;
+// use App\Models\Customer;
+// use App\Models\Product;
 use App\Services\Analytics\AnalyticsFilters;
 use App\Services\Analytics\AnalyticsService;
-use App\Services\Analytics\AnalyticsTableResolver;
+// use App\Services\Analytics\AnalyticsTableResolver;
 use BackedEnum;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
@@ -104,57 +104,20 @@ class Reports extends BaseDashboard
                             ->required(),
                         DatePicker::make('start_date')
                             ->label(__('analytics.filters.start_date'))
-                            ->visible(fn (callable $get): bool => $get('date_preset') === AnalyticsFilters::PRESET_CUSTOM),
+                            ->live()
+                            ->afterStateUpdated(function (callable $set, $state) {
+                                if (filled($state)) {
+                                    $set('date_preset', AnalyticsFilters::PRESET_CUSTOM);
+                                }
+                            }),
                         DatePicker::make('end_date')
                             ->label(__('analytics.filters.end_date'))
-                            ->visible(fn (callable $get): bool => $get('date_preset') === AnalyticsFilters::PRESET_CUSTOM),
-                        Select::make('product_id')
-                            ->label(__('analytics.filters.product'))
-                            ->options(function (): array {
-                                $tables = app(AnalyticsTableResolver::class);
-
-                                return $tables->hasProducts()
-                                    ? Product::query()->orderBy('name')->pluck('name', 'id')->all()
-                                    : [];
-                            })
-                            ->visible(fn (): bool => app(AnalyticsTableResolver::class)->hasProducts())
-                            ->searchable()
-                            ->preload()
-                            ->nullable(),
-                        Select::make('category_id')
-                            ->label(__('analytics.filters.category'))
-                            ->options(function (): array {
-                                $tables = app(AnalyticsTableResolver::class);
-
-                                return $tables->hasCategories()
-                                    ? Category::query()->orderBy('name')->pluck('name', 'id')->all()
-                                    : [];
-                            })
-                            ->visible(fn (): bool => app(AnalyticsTableResolver::class)->hasCategories())
-                            ->searchable()
-                            ->preload()
-                            ->nullable(),
-                        Select::make('customer_id')
-                            ->label(__('analytics.filters.customer'))
-                            ->options(function (): array {
-                                $tables = app(AnalyticsTableResolver::class);
-
-                                return $tables->hasCustomers()
-                                    ? Customer::query()->orderBy('name')->pluck('name', 'id')->all()
-                                    : [];
-                            })
-                            ->visible(fn (): bool => app(AnalyticsTableResolver::class)->hasCustomers())
-                            ->searchable()
-                            ->preload()
-                            ->nullable(),
-                        Select::make('order_status')
-                            ->label(__('analytics.filters.order_status'))
-                            ->options(__('order.status'))
-                            ->nullable(),
-                        Select::make('payment_method')
-                            ->label(__('analytics.filters.payment_method'))
-                            ->options(__('analytics.payment_methods'))
-                            ->nullable(),
+                            ->live()
+                            ->afterStateUpdated(function (callable $set, $state) {
+                                if (filled($state)) {
+                                    $set('date_preset', AnalyticsFilters::PRESET_CUSTOM);
+                                }
+                            }),
                     ])
                     ->columns([
                         'default' => 1,
@@ -164,7 +127,6 @@ class Reports extends BaseDashboard
                     ->columnSpanFull(),
             ]);
     }
-
     /**
      * @return array<class-string>
      */
@@ -172,14 +134,14 @@ class Reports extends BaseDashboard
     {
         return [
             AnalyticsStatsOverview::class,
-            AnalyticsInsightsWidget::class,
+            OrderReportTable::class,
+            // AnalyticsInsightsWidget::class,
             SalesRevenueChart::class,
             OrdersChart::class,
             CustomerGrowthChart::class,
             ProductPerformanceChart::class,
             TopSellingProductsTable::class,
             CustomerReportTable::class,
-            OrderReportTable::class,
         ];
     }
 

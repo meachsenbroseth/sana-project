@@ -12,7 +12,7 @@ class OrderStatuChart extends ChartWidget
 
     public static function canView(): bool
     {
-        return auth()->user()?->can('View:' . class_basename(static::class)) ?? false;
+        return false;
     }
 
     protected function getData(): array

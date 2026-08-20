@@ -164,13 +164,13 @@ class AnalyticsStatsOverview extends StatsOverviewWidget
                     'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1',
                 ]),
 
-            Stat::make(__('analytics.kpis.orders_today'), number_format($metrics['orders_today']))
-                ->description(__('analytics.kpis.orders_today_desc'))
-                ->descriptionIcon(Heroicon::CalendarDays)
-                ->color('primary')
-                ->extraAttributes([
-                    'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1',
-                ]),
+            // Stat::make(__('analytics.kpis.orders_today'), number_format($metrics['orders_today']))
+            //     ->description(__('analytics.kpis.orders_today_desc'))
+            //     ->descriptionIcon(Heroicon::CalendarDays)
+            //     ->color('primary')
+            //     ->extraAttributes([
+            //         'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1',
+            //     ]),
 
             Stat::make(__('analytics.kpis.revenue_today'), $format($metrics['revenue_today']))
                 ->description($this->growthLabel($metrics['total_revenue'], $metrics['revenue_today']))
@@ -180,16 +180,16 @@ class AnalyticsStatsOverview extends StatsOverviewWidget
                     'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1',
                 ]),
 
-            Stat::make(__('analytics.kpis.pending_orders'), number_format($pendingOrdersCount))
-                ->description(__('analytics.kpis.pending_orders_desc'))
-                ->descriptionIcon(Heroicon::Clock)
-                ->color($pendingOrdersCount > 0 ? 'danger' : 'success')
-                ->url(route('filament.admin.resources.orders.index', [
-                    'tableFilters[status][value]' => 'pending',
-                ]))
-                ->extraAttributes([
-                    'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer',
-                ]),
+            // Stat::make(__('analytics.kpis.pending_orders'), number_format($pendingOrdersCount))
+            //     ->description(__('analytics.kpis.pending_orders_desc'))
+            //     ->descriptionIcon(Heroicon::Clock)
+            //     ->color($pendingOrdersCount > 0 ? 'danger' : 'success')
+            //     ->url(route('filament.admin.resources.orders.index', [
+            //         'tableFilters[status][value]' => 'pending',
+            //     ]))
+            //     ->extraAttributes([
+            //         'class' => 'hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer',
+            //     ]),
 
             // ── Row 3: Inventory health ───────────────────────────────────────
 
