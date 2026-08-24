@@ -80,7 +80,18 @@ class OrdersTable
                         'delivered' => 'success',
                         'cancelled' => 'danger',
                         default => 'gray',
-                    }),
+                    })
+                    ->action(
+                        Action::make('advanceStatusBadge')
+                            ->label(fn ($record) => __('order.actions.advance_to', [
+                                'status' => __('order.status.'.self::nextStatus($record->status)),
+                            ]))
+                            ->requiresConfirmation()
+                            ->modalHeading(fn ($record) => self::advanceStatusModalHeading($record->status))
+                            ->modalDescription(fn ($record) => self::advanceStatusModalDescription($record->status))
+                            ->visible(fn ($record) => self::nextStatus($record->status) !== null && $record->status !== 'cancelled')
+                            ->action(fn ($record) => self::performAdvanceStatus($record))
+                    ),
 
                 TextColumn::make('items_count')
                     ->counts('items')
@@ -221,34 +232,6 @@ class OrdersTable
                                 ->success()
                                 ->send();
                         }),
-                    Action::make('advanceStatus')
-                        ->label(fn ($record) => __('order.actions.advance_to', [
-                            'status' => __('order.status.'.self::nextStatus($record->status)),
-                        ]))
-                        ->icon('heroicon-m-arrow-right-circle')
-                        ->color('primary')
-                        ->requiresConfirmation()
-                        ->modalHeading(fn ($record) => __('order.actions.advance_to', [
-                            'status' => __('order.status.'.self::nextStatus($record->status)),
-                        ]))
-                        ->modalDescription(fn ($record) => __('order.actions.advance_status_confirm', [
-                            'status' => __('order.status.'.self::nextStatus($record->status)),
-                        ]))
-                        ->visible(fn ($record) => self::nextStatus($record->status) !== null && $record->status !== 'cancelled')
-                        ->action(function ($record) {
-                            $next = self::nextStatus($record->status);
-
-                            if ($next) {
-                                $record->update(['status' => $next]);
-
-                                Notification::make()
-                                    ->title(__('order.notifications.status_advanced', [
-                                        'status' => __('order.status.'.$next),
-                                    ]))
-                                    ->success()
-                                    ->send();
-                            }
-                        }),
                     DeleteAction::make()
                         ->icon('heroicon-m-trash')
                         ->color('danger'),
@@ -275,5 +258,44 @@ class OrdersTable
             'shipped' => 'delivered',
             default => null,
         };
+    }
+
+    /**
+     * Builds the confirmation modal heading for an advance-status action.
+     */
+    private static function advanceStatusModalHeading(string $currentStatus): string
+    {
+        return __('order.actions.advance_to', [
+            'status' => __('order.status.'.self::nextStatus($currentStatus)),
+        ]);
+    }
+
+    /**
+     * Builds the confirmation modal body for an advance-status action.
+     */
+    private static function advanceStatusModalDescription(string $currentStatus): string
+    {
+        return __('order.actions.advance_status_confirm', [
+            'status' => __('order.status.'.self::nextStatus($currentStatus)),
+        ]);
+    }
+
+    /**
+     * Advances the order to the next status and fires the success notification.
+     */
+    private static function performAdvanceStatus(mixed $record): void
+    {
+        $next = self::nextStatus($record->status);
+
+        if ($next) {
+            $record->update(['status' => $next]);
+
+            Notification::make()
+                ->title(__('order.notifications.status_advanced', [
+                    'status' => __('order.status.'.$next),
+                ]))
+                ->success()
+                ->send();
+        }
     }
 }
