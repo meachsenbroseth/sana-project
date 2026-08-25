@@ -68,7 +68,16 @@ class OrdersTable
                         'failed' => 'heroicon-m-x-circle',
                         default => 'heroicon-m-question-mark-circle',
                     })
-                    ->searchable(),
+                    ->searchable()
+                    ->action(
+                        Action::make('markPaidBadge')
+                            ->label(__('order.actions.mark_paid'))
+                            ->requiresConfirmation()
+                            ->modalHeading(__('order.actions.mark_paid'))
+                            ->modalDescription(__('order.actions.mark_paid_confirm'))
+                            ->visible(fn ($record) => $record->payment_status !== 'paid')
+                            ->action(fn ($record) => self::performMarkPaid($record))
+                    ),
 
                 TextColumn::make('status')
                     ->label(__('table.status'))
@@ -218,20 +227,6 @@ class OrdersTable
                                 ->warning()
                                 ->send();
                         }),
-                    Action::make('markPaid')
-                        ->label(__('order.actions.mark_paid'))
-                        ->icon('heroicon-m-banknotes')
-                        ->color('success')
-                        ->requiresConfirmation()
-                        ->visible(fn ($record) => $record->payment_status !== 'paid')
-                        ->action(function ($record) {
-                            $record->update(['payment_status' => 'paid']);
-
-                            Notification::make()
-                                ->title(__('order.notifications.marked_paid'))
-                                ->success()
-                                ->send();
-                        }),
                     DeleteAction::make()
                         ->icon('heroicon-m-trash')
                         ->color('danger'),
@@ -297,5 +292,18 @@ class OrdersTable
                 ->success()
                 ->send();
         }
+    }
+
+    /**
+     * Marks the order as paid and fires the success notification.
+     */
+    private static function performMarkPaid(mixed $record): void
+    {
+        $record->update(['payment_status' => 'paid']);
+
+        Notification::make()
+            ->title(__('order.notifications.marked_paid'))
+            ->success()
+            ->send();
     }
 }

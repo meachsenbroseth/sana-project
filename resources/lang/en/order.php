@@ -6,6 +6,7 @@ return [
         'mark_done' => 'Mark Done',
         'unmark_done' => 'Unmark Done',
         'mark_paid' => 'Mark as Paid',
+        'mark_paid_confirm' => 'Are you sure you want to mark this order as paid?',
         'advance_to' => 'Advance to :status',
         'advance_status_confirm' => 'Are you sure you want to advance this order to :status?',
     ],
